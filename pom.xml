@@ -1,0 +1,125 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <groupId>org.papoose</groupId>
+        <artifactId>papoose-root</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.papoose.core</groupId>
+    <artifactId>papoose-core</artifactId>
+    <name>Papoose :: Core</name>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>papoose-core-framework</module>
+    </modules>
+
+    <properties>
+        <jettyVersion>6.1-SNAPSHOT</jettyVersion>
+    </properties>
+
+    <build>
+        <defaultGoal>install</defaultGoal>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.mortbay.jetty</groupId>
+                    <artifactId>maven-jetty-plugin</artifactId>
+                    <version>${jettyVersion}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>1.5</source>
+                        <target>1.5</target>
+                        <showDeprecation>true</showDeprecation>
+                        <showWarnings>true</showWarnings>
+                        <compilerArgument>-Xlint:all,-serial,-unchecked</compilerArgument>
+                    </configuration>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+
+            <plugin>
+                <groupId>org.papoose.plugins</groupId>
+                <artifactId>version-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>validate-java-version</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>require-java-version</goal>
+                        </goals>
+                        <configuration>
+                            <version>1.5+</version>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+
+    </build>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>3.8.1</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mortbay.jetty</groupId>
+                <artifactId>jetty-embedded</artifactId>
+                <version>${jettyVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>cwOSGi_R4_v4.0.1_core_spec</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <repositories>
+        <repository>
+            <id>papoose-dist-m2</id>
+            <name>Papoose Repository</name>
+            <url>http://osgi.sourceforge.net/dist-m2</url>
+        </repository>
+
+        <repository>
+            <id>papoose-dist-m2-snapshot</id>
+            <name>Papoose SNAPSHOT Repository</name>
+            <url>http://osgi.sourceforge.net/dist-m2-snapshot</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+
+    </repositories>
+
+    <scm>
+        <connection>scm:svn:http://osgi.svn.sourceforge.net/svnroot/osgi/osgi-R4-spec/trunk</connection>
+        <developerConnection>scm:svn:https://osgi.svn.sourceforge.net/svnroot/osgi/osgi-R4-spec/trunk</developerConnection>
+        <url>https://osgi.svn.sourceforge.net/svnroot/osgi/osgi-R4-spec/trunk</url>
+    </scm>
+
+</project>
