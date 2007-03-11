@@ -16,9 +16,69 @@
  */
 package org.papoose.core.framework;
 
+import java.util.logging.Logger;
+
+import org.papoose.core.framework.spi.BundleManager;
+import org.papoose.core.framework.spi.ThreadPool;
+
+
 /**
  * @version $Revision$ $Date: $
  */
-public class Papoose {
+public class Papoose
+{
+    private final Logger logger = Logger.getLogger(getClass().getName());
+    private final BundleManager bundleManager;
+    private final ThreadPool threadPool;
+    private long waitPeriod;
 
+    public Papoose(BundleManager bundleManager, ThreadPool threadPool)
+    {
+        this.bundleManager = bundleManager;
+        this.threadPool = threadPool;
+    }
+
+    BundleManager getBundleManager()
+    {
+        return bundleManager;
+    }
+
+    ThreadPool getThreadPool()
+    {
+        return threadPool;
+    }
+
+    public long getWaitPeriod()
+    {
+        return waitPeriod;
+    }
+
+    public void setWaitPeriod(long waitPeriod)
+    {
+        this.waitPeriod = waitPeriod;
+    }
+
+    public void start()
+    {
+        logger.entering(getClass().getName(), "start");
+
+        logger.exiting(getClass().getName(), "start");
+    }
+
+    public void stop()
+    {
+        logger.entering(getClass().getName(), "stop");
+
+        logger.exiting(getClass().getName(), "stop");
+    }
+
+    void unregisterServices(AbstractBundle bundle)
+    {
+
+    }
+
+    void releaseServices(AbstractBundle bundle)
+    {
+
+    }
 }

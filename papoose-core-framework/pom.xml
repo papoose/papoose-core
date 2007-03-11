@@ -15,4 +15,19 @@
 
     <build/>
 
+    <dependencies>
+
+        <dependency>
+            <groupId>org.mortbay.jetty</groupId>
+            <artifactId>jetty-embedded</artifactId>
+            <scope>optional</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>OSGi_R4_v4.0.1_core_spec</artifactId>
+        </dependency>
+
+    </dependencies>
+
 </project>

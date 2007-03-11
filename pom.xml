@@ -88,12 +88,22 @@
 
             <dependency>
                 <groupId>org.osgi</groupId>
-                <artifactId>cwOSGi_R4_v4.0.1_core_spec</artifactId>
+                <artifactId>OSGi_R4_v4.0.1_core_spec</artifactId>
                 <version>1.0.0</version>
             </dependency>
 
         </dependencies>
     </dependencyManagement>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+
+    </dependencies>
+
 
     <repositories>
         <repository>
