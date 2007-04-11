@@ -27,12 +27,18 @@ import java.util.Map;
 class ExportDescription
 {
     private final List<String> packageNames;
-    private final Map<String, Object> parameters;
+    private final Map<String, Object> attributes;
+    private final Map<String, Object> directives;
 
-    public ExportDescription(List<String> packageNames, Map<String, Object> parameters)
+    public ExportDescription(List<String> packageNames, Map<String, Object> attributes, Map<String, Object> directives)
     {
+        assert packageNames.size() > 0;
+        assert attributes != null;
+        assert directives != null;
+
         this.packageNames = Collections.unmodifiableList(packageNames);
-        this.parameters = Collections.unmodifiableMap(parameters);
+        this.attributes = Collections.unmodifiableMap(attributes);
+        this.directives = Collections.unmodifiableMap(directives);
     }
 
     public List<String> getPackageNames()
@@ -40,8 +46,13 @@ class ExportDescription
         return packageNames;
     }
 
-    public Map<String, Object> getParameters()
+    public Map<String, Object> getAttributes()
     {
-        return parameters;
+        return attributes;
+    }
+
+    public Map<String, Object> getDirectives()
+    {
+        return directives;
     }
 }

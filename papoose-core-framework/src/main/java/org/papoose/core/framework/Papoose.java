@@ -25,7 +25,7 @@ import org.papoose.core.framework.spi.ThreadPool;
 /**
  * @version $Revision$ $Date: $
  */
-public class Papoose
+public final class Papoose
 {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final BundleManager bundleManager;

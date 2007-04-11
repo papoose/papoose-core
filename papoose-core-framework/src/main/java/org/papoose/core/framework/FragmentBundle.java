@@ -25,10 +25,15 @@ import org.osgi.framework.Version;
 /**
  * @version $Revision$ $Date$
  */
-class SystemBundle extends AbstractBundle
+public class FragmentBundle extends AbstractBundle
 {
-    public SystemBundle(Papoose framework, ClassLoader classLoader, String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<String> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragementDescription bundleFragementHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<String> bundleRequireBundle)
+    public FragmentBundle(Papoose framework, ClassLoader classLoader, String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<String> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragementDescription bundleFragementHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<String> bundleRequireBundle)
     {
         super(framework, classLoader, bundleActivatorClass, bundleCategories, bundleClassPath, bundleContactAddress, bundleCopyright, bundleDescription, bundleDocUrl, bundleLocalization, bundleManifestVersion, bundleName, bundleNativeCodeList, bundleExecutionEnvironment, bundleSymbolicName, bundleUpdateLocation, bundleVendor, bundleVersion, bundleDynamicImportList, bundleExportList, bundleExportService, bundleFragementHost, bundleImportList, bundleImportService, bundleRequireBundle);
+    }
+
+    public Class loadClass(String name) throws ClassNotFoundException
+    {
+        throw new ClassNotFoundException();
     }
 }

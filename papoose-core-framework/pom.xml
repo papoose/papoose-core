@@ -13,7 +13,17 @@
     <name>Papoose :: OSGi R4 core framework</name>
     <description>OSGi R4 Core Framework</description>
 
-    <build/>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-enableassertions</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <dependencies>
 
