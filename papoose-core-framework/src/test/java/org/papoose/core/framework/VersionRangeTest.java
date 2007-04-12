@@ -16,6 +16,9 @@
  */
 package org.papoose.core.framework;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import junit.framework.TestCase;
 import org.osgi.framework.Version;
 
@@ -93,14 +96,6 @@ public class VersionRangeTest extends TestCase
         assertTrue(range.includes(new Version(2, 0, 0)));
         assertFalse(range.includes(new Version(3, 0, 0)));
 
-        range = new VersionRange(null, new Version(2, 0, 0), true, true);
-
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertTrue(range.includes(new Version(0, 0, 1)));
-        assertTrue(range.includes(new Version(1, 0, 0)));
-        assertTrue(range.includes(new Version(2, 0, 0)));
-        assertFalse(range.includes(new Version(3, 0, 0)));
-
         range = new VersionRange(new Version(1, 0, 0), null, true, true);
 
         assertTrue(range.includes(new Version(1, 1, 0)));
@@ -108,5 +103,163 @@ public class VersionRangeTest extends TestCase
         assertTrue(range.includes(new Version(1, 0, 0)));
         assertTrue(range.includes(new Version(2, 0, 0)));
         assertTrue(range.includes(new Version(3, 0, 0)));
+
+        try
+        {
+            new VersionRange(null, new Version(2, 0, 0), true, true);
+        }
+        catch (IllegalArgumentException ignore)
+        {
+        }
+
+    }
+
+    public void testVersion()
+    {
+        VersionRange range = VersionRange.parseVersionRange("(1.0.0,2.0.0)");
+
+        assertTrue(range.includes(new Version(1, 1, 0)));
+        assertFalse(range.includes(new Version(0, 0, 1)));
+        assertFalse(range.includes(new Version(1, 0, 0)));
+        assertFalse(range.includes(new Version(2, 0, 0)));
+        assertFalse(range.includes(new Version(3, 0, 0)));
+
+        range = VersionRange.parseVersionRange("  (  1.0.0   ,    2.0.0  )    ");
+
+        assertTrue(range.includes(new Version(1, 1, 0)));
+        assertFalse(range.includes(new Version(0, 0, 1)));
+        assertFalse(range.includes(new Version(1, 0, 0)));
+        assertFalse(range.includes(new Version(2, 0, 0)));
+        assertFalse(range.includes(new Version(3, 0, 0)));
+
+        range = VersionRange.parseVersionRange("[1.0.0, 2.0.0)");
+
+        assertTrue(range.includes(new Version(1, 1, 0)));
+        assertFalse(range.includes(new Version(0, 0, 1)));
+        assertTrue(range.includes(new Version(1, 0, 0)));
+        assertFalse(range.includes(new Version(2, 0, 0)));
+        assertFalse(range.includes(new Version(3, 0, 0)));
+
+        range = VersionRange.parseVersionRange("(1.0.0, 2.0.0]");
+
+        assertTrue(range.includes(new Version(1, 1, 0)));
+        assertFalse(range.includes(new Version(0, 0, 1)));
+        assertFalse(range.includes(new Version(1, 0, 0)));
+        assertTrue(range.includes(new Version(2, 0, 0)));
+        assertFalse(range.includes(new Version(3, 0, 0)));
+
+        range = VersionRange.parseVersionRange("[1.0.0, 2.0.0]");
+
+        assertTrue(range.includes(new Version(1, 1, 0)));
+        assertFalse(range.includes(new Version(0, 0, 1)));
+        assertTrue(range.includes(new Version(1, 0, 0)));
+        assertTrue(range.includes(new Version(2, 0, 0)));
+        assertFalse(range.includes(new Version(3, 0, 0)));
+
+        range = VersionRange.parseVersionRange("1.0.0");
+
+        assertTrue(range.includes(new Version(1, 1, 0)));
+        assertFalse(range.includes(new Version(0, 0, 1)));
+        assertTrue(range.includes(new Version(1, 0, 0)));
+        assertTrue(range.includes(new Version(2, 0, 0)));
+        assertTrue(range.includes(new Version(3, 0, 0)));
+
+        assertTrue(range.equals(range));
+        assertFalse(range.equals(Version.parseVersion("1.2.3.wrong")));
+        assertTrue(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0, 2.0.0]")));
+        assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0, 2.0.0)")));
+        assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("(1.0.0, 2.0.0]")));
+        assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0.yikes, 2.0.0]")));
+        assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0, 2.0.0.yikes]")));
+
+        Map<VersionRange, String> map = new HashMap<VersionRange, String>();
+
+        map.put(VersionRange.parseVersionRange("1.0.0"), "Hello");
+
+        assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("1.0.0"))));
+
+        map.put(VersionRange.parseVersionRange("[1.0.0, 2.0.0]"), "Hello");
+
+        assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("[1.0.0, 2.0.0]"))));
+
+        map.put(VersionRange.parseVersionRange("(1.0.0, 2.0.0]"), "Hello");
+
+        assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("(1.0.0, 2.0.0]"))));
+
+        map.put(VersionRange.parseVersionRange("[1.0.0, 2.0.0)"), "Hello");
+
+        assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("[1.0.0, 2.0.0)"))));
+
+        try
+        {
+            VersionRange.parseVersionRange("1.yikes.0");
+            fail("Should have thrown an exception");
+        }
+        catch (IllegalArgumentException ignore)
+        {
+        }
+
+        try
+        {
+            VersionRange.parseVersionRange("[1.yikes.0, 2.0.0]");
+            fail("Should have thrown an exception");
+        }
+        catch (IllegalArgumentException ignore)
+        {
+        }
+
+        try
+        {
+            VersionRange.parseVersionRange("[1.0.0, 2.yikes.0]");
+            fail("Should have thrown an exception");
+        }
+        catch (IllegalArgumentException ignore)
+        {
+        }
+
+        try
+        {
+            VersionRange.parseVersionRange("[1.0.0 + 2.0.0]");
+            fail("Should have thrown an exception");
+        }
+        catch (IllegalArgumentException ignore)
+        {
+        }
+
+        try
+        {
+            VersionRange.parseVersionRange("[1.0.0, 2.0.0+]");
+            fail("Should have thrown an exception");
+        }
+        catch (IllegalArgumentException ignore)
+        {
+        }
+
+        try
+        {
+            VersionRange.parseVersionRange("[1.0.0, 2.0.0 ");
+            fail("Should have thrown an exception");
+        }
+        catch (IllegalArgumentException ignore)
+        {
+        }
+
+        try
+        {
+            VersionRange.parseVersionRange("[1.0.0, 2.0.0 }");
+            fail("Should have thrown an exception");
+        }
+        catch (IllegalArgumentException ignore)
+        {
+        }
+
+        try
+        {
+            VersionRange.parseVersionRange("[1.0.0, 2.0.0");
+            fail("Should have thrown an exception");
+        }
+        catch (IllegalArgumentException ignore)
+        {
+        }
     }
 }
