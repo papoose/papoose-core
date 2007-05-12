@@ -16,27 +16,32 @@
  */
 package org.papoose.core.framework;
 
+import java.io.File;
+import java.net.URI;
+
+
 /**
  * @version $Revision$ $Date$
  */
-class Wire
+public class BundleFile extends File
 {
-    private final String packageName;
-    private final BundleClassLoader bundleClassLoader;
-
-    public Wire(String packageName, BundleClassLoader bundleClassLoader)
+    public BundleFile(String pathname)
     {
-        this.packageName = packageName;
-        this.bundleClassLoader = bundleClassLoader;
+        super(pathname);
     }
 
-    public String getPackageName()
+    public BundleFile(String parent, String child)
     {
-        return packageName;
+        super(parent, child);
     }
 
-    public BundleClassLoader getBundleClassLoader()
+    public BundleFile(File parent, String child)
     {
-        return bundleClassLoader;
+        super(parent, child);
+    }
+
+    public BundleFile(URI uri)
+    {
+        super(uri);
     }
 }

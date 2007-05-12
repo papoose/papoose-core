@@ -14,29 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.framework;
+package org.papoose.core.framework.spi;
+
+import java.io.File;
+
 
 /**
  * @version $Revision$ $Date$
  */
-class Wire
+public interface Store
 {
-    private final String packageName;
-    private final BundleClassLoader bundleClassLoader;
+    File getRoot();
 
-    public Wire(String packageName, BundleClassLoader bundleClassLoader)
-    {
-        this.packageName = packageName;
-        this.bundleClassLoader = bundleClassLoader;
-    }
+    BundleStore allocateBundleStore(long bundleId);
 
-    public String getPackageName()
-    {
-        return packageName;
-    }
-
-    public BundleClassLoader getBundleClassLoader()
-    {
-        return bundleClassLoader;
-    }
+    void removeBundleStore(long bundleId);
 }

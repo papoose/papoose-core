@@ -20,26 +20,37 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.osgi.framework.Version;
+
 
 /**
  * @version $Revision$ $Date$
  */
 class ImportDescription
 {
+    private final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
     private final List<String> packageNames;
-    private final Map<String, Object> attributes;
-    private final Map<String, Object> directives;
+    private final Map<String, String> attributes;
+    private final Resolution resolution;
+    private VersionRange version = DEFAULT_VERSION_RANGE;
+    private String bundleSymbolicName;
+    private VersionRange bundleVersion = DEFAULT_VERSION_RANGE;
 
-    public ImportDescription(List<String> packageNames, Map<String, Object> attributes, Map<String, Object> directives)
+    public ImportDescription(List<String> packageNames, Map<String, String> attributes)
+    {
+        this(packageNames, attributes, Resolution.MANDATORY);
+    }
+
+    public ImportDescription(List<String> packageNames, Map<String, String> attributes, Resolution resolution)
     {
         assert packageNames != null;
         assert packageNames.size() > 0;
         assert attributes != null;
-        assert directives != null;
+        assert resolution != null;
 
         this.packageNames = Collections.unmodifiableList(packageNames);
         this.attributes = Collections.unmodifiableMap(attributes);
-        this.directives = Collections.unmodifiableMap(directives);
+        this.resolution = resolution;
     }
 
     public List<String> getPackageNames()
@@ -47,13 +58,43 @@ class ImportDescription
         return packageNames;
     }
 
-    public Map<String, Object> getAttributes()
+    public Map<String, String> getAttributes()
     {
         return attributes;
     }
 
-    public Map<String, Object> getDirectives()
+    public Resolution getResolution()
     {
-        return directives;
+        return resolution;
+    }
+
+    public VersionRange getVersion()
+    {
+        return version;
+    }
+
+    public void setVersion(VersionRange version)
+    {
+        this.version = version;
+    }
+
+    public String getBundleSymbolicName()
+    {
+        return bundleSymbolicName;
+    }
+
+    public void setBundleSymbolicName(String bundleSymbolicName)
+    {
+        this.bundleSymbolicName = bundleSymbolicName;
+    }
+
+    public VersionRange getBundleVersion()
+    {
+        return bundleVersion;
+    }
+
+    public void setBundleVersion(VersionRange bundleVersion)
+    {
+        this.bundleVersion = bundleVersion;
     }
 }

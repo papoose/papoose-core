@@ -14,29 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.framework;
+package org.papoose.core.framework.bundle;
+
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+
+import org.papoose.core.framework.BundleURLStreamHandler;
+
 
 /**
+ * This URLStreamHandler will be used if our URLStreamHandlerFactory has not
+ * been registered w/ URL.
+ *
  * @version $Revision$ $Date$
+ * @see org.papoose.core.framework.ServiceURLStreamHandlerFactory
  */
-class Wire
+public class Handler extends URLStreamHandler
 {
-    private final String packageName;
-    private final BundleClassLoader bundleClassLoader;
-
-    public Wire(String packageName, BundleClassLoader bundleClassLoader)
+    protected URLConnection openConnection(URL url) throws IOException
     {
-        this.packageName = packageName;
-        this.bundleClassLoader = bundleClassLoader;
-    }
-
-    public String getPackageName()
-    {
-        return packageName;
-    }
-
-    public BundleClassLoader getBundleClassLoader()
-    {
-        return bundleClassLoader;
+        return BundleURLStreamHandler.allocateConnection(url);
     }
 }

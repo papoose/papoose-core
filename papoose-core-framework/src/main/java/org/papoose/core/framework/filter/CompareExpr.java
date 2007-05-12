@@ -33,8 +33,8 @@ abstract class CompareExpr implements Expr
 
     public CompareExpr(String attribute, String value)
     {
-        if (attribute == null) throw new IllegalArgumentException("Attribute is null");
-        if (value == null) throw new IllegalArgumentException("Value is null");
+        assert attribute != null;
+        assert value != null;
 
         this.attribute = attribute;
         this.value = value;
@@ -45,8 +45,10 @@ abstract class CompareExpr implements Expr
         try
         {
             Object object = dictionary.get(attribute);
-            Object test;
 
+            if (object == null) return false;
+
+            Object test;
             if (isScalar(object)) test = convert(object, value);
             else if (object.getClass().isArray())
             {
@@ -55,20 +57,20 @@ abstract class CompareExpr implements Expr
                 for (int i = 0; i < length; i++)
                 {
                     Object element = Array.get(object, i);
-                    if (isScalar(element) && test(element, convert(element, value))) return true;
+                    if (isScalar(element) && testPair(element, convert(element, value))) return true;
                 }
                 return false;
             }
             else if (object instanceof Collection)
             {
                 for (Object element : (Collection) object)
-                    if (isScalar(element) && test(element, convert(element, value))) return true;
+                    if (isScalar(element) && testPair(element, convert(element, value))) return true;
                 return false;
             }
             else return false;
 
 
-            return test(object, test);
+            return testPair(object, test);
         }
         catch (NumberFormatException doNothing)
         {
@@ -76,7 +78,7 @@ abstract class CompareExpr implements Expr
         }
     }
 
-    protected abstract boolean test(Object object, Object value);
+    protected abstract boolean testPair(Object object, Object value);
 
     protected abstract Object getFalseObject();
 

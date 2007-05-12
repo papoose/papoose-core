@@ -16,6 +16,9 @@
  */
 package org.papoose.core.framework.spi;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.osgi.framework.Bundle;
 
 
@@ -24,7 +27,13 @@ import org.osgi.framework.Bundle;
  */
 public interface BundleManager
 {
-    public void recordBundleHasStarted(Bundle bundle);
+    InputStream getInputStream(int bundleId, int generation) throws IOException;
 
-    public void resolve(Bundle bundle);
+    void recordBundleHasStarted(Bundle bundle);
+
+    void resolve(Bundle bundle);
+
+    Bundle getBundle(long bundleId);
+
+    Bundle[] getBundles();
 }

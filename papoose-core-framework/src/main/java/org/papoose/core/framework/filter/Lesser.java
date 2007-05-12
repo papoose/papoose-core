@@ -28,7 +28,7 @@ class Lesser extends CompareExpr
         super(attribute, value);
     }
 
-    protected boolean test(Object value, Object object)
+    protected boolean testPair(Object value, Object object)
     {
         return ((Comparable<Object>) value).compareTo(object) >= 0;
     }

@@ -31,14 +31,12 @@ public class ImportDescriptionTest extends TestCase
 {
     public void testConstruction()
     {
-        boolean b = "abc".startsWith("");
         List<String> packageNames = new ArrayList<String>();
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        Map<String, Object> directives = new HashMap<String, Object>();
+        Map<String, String> attributes = new HashMap<String, String>();
 
         try
         {
-            new ImportDescription(null, attributes, directives);
+            new ImportDescription(null, attributes);
             fail("Should have caught the null package names list");
         }
         catch (AssertionError donothing)
@@ -47,7 +45,7 @@ public class ImportDescriptionTest extends TestCase
 
         try
         {
-            new ImportDescription(packageNames, attributes, directives);
+            new ImportDescription(packageNames, attributes);
             fail("Should have caught the empty package names list");
         }
         catch (AssertionError donothing)
@@ -56,24 +54,15 @@ public class ImportDescriptionTest extends TestCase
 
         try
         {
-            new ImportDescription(packageNames, null, directives);
+            new ImportDescription(packageNames, null);
             fail("Should have caught the null attributes map");
         }
         catch (AssertionError donothing)
         {
         }
 
-        try
-        {
-            new ImportDescription(packageNames, attributes, null);
-            fail("Should have caught the null directives map");
-        }
-        catch (AssertionError donothing)
-        {
-        }
-
         packageNames.add("com.acme.detonator");
-        new ImportDescription(packageNames, attributes, directives);
+        new ImportDescription(packageNames, attributes);
 
     }
 }

@@ -16,10 +16,15 @@
  */
 package org.papoose.core.framework;
 
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import org.papoose.core.framework.spi.BundleManager;
 import org.papoose.core.framework.spi.ThreadPool;
+import org.papoose.core.framework.filter.Parser;
 
 
 /**
@@ -28,14 +33,26 @@ import org.papoose.core.framework.spi.ThreadPool;
 public final class Papoose
 {
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+    private static long frameworkCounter = 0;
+    private final static Map<Long, Reference<Papoose>> frameworks = new Hashtable<Long, Reference<Papoose>>();
+
     private final BundleManager bundleManager;
     private final ThreadPool threadPool;
+    private final long frameworkId;
     private long waitPeriod;
+    private Parser parser;
 
     public Papoose(BundleManager bundleManager, ThreadPool threadPool)
     {
+        if (bundleManager == null) throw new IllegalArgumentException("bundleManager is null");
+        if (threadPool == null) throw new IllegalArgumentException("threadPool is null");
+
         this.bundleManager = bundleManager;
         this.threadPool = threadPool;
+        this.frameworkId = frameworkCounter++;
+
+        frameworks.put(frameworkId, new WeakReference<Papoose>(this));
     }
 
     BundleManager getBundleManager()
@@ -48,6 +65,11 @@ public final class Papoose
         return threadPool;
     }
 
+    long getFrameworkId()
+    {
+        return frameworkId;
+    }
+
     public long getWaitPeriod()
     {
         return waitPeriod;
@@ -56,6 +78,25 @@ public final class Papoose
     public void setWaitPeriod(long waitPeriod)
     {
         this.waitPeriod = waitPeriod;
+    }
+
+    public Parser getParser()
+    {
+        return parser;
+    }
+
+    public void setParser(Parser parser)
+    {
+        this.parser = parser;
+    }
+
+    static Papoose getFramework(Long frameworkId)
+    {
+        Papoose result = frameworks.get(frameworkId).get();
+
+        if (result == null) frameworks.remove(frameworkId);
+
+        return result;
     }
 
     public void start()
@@ -74,11 +115,14 @@ public final class Papoose
 
     void unregisterServices(AbstractBundle bundle)
     {
-
     }
 
     void releaseServices(AbstractBundle bundle)
     {
+    }
 
+    Wire resolve(ImportDescription importDescription)
+    {
+        return null;
     }
 }

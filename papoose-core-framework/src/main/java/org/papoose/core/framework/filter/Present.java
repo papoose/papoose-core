@@ -30,7 +30,7 @@ class Present implements Expr
 
     public Present(String attribute)
     {
-        if (attribute == null) throw new IllegalArgumentException("attribute is null");
+        assert attribute != null;
 
         this.attribute = attribute;
     }

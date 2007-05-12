@@ -19,24 +19,7 @@ package org.papoose.core.framework;
 /**
  * @version $Revision$ $Date$
  */
-class Wire
+enum Resolution
 {
-    private final String packageName;
-    private final BundleClassLoader bundleClassLoader;
-
-    public Wire(String packageName, BundleClassLoader bundleClassLoader)
-    {
-        this.packageName = packageName;
-        this.bundleClassLoader = bundleClassLoader;
-    }
-
-    public String getPackageName()
-    {
-        return packageName;
-    }
-
-    public BundleClassLoader getBundleClassLoader()
-    {
-        return bundleClassLoader;
-    }
+    MANDATORY, OPTIONAL    
 }

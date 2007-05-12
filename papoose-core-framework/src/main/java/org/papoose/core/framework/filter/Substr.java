@@ -31,9 +31,9 @@ class Substr implements Expr
 
     public Substr(String attribute, String[] values)
     {
-        if (attribute == null) throw new IllegalArgumentException("attribute is null");
-        if (values == null) throw new IllegalArgumentException("values is null");
-        if (values.length < 2) throw new IllegalArgumentException("values does not have the proper number of elements");
+        assert attribute != null;
+        assert values != null;
+        assert values.length >= 2;
 
         this.attribute = attribute;
         this.values = values;

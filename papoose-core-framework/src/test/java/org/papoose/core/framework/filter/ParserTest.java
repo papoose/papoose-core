@@ -16,8 +16,12 @@
  */
 package org.papoose.core.framework.filter;
 
+import java.util.Collections;
 import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Map;
+import java.util.TreeMap;
 
 import junit.framework.TestCase;
 
@@ -27,72 +31,127 @@ import junit.framework.TestCase;
  */
 public class ParserTest extends TestCase
 {
+    private final Parser parser = new Parser();
+
     public void test() throws Exception
     {
         Dictionary<String, Object> dictionary = new Hashtable<String, Object>();
-        dictionary.put("C AND F", new String[] { "a", "b", "c" });
-        Expr filter = new Parser().parse("   ( c and f    =c) ");
+        dictionary.put("c and f", new String[]{"a", "b", "c"});
+        Expr filter = parser.parse("   ( c and f    =c) ");
 
         assertTrue(filter.match(dictionary));
 
-        dictionary.put("SERVICE.PID", "USB-1232312452");
-        dictionary.put("VENDOR", "ibm");
-        filter = new Parser().parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson)( vendor  ~=ibm) ) ) ");
+        dictionary.put("service.pid", "USB-1232312452");
+        dictionary.put("vendor", "ibm");
+        filter = parser.parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson)( vendor  ~=ibm) ) ) ");
 
         assertTrue(filter.match(dictionary));
 
-        dictionary.put("VENDOR", "ericssin");
-        filter = new Parser().parse(" ( & (service.pid=USB-1232312452)( | (   vendor   ~=ericsson)(vendor~=ibm) ) ) ");
+        dictionary.put("vendor", "ericssin");
+        filter = parser.parse(" ( & (service.pid=USB-1232312452)( | (   vendor   ~=ericsson)(vendor~=ibm) ) ) ");
 
         assertFalse(filter.match(dictionary));
 
-        dictionary.put("VENDOR", "ericssin01");
-        filter = new Parser().parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson01)(vendor~=ibm) ) (!(vendor=ibm))) ");
+        dictionary.put("vendor", "ericssin01");
+        filter = parser.parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson01)(vendor~=ibm) ) (!(vendor=ibm))) ");
 
         assertTrue(filter.match(dictionary));
 
-        dictionary.put("PRESENT", "oohrah");
-        filter = new Parser().parse(" ( present =*) ");
+        dictionary.put("present", "oohrah");
+        filter = parser.parse(" ( present =*) ");
 
         assertTrue(filter.match(dictionary));
 
-        dictionary.put("SUBSTR", "How now brown cow");
-        filter = new Parser().parse(" ( substr =*no*brown*) ");
+        dictionary.put("substr", "How now brown cow");
+        filter = parser.parse(" ( substr =*no*brown*) ");
 
         assertTrue(filter.match(dictionary));
 
-        filter = new Parser().parse(" ( substr =*now*) ");
+        filter = parser.parse(" ( substr =*now*) ");
 
         assertTrue(filter.match(dictionary));
 
-        filter = new Parser().parse(" ( substr =H*no*brown*w) ");
+        filter = parser.parse(" ( substr =H*no*brown*w) ");
 
         assertTrue(filter.match(dictionary));
 
-        filter = new Parser().parse(" ( substr =How*) ");
+        filter = parser.parse(" ( substr =How*) ");
 
         assertTrue(filter.match(dictionary));
 
-        filter = new Parser().parse(" ( substr =*cow) ");
+        filter = parser.parse(" ( substr =*cow) ");
 
         assertTrue(filter.match(dictionary));
 
-        filter = new Parser().parse(" ( substr =How*br*n cow) ");
+        filter = parser.parse(" ( substr =How*br*n cow) ");
 
         assertTrue(filter.match(dictionary));
 
-        dictionary.put("SUBSTR", "How now brown cow ");
-        filter = new Parser().parse(" ( substr =How*br*n cow ) ");
+        dictionary.put("substr", "How now brown cow ");
+        filter = parser.parse(" ( substr =How*br*n cow ) ");
 
         assertTrue(filter.match(dictionary));
 
-        dictionary.put("SUBSTR", "How now* brown cow ");
-        filter = new Parser().parse(" ( substr =How*\\**br*n cow ) ");
+        dictionary.put("substr", "How now* brown cow ");
+        filter = parser.parse(" ( substr =How*\\**br*n cow ) ");
 
         assertTrue(filter.match(dictionary));
 
-        dictionary.put("SUBSTR", "How now* brown (cow) ");
-        filter = new Parser().parse(" ( substr =How*\\**br*n \\(cow\\) ) ");
+        dictionary.put("substr", "How now* brown (cow) ");
+        filter = parser.parse(" ( substr =How*\\**br*n \\(cow\\) ) ");
+
+        assertTrue(filter.match(dictionary));
+
+        dictionary.remove("substr");
+        dictionary.put("SuBsTr", "How now* brown (cow) ");
+
+        assertFalse(filter.match(dictionary));
+
+
+        dictionary = new Dictionary<String, Object>()
+        {
+            final Map<String, Object> map = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+
+            public int size()
+            {
+                return map.size();
+            }
+
+            public boolean isEmpty()
+            {
+                return map.isEmpty();
+            }
+
+            public Enumeration<String> keys()
+            {
+                return Collections.enumeration(map.keySet());
+            }
+
+            public Enumeration<Object> elements()
+            {
+                return Collections.enumeration(map.values());
+            }
+
+            public Object get(Object key)
+            {
+                return map.get(key);
+            }
+
+            public Object put(String key, Object value)
+            {
+                return map.put(key, value);
+            }
+
+            public Object remove(Object key)
+            {
+                return map.remove(key);
+            }
+        };
+
+        dictionary.put("SeRvIcE.pId", "USB-1232312452");
+        dictionary.put("VeNdOr", "ericssin01");
+
+        filter = parser.parse("(&(service.pid=USB-1232312452)(|(vendor~=ericssin01)(vendor~=ibm))(!(vendor=ibm)))");
 
         assertTrue(filter.match(dictionary));
 
@@ -100,7 +159,6 @@ public class ParserTest extends TestCase
         long start = System.currentTimeMillis();
         final int COUNT1 = 500000;
 
-        Parser parser = new Parser();
         for (int i = 0; i < COUNT1; i++)
         {
             parser.parse("(&(service.pid=USB-1232312452)(|(vendor~=ericssin01)(vendor~=ibm))(!(vendor=ibm)))");
@@ -113,7 +171,7 @@ public class ParserTest extends TestCase
         start = System.currentTimeMillis();
         final int COUNT2 = 500000;
 
-        dictionary.put("VENDOR", "ericssin01");
+        dictionary.put("vendor", "ericssin01");
         filter = parser.parse("(&(service.pid=USB-1232312452)(|(vendor~=ericssin01)(vendor~=ibm))(!(vendor=ibm)))");
         for (int i = 0; i < COUNT2; i++)
         {
@@ -122,6 +180,62 @@ public class ParserTest extends TestCase
 
         stop = System.currentTimeMillis();
 
-        System.err.println("time: " + (stop - start) * 1000.0 / COUNT2 + "ns");
+        System.err.println("time case sensitive: " + (stop - start) * 1000.0 / COUNT2 + "ns");
+
+        start = System.currentTimeMillis();
+        final int COUNT3 = 500000;
+
+        filter = parser.parse("(&(service.pid=USB-1232312452)(|(vendor~=ericssin01)(vendor~=ibm))(!(vendor=ibm)))");
+        for (int i = 0; i < COUNT2; i++)
+        {
+            dictionary = new Dictionary<String, Object>()
+            {
+                final Map<String, Object> map = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+
+                public int size()
+                {
+                    return map.size();
+                }
+
+                public boolean isEmpty()
+                {
+                    return map.isEmpty();
+                }
+
+                public Enumeration<String> keys()
+                {
+                    return Collections.enumeration(map.keySet());
+                }
+
+                public Enumeration<Object> elements()
+                {
+                    return Collections.enumeration(map.values());
+                }
+
+                public Object get(Object key)
+                {
+                    return map.get(key);
+                }
+
+                public Object put(String key, Object value)
+                {
+                    return map.put(key, value);
+                }
+
+                public Object remove(Object key)
+                {
+                    return map.remove(key);
+                }
+            };
+
+            dictionary.put("SeRvIcE.pId", "USB-1232312452");
+            dictionary.put("VeNdOr", "ericssin01");
+
+            filter.match(dictionary);
+        }
+
+        stop = System.currentTimeMillis();
+
+        System.err.println("time case insensitive " + (stop - start) * 1000.0 / COUNT3 + "ns");
     }
 }

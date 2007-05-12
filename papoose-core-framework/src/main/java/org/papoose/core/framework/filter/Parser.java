@@ -26,7 +26,7 @@ import org.osgi.framework.InvalidSyntaxException;
 /**
  * @version $Revision$ $Date$
  */
-public class Parser
+public final class Parser
 {
     private final ApproxAlgorithm approxAlgorithm;
 
@@ -179,7 +179,7 @@ public class Parser
 
     String parseAttribute(State state) throws InvalidSyntaxException
     {
-        return state.eatAttribute().trim().toUpperCase();
+        return state.eatAttribute().trim();
     }
 
     Expr parseEqualOrSubstrOrPresent(State state, String attribute) throws InvalidSyntaxException

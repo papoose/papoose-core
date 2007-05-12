@@ -16,27 +16,19 @@
  */
 package org.papoose.core.framework;
 
+import java.net.URL;
+import java.util.List;
+
+import org.osgi.framework.Version;
+
+
 /**
  * @version $Revision$ $Date$
  */
-class Wire
+class FragmentImpl extends AbstractBundle
 {
-    private final String packageName;
-    private final BundleClassLoader bundleClassLoader;
-
-    public Wire(String packageName, BundleClassLoader bundleClassLoader)
+    public FragmentImpl(long bundleId)
     {
-        this.packageName = packageName;
-        this.bundleClassLoader = bundleClassLoader;
-    }
-
-    public String getPackageName()
-    {
-        return packageName;
-    }
-
-    public BundleClassLoader getBundleClassLoader()
-    {
-        return bundleClassLoader;
+        super(bundleId);
     }
 }

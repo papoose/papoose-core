@@ -29,7 +29,7 @@ class Not implements Expr
 
     public Not(Expr expression)
     {
-        if (expression == null) throw new IllegalArgumentException("expression is null");
+        assert expression != null;
 
         this.expression = expression;
     }

@@ -28,7 +28,7 @@ class Equal extends CompareExpr
         super(attribute, value);
     }
 
-    protected boolean test(Object object, Object value)
+    protected boolean testPair(Object object, Object value)
     {
         return value.equals(object);
     }

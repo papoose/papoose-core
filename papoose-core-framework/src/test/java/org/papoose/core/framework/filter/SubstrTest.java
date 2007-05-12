@@ -16,8 +16,12 @@
  */
 package org.papoose.core.framework.filter;
 
+import java.util.Collections;
 import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Map;
+import java.util.TreeMap;
 
 import junit.framework.TestCase;
 
@@ -65,36 +69,106 @@ public class SubstrTest extends TestCase
 
     public void testDictionary()
     {
-        TestSubtr test = new TestSubtr("foo", new String[]{"", "no", "brown", ""});
+        TestSubtr test = new TestSubtr("FoO", new String[]{"", "no", "brown", ""});
+        Dictionary<String, Object> dictionary = new Dictionary<String, Object>()
+        {
+            final Map<String, Object> map = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+
+            public int size()
+            {
+                return map.size();
+            }
+
+            public boolean isEmpty()
+            {
+                return map.isEmpty();
+            }
+
+            public Enumeration<String> keys()
+            {
+                return Collections.enumeration(map.keySet());
+            }
+
+            public Enumeration<Object> elements()
+            {
+                return Collections.enumeration(map.values());
+            }
+
+            public Object get(Object key)
+            {
+                return map.get(key);
+            }
+
+            public Object put(String key, Object value)
+            {
+                return map.put(key, value);
+            }
+
+            public Object remove(Object key)
+            {
+                return map.remove(key);
+            }
+        };
+
+        dictionary.put("FOO", "How now brown cow");
+        assertTrue(test.match(dictionary));
+
+        dictionary.put("FOO", "How nobrown cow");
+        assertTrue(test.match(dictionary));
+
+        dictionary.put("FOO", "nobrown");
+        assertTrue(test.match(dictionary));
+
+        dictionary.put("FOO", new Object[]{null, false, 5.0, "nobrown"});
+        assertFalse(test.match(dictionary));
+
+        dictionary.put("FOO", new String[]{null, "false", "5.0", "nobrown"});
+        assertTrue(test.match(dictionary));
+
+        dictionary.put("FOO", "nomatch");
+        assertFalse(test.match(dictionary));
+
+        dictionary.put("FOO", 5.0);
+        assertFalse(test.match(dictionary));
+
+        dictionary.remove("FOO");
+        assertFalse(test.match(dictionary));
+
+        dictionary.put("FOO", new Object[]{null, false, 5.0, "nomatch"});
+        assertFalse(test.match(dictionary));
+    }
+
+    public void testDictionaryCase()
+    {
+        TestSubtr test = new TestSubtr("FoO", new String[]{"", "no", "brown", ""});
         Dictionary<String, Object> dictionary = new Hashtable<String, Object>();
 
-        dictionary.put("foo", "How now brown cow");
+        dictionary.put("FoO", "How now brown cow");
         assertTrue(test.match(dictionary));
 
-        dictionary.put("foo", "How nobrown cow");
+        dictionary.put("FoO", "How nobrown cow");
         assertTrue(test.match(dictionary));
 
-        dictionary.put("foo", "nobrown");
+        dictionary.put("FoO", "nobrown");
         assertTrue(test.match(dictionary));
 
-        dictionary.put("foo", new Object[]{null, false, 5.0, "nobrown"});
+        dictionary.put("FoO", new Object[]{null, false, 5.0, "nobrown"});
         assertFalse(test.match(dictionary));
 
-        dictionary.put("foo", new String[]{null, "false", "5.0", "nobrown"});
+        dictionary.put("FoO", new String[]{null, "false", "5.0", "nobrown"});
         assertTrue(test.match(dictionary));
 
-        dictionary.put("foo", "nomatch");
+        dictionary.put("FoO", "nomatch");
         assertFalse(test.match(dictionary));
 
-        dictionary.put("foo", 5.0);
+        dictionary.put("FoO", 5.0);
         assertFalse(test.match(dictionary));
 
-        dictionary.remove("foo");
+        dictionary.remove("FoO");
         assertFalse(test.match(dictionary));
 
-        dictionary.put("foo", new Object[]{null, false, 5.0, "nomatch"});
+        dictionary.put("FoO", new Object[]{null, false, 5.0, "nomatch"});
         assertFalse(test.match(dictionary));
-
     }
 
     static class TestSubtr extends Substr

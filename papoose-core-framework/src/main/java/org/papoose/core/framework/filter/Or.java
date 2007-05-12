@@ -29,8 +29,8 @@ class Or implements Expr
 
     public Or(Expr[] expressions)
     {
-        if (expressions == null) throw new IllegalArgumentException("expressions is null");
-        if (expressions.length == 0) throw new IllegalArgumentException("expressions is empty");
+        assert expressions != null;
+        assert expressions.length != 0;
 
         this.expressions = expressions;
     }
