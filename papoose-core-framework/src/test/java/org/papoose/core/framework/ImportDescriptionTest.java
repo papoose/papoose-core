@@ -32,7 +32,7 @@ public class ImportDescriptionTest extends TestCase
     public void testConstruction()
     {
         List<String> packageNames = new ArrayList<String>();
-        Map<String, String> attributes = new HashMap<String, String>();
+        Map<String, Object> attributes = new HashMap<String, Object>();
 
         try
         {

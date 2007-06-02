@@ -118,22 +118,22 @@ class Substr implements Expr
             char c = string.charAt(i);
             switch (c)
             {
-                case '\\' :
+                case'\\':
                 {
                     builder.append("\\\\");
                     break;
                 }
-                case '(' :
+                case'(':
                 {
                     builder.append("\\(");
                     break;
                 }
-                case '*' :
+                case'*':
                 {
                     builder.append("\\*");
                     break;
                 }
-                case ')' :
+                case')':
                 {
                     builder.append("\\)");
                     break;

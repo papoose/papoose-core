@@ -16,31 +16,10 @@
  */
 package org.papoose.core.framework;
 
-import java.util.Collections;
-import java.util.Map;
-
-
 /**
  * @version $Revision$ $Date$
  */
-class FragementDescription
+enum Visibility
 {
-    private final String symbolName;
-    private final Map<String, Object> parameters;
-
-    public FragementDescription(String symbolName, Map<String, Object> parameters)
-    {
-        this.symbolName = symbolName;
-        this.parameters = Collections.unmodifiableMap(parameters);
-    }
-
-    public String getSymbolName()
-    {
-        return symbolName;
-    }
-
-    public Map<String, Object> getParameters()
-    {
-        return parameters;
-    }
+    PRIVATE, REEXPORT
 }

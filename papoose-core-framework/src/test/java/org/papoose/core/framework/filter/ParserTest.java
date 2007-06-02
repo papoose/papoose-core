@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import junit.framework.TestCase;
+import org.osgi.framework.InvalidSyntaxException;
 
 
 /**
@@ -35,6 +36,16 @@ public class ParserTest extends TestCase
 
     public void test() throws Exception
     {
+
+        try
+        {
+            parser.parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson)( vendor  ~ibm) ) ) ");
+            fail("Should have thrown an exception");
+        }
+        catch (InvalidSyntaxException doNothing)
+        {
+        }
+
         Dictionary<String, Object> dictionary = new Hashtable<String, Object>();
         dictionary.put("c and f", new String[]{"a", "b", "c"});
         Expr filter = parser.parse("   ( c and f    =c) ");

@@ -64,19 +64,19 @@ public final class Parser
 
         switch (state.peek())
         {
-            case '&' :
+            case'&':
             {
                 state.eat(1);
                 result = parseAnd(state);
                 break;
             }
-            case '|' :
+            case'|':
             {
                 state.eat(1);
                 result = parseOr(state);
                 break;
             }
-            case '!' :
+            case'!':
             {
                 state.eat(1);
                 result = parseNot(state);
@@ -152,24 +152,27 @@ public final class Parser
 
         switch (state.peek())
         {
-            case '=' :
+            case'=':
             {
                 state.eat(1);
                 return parseEqualOrSubstrOrPresent(state, attribute);
             }
-            case '~' :
+            case'~':
             {
-                state.eat(2);
+                state.eat(1);
+                state.eat("=");
                 return parseApprox(state, attribute);
             }
-            case '>' :
+            case'>':
             {
-                state.eat(2);
+                state.eat(1);
+                state.eat("=");
                 return parseGreater(state, attribute);
             }
-            case '<' :
+            case'<':
             {
-                state.eat(2);
+                state.eat(1);
+                state.eat("=");
                 return parseLess(state, attribute);
             }
         }
@@ -281,7 +284,7 @@ public final class Parser
         {
             List<String> values = new ArrayList<String>();
 
-            StringBuilder buffer = new StringBuilder();
+            StringBuilder builder = new StringBuilder();
             try
             {
                 char c;
@@ -290,23 +293,23 @@ public final class Parser
                 {
                     switch (c)
                     {
-                        case '\\' :
+                        case'\\':
                         {
                             pointer++;
-                            buffer.append(expression.charAt(pointer++));
+                            builder.append(expression.charAt(pointer++));
                             break;
                         }
-                        case '*':
+                        case'*':
                         {
                             pointer++;
-                            values.add(buffer.toString());
-                            buffer = new StringBuilder();
+                            values.add(builder.toString());
+                            builder = new StringBuilder();
                             break;
                         }
                         default:
                         {
                             pointer++;
-                            buffer.append(c);
+                            builder.append(c);
                         }
                     }
                 }
@@ -316,7 +319,7 @@ public final class Parser
                 throw new InvalidSyntaxException("Invalid escaping of value", expression);
             }
 
-            values.add(buffer.toString());
+            values.add(builder.toString());
 
             if (values.size() == 1) return values.get(0);
             else if (values.size() == 2 & values.get(0).length() == 0 && values.get(1).length() == 0) return null;
@@ -326,6 +329,11 @@ public final class Parser
         public boolean isValidValueChar(char c)
         {
             return c != ')';
+        }
+
+        public String toString()
+        {
+            return expression.substring(Math.min(pointer, expression.length() - 1));
         }
     }
 }

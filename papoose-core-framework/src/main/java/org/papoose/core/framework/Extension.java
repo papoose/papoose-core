@@ -16,32 +16,10 @@
  */
 package org.papoose.core.framework;
 
-import java.io.File;
-import java.net.URI;
-
-
 /**
  * @version $Revision$ $Date$
  */
-public class BundleFile extends File
+enum Extension
 {
-    public BundleFile(String pathname)
-    {
-        super(pathname);
-    }
-
-    public BundleFile(String parent, String child)
-    {
-        super(parent, child);
-    }
-
-    public BundleFile(File parent, String child)
-    {
-        super(parent, child);
-    }
-
-    public BundleFile(URI uri)
-    {
-        super(uri);
-    }
+    FRAMEWORK, BOOTCLASSPATH
 }

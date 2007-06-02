@@ -19,8 +19,8 @@ package org.papoose.core.framework.filter;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Dictionary;
 import java.util.Collection;
+import java.util.Dictionary;
 
 
 /**

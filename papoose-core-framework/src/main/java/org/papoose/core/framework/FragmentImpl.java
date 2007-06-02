@@ -16,12 +16,6 @@
  */
 package org.papoose.core.framework;
 
-import java.net.URL;
-import java.util.List;
-
-import org.osgi.framework.Version;
-
-
 /**
  * @version $Revision$ $Date$
  */

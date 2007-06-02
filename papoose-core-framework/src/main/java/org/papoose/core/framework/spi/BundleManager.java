@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleException;
 
 
 /**
@@ -36,4 +37,6 @@ public interface BundleManager
     Bundle getBundle(long bundleId);
 
     Bundle[] getBundles();
+
+    Bundle installBundle(String location, InputStream inputStream) throws BundleException;
 }

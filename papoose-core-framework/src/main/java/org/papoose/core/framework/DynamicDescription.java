@@ -20,25 +20,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.osgi.framework.Version;
-
 
 /**
  * @version $Revision$ $Date$
  */
-class ExportDescription
+public class DynamicDescription
 {
-    public static final Version DEFAULT_VERSION = new Version(0, 0, 0);
     private final List<String> packages;
-    private final Map<String, Object> parameters;
-    private List<String> uses;
-    private List<String> mandatory;
-    private List<String> include;
-    private List<String> exclude;
+    private final Map<String, String> parameters;
+    private VersionRange version;
+    private String bundleSymbolicName;
+    private VersionRange bundleVersion;
 
-    public ExportDescription(List<String> paths, Map<String, Object> parameters)
+    public DynamicDescription(List<String> packages, Map<String, String> parameters)
     {
-        this.packages = Collections.unmodifiableList(paths);
+        this.packages = Collections.unmodifiableList(packages);
         this.parameters = Collections.unmodifiableMap(parameters);
     }
 
@@ -47,48 +43,40 @@ class ExportDescription
         return packages;
     }
 
-    public Map<String, Object> getParameters()
+    public Map<String, String> getParameters()
     {
         return parameters;
     }
 
-    public List<String> getUses()
+    public VersionRange getVersion()
     {
-        return uses;
+        return version;
     }
 
-    void setUses(List<String> uses)
+    void setVersion(VersionRange version)
     {
-        this.uses = uses;
+        this.version = version;
     }
 
-    public List<String> getMandatory()
+
+    public String getBundleSymbolicName()
     {
-        return mandatory;
+        return bundleSymbolicName;
     }
 
-    void setMandatory(List<String> mandatory)
+    void setBundleSymbolicName(String bundleSymbolicName)
     {
-        this.mandatory = mandatory;
+        this.bundleSymbolicName = bundleSymbolicName;
     }
 
-    public List<String> getInclude()
+
+    public VersionRange getBundleVersion()
     {
-        return include;
+        return bundleVersion;
     }
 
-    void setInclude(List<String> include)
+    void setBundleVersion(VersionRange bundleVersion)
     {
-        this.include = include;
-    }
-
-    public List<String> getExclude()
-    {
-        return exclude;
-    }
-
-    void setExclude(List<String> exclude)
-    {
-        this.exclude = exclude;
+        this.bundleVersion = bundleVersion;
     }
 }

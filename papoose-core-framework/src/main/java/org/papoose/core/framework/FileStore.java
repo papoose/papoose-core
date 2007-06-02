@@ -43,9 +43,11 @@ public class FileStore implements Store
     {
         File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId);
 
-        bundleRoot.mkdir();
+        BundleStore result = new FileBundleStore(bundleRoot);
 
-        return new FileBundleStore(bundleRoot);
+        result.getDataRoot().mkdirs();
+
+        return result;
     }
 
     public void removeBundleStore(long bundleId)

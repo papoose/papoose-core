@@ -21,5 +21,5 @@ package org.papoose.core.framework;
  */
 enum Resolution
 {
-    MANDATORY, OPTIONAL    
+    MANDATORY, OPTIONAL
 }

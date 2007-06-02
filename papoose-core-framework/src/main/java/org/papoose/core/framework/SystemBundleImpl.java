@@ -21,14 +21,16 @@ import java.util.List;
 
 import org.osgi.framework.Version;
 
+import org.papoose.core.framework.spi.BundleStore;
+
 
 /**
  * @version $Revision$ $Date$
  */
 class SystemBundleImpl extends BundleImpl
 {
-    public SystemBundleImpl(ClassLoader classLoader, Papoose framework, long bundleId, String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<String> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragementDescription bundleFragementHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<String> bundleRequireBundle)
+    public SystemBundleImpl(ClassLoader classLoader, Papoose framework, BundleStore bundleStore, long bundleId, String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragmentDescription bundleFragmentHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle)
     {
-        super(classLoader, framework, bundleId, bundleActivatorClass, bundleCategories, bundleClassPath, bundleContactAddress, bundleCopyright, bundleDescription, bundleDocUrl, bundleLocalization, bundleManifestVersion, bundleName, bundleNativeCodeList, bundleExecutionEnvironment, bundleSymbolicName, bundleUpdateLocation, bundleVendor, bundleVersion, bundleDynamicImportList, bundleExportList, bundleExportService, bundleFragementHost, bundleImportList, bundleImportService, bundleRequireBundle);
+        super(classLoader, framework, bundleStore, bundleId, bundleActivatorClass, bundleCategories, bundleClassPath, bundleContactAddress, bundleCopyright, bundleDescription, bundleDocUrl, bundleLocalization, bundleManifestVersion, bundleName, bundleNativeCodeList, bundleExecutionEnvironment, bundleSymbolicName, bundleUpdateLocation, bundleVendor, bundleVersion, bundleDynamicImportList, bundleExportList, bundleExportService, bundleFragmentHost, bundleImportList, bundleImportService, bundleRequireBundle);
     }
 }

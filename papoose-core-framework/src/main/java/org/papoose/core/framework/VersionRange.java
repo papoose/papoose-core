@@ -77,13 +77,13 @@ class VersionRange
         boolean endsWith;
         switch (state.peek())
         {
-            case '[':
+            case'[':
             {
                 state.eat(1);
                 startsWith = true;
                 break;
             }
-            case '(':
+            case'(':
             {
                 state.eat(1);
                 startsWith = false;
@@ -131,13 +131,13 @@ class VersionRange
 
         switch (state.peek())
         {
-            case ']':
+            case']':
             {
                 state.eat(1);
                 endsWith = true;
                 break;
             }
-            case ')':
+            case')':
             {
                 state.eat(1);
                 endsWith = false;

@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.osgi.framework.Filter;
+
 
 /**
  * @version $Revision$ $Date$
@@ -29,6 +31,11 @@ class NativeCodeDescription
     final static NativeCodeDescription ASTERISK = new NativeCodeDescription(null, null);
     private final List<String> paths;
     private final Map<String, String> parameters;
+    private String osname;
+    private VersionRange osversion;
+    private String processor;
+    private String language;
+    private Filter filter;
 
     public NativeCodeDescription(List<String> paths, Map<String, String> parameters)
     {
@@ -44,5 +51,55 @@ class NativeCodeDescription
     public Map<String, String> getParameters()
     {
         return parameters;
+    }
+
+    public String getOsname()
+    {
+        return osname;
+    }
+
+    void setOsname(String osname)
+    {
+        this.osname = osname;
+    }
+
+    public VersionRange getOsversion()
+    {
+        return osversion;
+    }
+
+    void setOsversion(VersionRange osversion)
+    {
+        this.osversion = osversion;
+    }
+
+    public String getProcessor()
+    {
+        return processor;
+    }
+
+    void setProcessor(String processor)
+    {
+        this.processor = processor;
+    }
+
+    public String getLanguage()
+    {
+        return language;
+    }
+
+    void setLanguage(String language)
+    {
+        this.language = language;
+    }
+
+    public Filter getFilter()
+    {
+        return filter;
+    }
+
+    void setFilter(Filter filter)
+    {
+        this.filter = filter;
     }
 }

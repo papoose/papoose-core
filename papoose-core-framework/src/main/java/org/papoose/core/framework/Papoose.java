@@ -22,9 +22,10 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.papoose.core.framework.spi.BundleManager;
-import org.papoose.core.framework.spi.ThreadPool;
 import org.papoose.core.framework.filter.Parser;
+import org.papoose.core.framework.spi.BundleManager;
+import org.papoose.core.framework.spi.Store;
+import org.papoose.core.framework.spi.ThreadPool;
 
 
 /**
@@ -43,12 +44,12 @@ public final class Papoose
     private long waitPeriod;
     private Parser parser;
 
-    public Papoose(BundleManager bundleManager, ThreadPool threadPool)
+    public Papoose(Store store, ThreadPool threadPool)
     {
-        if (bundleManager == null) throw new IllegalArgumentException("bundleManager is null");
+        if (store == null) throw new IllegalArgumentException("store is null");
         if (threadPool == null) throw new IllegalArgumentException("threadPool is null");
 
-        this.bundleManager = bundleManager;
+        this.bundleManager = new BundleManagerImpl(this, store);
         this.threadPool = threadPool;
         this.frameworkId = frameworkCounter++;
 
@@ -90,6 +91,11 @@ public final class Papoose
         this.parser = parser;
     }
 
+    String getProperty(String key)
+    {
+        return null; // TODO: fix me
+    }
+
     static Papoose getFramework(Long frameworkId)
     {
         Papoose result = frameworks.get(frameworkId).get();
@@ -125,4 +131,5 @@ public final class Papoose
     {
         return null;
     }
+
 }

@@ -16,29 +16,33 @@
  */
 package org.papoose.core.framework;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
-import java.util.List;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.logging.Logger;
-import java.io.InputStream;
-import java.io.IOException;
 
-import org.osgi.framework.Version;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.BundleEvent;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleEvent;
+import org.osgi.framework.BundleException;
 import org.osgi.framework.BundleListener;
-import org.osgi.framework.SynchronousBundleListener;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.FrameworkListener;
+import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkEvent;
-import org.osgi.framework.ServiceListener;
+import org.osgi.framework.FrameworkListener;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
+import org.osgi.framework.SynchronousBundleListener;
+import org.osgi.framework.Version;
 
-import org.papoose.core.framework.util.ResetableLatch;
-import org.papoose.core.framework.util.Listeners;
 import org.papoose.core.framework.spi.BundleStore;
+import org.papoose.core.framework.util.Listeners;
+import org.papoose.core.framework.util.ResetableLatch;
 
 
 /**
@@ -69,7 +73,24 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             listener.frameworkEvent(event);
         }
     });
-    private final Listeners<ServiceListener, ServiceEvent> servciceListeners = new Listeners<ServiceListener, ServiceEvent>(new Listeners.Functor<ServiceListener, ServiceEvent>()
+    private static final Filter TRUE = new Filter()
+    {
+        public boolean match(ServiceReference serviceReference)
+        {
+            return true;
+        }
+
+        public boolean match(Dictionary dictionary)
+        {
+            return true;
+        }
+
+        public boolean matchCase(Dictionary dictionary)
+        {
+            return true;
+        }
+    };
+    private final Listeners<ServiceListener, ServiceEvent> serviceListeners = new Listeners<ServiceListener, ServiceEvent>(new Listeners.Functor<ServiceListener, ServiceEvent>()
     {
         public void fire(ServiceListener listener, ServiceEvent event)
         {
@@ -102,17 +123,17 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
     private final URL bundleUpdateLocation;
     private final String bundleVendor;
     private final Version bundleVersion;
-    private final List<String> bundleDynamicImportList;
+    private final List<DynamicDescription> bundleDynamicImportList;
     private final List<ExportDescription> bundleExportList;
     private final List<String> bundleExportService;
-    private final FragementDescription bundleFragementHost;
+    private final FragmentDescription bundleFragmentHost;
     private final List<ImportDescription> bundleImportList;
     private final List<String> bundleImportService;
-    private final List<String> bundleRequireBundle;
+    private final List<RequireDescription> bundleRequireBundle;
 
 
     public BundleImpl(ClassLoader classLoader, Papoose framework, BundleStore bundleStore, long bundleId,
-                          String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<String> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragementDescription bundleFragementHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<String> bundleRequireBundle)
+                      String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragmentDescription bundleFragmentHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle)
     {
         super(bundleId);
 
@@ -140,7 +161,7 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
         this.bundleDynamicImportList = bundleDynamicImportList;
         this.bundleExportList = bundleExportList;
         this.bundleExportService = bundleExportService;
-        this.bundleFragementHost = bundleFragementHost;
+        this.bundleFragmentHost = bundleFragmentHost;
         this.bundleImportList = bundleImportList;
         this.bundleImportService = bundleImportService;
         this.bundleRequireBundle = bundleRequireBundle;
@@ -293,19 +314,19 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
         }
     }
 
-    public URL getResource(String transOID)
+    public URL getResource(String name)
     {
         synchronized (LOCK)
         {
-            return state.getResource(transOID);
+            return state.getResource(name);
         }
     }
 
-    public Dictionary getHeaders(String transOID)
+    public Dictionary getHeaders(String locale)
     {
         synchronized (LOCK)
         {
-            return state.getHeaders(transOID);
+            return state.getHeaders(locale);
         }
     }
 
@@ -325,27 +346,27 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
         }
     }
 
-    public Enumeration getResources(String transOID) throws IOException
+    public Enumeration getResources(String name) throws IOException
     {
         synchronized (LOCK)
         {
-            return state.getResources(transOID);
+            return state.getResources(name);
         }
     }
 
-    public Enumeration getEntryPaths(String transOID)
+    public Enumeration getEntryPaths(String path)
     {
         synchronized (LOCK)
         {
-            return state.getEntryPaths(transOID);
+            return state.getEntryPaths(path);
         }
     }
 
-    public URL getEntry(String transOID)
+    public URL getEntry(String name)
     {
         synchronized (LOCK)
         {
-            return state.getEntry(transOID);
+            return state.getEntry(name);
         }
     }
 
@@ -357,11 +378,11 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
         }
     }
 
-    public Enumeration findEntries(String transOID, String transOID1, boolean b)
+    public Enumeration findEntries(String path, String filePattern, boolean recurse)
     {
         synchronized (LOCK)
         {
-            return state.findEntries(transOID, transOID1, b);
+            return state.findEntries(path, filePattern, recurse);
         }
     }
 
@@ -387,9 +408,59 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
         if (bundleListener instanceof SynchronousBundleListener) syncListeners.removeListener((SynchronousBundleListener) bundleListener);
     }
 
-    public void addFrameworkListener(FrameworkListener frameworkListener)
+    void addFrameworkListener(FrameworkListener frameworkListener)
     {
         frameworkListeners.addListener(frameworkListener);
+    }
+
+    void removeFrameworkListener(FrameworkListener frameworkListener)
+    {
+        frameworkListeners.removeListener(frameworkListener);
+    }
+
+    void addServiceListener(ServiceListener serviceListener)
+    {
+        addServiceListener(serviceListener, TRUE);
+    }
+
+    void addServiceListener(ServiceListener serviceListener, Filter filter)
+    {
+        serviceListeners.addListener(new ServiceListenerWithFilter(serviceListener, filter));
+    }
+
+    void removeServiceListener(ServiceListener serviceListener)
+    {
+        serviceListeners.removeListener(new ServiceListenerWithFilter(serviceListener, TRUE));
+    }
+
+    public ServiceRegistration registerService(String[] clazzes, Object service, Dictionary properties)
+    {
+        return null;  //todo: consider this autogenerated code
+    }
+
+    public ServiceReference[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException
+    {
+        return new ServiceReference[0];  //todo: consider this autogenerated code
+    }
+
+    public ServiceReference[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException
+    {
+        return new ServiceReference[0];  //todo: consider this autogenerated code
+    }
+
+    public ServiceReference getServiceReference(String clazz)
+    {
+        return null;  //todo: consider this autogenerated code
+    }
+
+    public Object getService(ServiceReference serviceReference)
+    {
+        return null;  //todo: consider this autogenerated code
+    }
+
+    public boolean ungetService(ServiceReference serviceReference)
+    {
+        return false;  //todo: consider this autogenerated code
     }
 
     abstract class State implements org.osgi.framework.Bundle
@@ -400,7 +471,7 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
     {
         public int getState()
         {
-            return 0;  //todo: consider this autogenerated code
+            return Bundle.UNINSTALLED;
         }
 
         public void start() throws BundleException
@@ -458,12 +529,12 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             return false;  //todo: consider this autogenerated code
         }
 
-        public URL getResource(String string)
+        public URL getResource(String name)
         {
             return null;  //todo: consider this autogenerated code
         }
 
-        public Dictionary getHeaders(String string)
+        public Dictionary getHeaders(String locale)
         {
             return null;  //todo: consider this autogenerated code
         }
@@ -478,17 +549,17 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             return null;  //todo: consider this autogenerated code
         }
 
-        public Enumeration getResources(String string) throws IOException
+        public Enumeration getResources(String name) throws IOException
         {
             return null;  //todo: consider this autogenerated code
         }
 
-        public Enumeration getEntryPaths(String string)
+        public Enumeration getEntryPaths(String path)
         {
             return null;  //todo: consider this autogenerated code
         }
 
-        public URL getEntry(String string)
+        public URL getEntry(String name)
         {
             return null;  //todo: consider this autogenerated code
         }
@@ -498,7 +569,7 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             return 0;  //todo: consider this autogenerated code
         }
 
-        public Enumeration findEntries(String string, String string1, boolean b)
+        public Enumeration findEntries(String path, String filePattern, boolean recurse)
         {
             return null;  //todo: consider this autogenerated code
         }
@@ -566,12 +637,12 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             return false;  //todo: consider this autogenerated code
         }
 
-        public URL getResource(String string)
+        public URL getResource(String name)
         {
             return null;  //todo: consider this autogenerated code
         }
 
-        public Dictionary getHeaders(String string)
+        public Dictionary getHeaders(String locale)
         {
             return null;  //todo: consider this autogenerated code
         }
@@ -586,17 +657,17 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             return null;  //todo: consider this autogenerated code
         }
 
-        public Enumeration getResources(String string) throws IOException
+        public Enumeration getResources(String name) throws IOException
         {
             return null;  //todo: consider this autogenerated code
         }
 
-        public Enumeration getEntryPaths(String string)
+        public Enumeration getEntryPaths(String path)
         {
             return null;  //todo: consider this autogenerated code
         }
 
-        public URL getEntry(String string)
+        public URL getEntry(String name)
         {
             return null;  //todo: consider this autogenerated code
         }
@@ -606,7 +677,7 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             return 0;  //todo: consider this autogenerated code
         }
 
-        public Enumeration findEntries(String string, String string1, boolean b)
+        public Enumeration findEntries(String path, String filePattern, boolean recurse)
         {
             return null;  //todo: consider this autogenerated code
         }
@@ -674,12 +745,12 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             return false;  //todo: consider this autogenerated code
         }
 
-        public URL getResource(String string)
+        public URL getResource(String name)
         {
             return null;  //todo: consider this autogenerated code
         }
 
-        public Dictionary getHeaders(String string)
+        public Dictionary getHeaders(String locale)
         {
             return null;  //todo: consider this autogenerated code
         }
@@ -694,17 +765,17 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             return null;  //todo: consider this autogenerated code
         }
 
-        public Enumeration getResources(String string) throws IOException
+        public Enumeration getResources(String name) throws IOException
         {
             return null;  //todo: consider this autogenerated code
         }
 
-        public Enumeration getEntryPaths(String string)
+        public Enumeration getEntryPaths(String path)
         {
             return null;  //todo: consider this autogenerated code
         }
 
-        public URL getEntry(String string)
+        public URL getEntry(String name)
         {
             return null;  //todo: consider this autogenerated code
         }
@@ -714,7 +785,7 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             return 0;  //todo: consider this autogenerated code
         }
 
-        public Enumeration findEntries(String string, String string1, boolean b)
+        public Enumeration findEntries(String path, String filePatter, boolean recurse)
         {
             return null;  //todo: consider this autogenerated code
         }
@@ -738,4 +809,44 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
     private final State STARTING_STATE = new StartingState();
     private final State STOPPING_STATE = new StopingState();
     private final State ACTIVE_STATE = new ActiveState();
+
+    private static class ServiceListenerWithFilter implements ServiceListener
+    {
+        private final ServiceListener delegate;
+        private final Filter filter;
+
+        public ServiceListenerWithFilter(ServiceListener delegate, Filter filter)
+        {
+            assert delegate != null;
+            assert filter != null;
+
+            this.delegate = delegate;
+            this.filter = filter;
+        }
+
+        public Filter getFilter()
+        {
+            return filter;
+        }
+
+        public void serviceChanged(ServiceEvent event)
+        {
+            delegate.serviceChanged(event);
+        }
+
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ServiceListenerWithFilter that = (ServiceListenerWithFilter) o;
+
+            return delegate.equals(that.delegate);
+        }
+
+        public int hashCode()
+        {
+            return delegate.hashCode();
+        }
+    }
 }

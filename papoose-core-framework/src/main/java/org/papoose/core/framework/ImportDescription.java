@@ -28,20 +28,17 @@ import org.osgi.framework.Version;
  */
 class ImportDescription
 {
-    private final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
+    public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
     private final List<String> packageNames;
-    private final Map<String, String> attributes;
+    private final Map<String, Object> attributes;
     private final Resolution resolution;
-    private VersionRange version = DEFAULT_VERSION_RANGE;
-    private String bundleSymbolicName;
-    private VersionRange bundleVersion = DEFAULT_VERSION_RANGE;
 
-    public ImportDescription(List<String> packageNames, Map<String, String> attributes)
+    public ImportDescription(List<String> packageNames, Map<String, Object> attributes)
     {
         this(packageNames, attributes, Resolution.MANDATORY);
     }
 
-    public ImportDescription(List<String> packageNames, Map<String, String> attributes, Resolution resolution)
+    public ImportDescription(List<String> packageNames, Map<String, Object> attributes, Resolution resolution)
     {
         assert packageNames != null;
         assert packageNames.size() > 0;
@@ -58,7 +55,7 @@ class ImportDescription
         return packageNames;
     }
 
-    public Map<String, String> getAttributes()
+    public Map<String, Object> getAttributes()
     {
         return attributes;
     }
@@ -66,35 +63,5 @@ class ImportDescription
     public Resolution getResolution()
     {
         return resolution;
-    }
-
-    public VersionRange getVersion()
-    {
-        return version;
-    }
-
-    public void setVersion(VersionRange version)
-    {
-        this.version = version;
-    }
-
-    public String getBundleSymbolicName()
-    {
-        return bundleSymbolicName;
-    }
-
-    public void setBundleSymbolicName(String bundleSymbolicName)
-    {
-        this.bundleSymbolicName = bundleSymbolicName;
-    }
-
-    public VersionRange getBundleVersion()
-    {
-        return bundleVersion;
-    }
-
-    public void setBundleVersion(VersionRange bundleVersion)
-    {
-        this.bundleVersion = bundleVersion;
     }
 }
