@@ -616,10 +616,10 @@ public class BundleManagerImpl implements BundleManager
 
         if (attributes.containsKey("Import-Package"))
         {
-            String[] exportDescriptions = attributes.getValue("Import-Package").split(",");
-            result = new ArrayList<ImportDescription>(exportDescriptions.length);
+            String[] importDescriptions = attributes.getValue("Import-Package").split(",");
+            result = new ArrayList<ImportDescription>(importDescriptions.length);
 
-            for (String importDescription : exportDescriptions)
+            for (String importDescription : importDescriptions)
             {
                 Set<String> keys = new HashSet<String>();
                 String[] packageparams = importDescription.split(";");

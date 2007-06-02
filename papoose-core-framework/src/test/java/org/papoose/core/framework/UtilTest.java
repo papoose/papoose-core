@@ -88,7 +88,7 @@ public class UtilTest extends TestCase
         assertEquals(tokens[1], "bar");
     }
 
-    public void testParseParameters()
+    public void testParseParameters() throws Exception
     {
         MockPOJO pojo = new MockPOJO();
         Map<String, Object> parameters = new HashMap<String, Object>();
