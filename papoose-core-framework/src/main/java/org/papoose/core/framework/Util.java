@@ -230,6 +230,10 @@ final class Util
                     {
                         argument = Resolution.valueOf(((String) argument).toUpperCase());
                     }
+                    else if ("extension".equals(token))
+                    {
+                        argument = Extension.valueOf(((String) argument).toUpperCase());
+                    }
 
                     callSetter(pojo, token, argument);
 

@@ -522,73 +522,29 @@ public class BundleManagerImpl implements BundleManager
 
     private FragmentDescription obtainBundleFragementHost(Attributes attributes) throws Exception
     {
-        FragmentDescription result = null;
+        FragmentDescription fragmentDescription = null;
 
         if (attributes.containsKey("Fragment-Host"))
         {
             Map<String, Object> parameters = new HashMap<String, Object>();
+            String description = attributes.getValue("Fragment-Host");
+            int index = description.indexOf(';');
 
-            String tokens[] = attributes.getValue("Fragment-Host").split(";");
-
-            for (int i = 1; i < tokens.length; i++)
+            if (index != -1)
             {
-                String token = tokens[i];
+                fragmentDescription = new FragmentDescription(Util.checkSymbolName(description.substring(0, index)), parameters);
 
-                if (token.contains(":="))
-                {
-                    String[] keyval = token.split(":=");
-
-                    if (keyval.length != 2) throw new BundleException("Malformed Fragment-Host");
-
-                    String key = keyval[0].trim();
-                    String value = keyval[1].trim();
-
-                    if ("extension".equals(key))
-                    {
-                        try
-                        {
-                            if (!Util.callSetter(result, key, Extension.valueOf(value.toUpperCase()))) throw new BundleException("extension");
-                        }
-                        catch (IllegalArgumentException iae)
-                        {
-                            throw new BundleException("Unable to set extension", iae);
-                        }
-                    }
-                }
-                else if (token.contains("="))
-                {
-                    String[] keyval = token.split("=");
-
-                    if (keyval.length != 2) throw new BundleException("Malformed Fragment-Host");
-
-                    String key = keyval[0].trim();
-                    String value = keyval[1].trim();
-
-                    if ("bundle-version".equals(key))
-                    {
-                        try
-                        {
-                            if (!Util.callSetter(result, key, VersionRange.parseVersionRange(value))) throw new BundleException("Unable to set bundle-version");
-                        }
-                        catch (IllegalArgumentException iae)
-                        {
-                            throw new BundleException("Unable to set bundle-version", iae);
-                        }
-                    }
-                    else
-                    {
-                        parameters.put(key, value);
-                    }
-                }
-
+                Util.parseParameters(description.substring(index + 1), fragmentDescription, parameters);
+            }
+            else
+            {
+                fragmentDescription = new FragmentDescription(Util.checkSymbolName(description), parameters);
             }
 
             if (!parameters.containsKey("bundle-version")) parameters.put("bundle-version", ImportDescription.DEFAULT_VERSION_RANGE);
-
-            result = new FragmentDescription(tokens[0], parameters);
         }
 
-        return result;
+        return fragmentDescription;
     }
 
     protected List<String> obtainBundleExportService(Attributes attributes)
