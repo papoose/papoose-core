@@ -19,12 +19,15 @@ package org.papoose.core.framework;
 import java.util.Collections;
 import java.util.Map;
 
+import org.osgi.framework.Version;
+
 
 /**
  * @version $Revision$ $Date$
  */
 public class RequireDescription
 {
+    public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
     private final String symbolName;
     private final Map<String, Object> parameters;
     private Visibility visibility = Visibility.PRIVATE;

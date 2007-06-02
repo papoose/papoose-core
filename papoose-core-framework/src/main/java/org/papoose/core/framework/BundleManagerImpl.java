@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 
 import org.papoose.core.framework.spi.BundleManager;
@@ -732,78 +733,36 @@ public class BundleManagerImpl implements BundleManager
     {
         List<RequireDescription> result = null;
 
-        if (attributes.containsKey("Require-Bundle"))
+        if (attributes.containsKey(Constants.REQUIRE_BUNDLE))
         {
             result = new ArrayList<RequireDescription>();
 
-            String[] descriptions = attributes.getValue("Require-Bundle").split(",");
+            String[] descriptions = Util.split(attributes.getValue(Constants.REQUIRE_BUNDLE), ",");
             for (String description : descriptions)
             {
                 Map<String, Object> parameters = new HashMap<String, Object>();
+                RequireDescription requireDescription;
+                int index = description.indexOf(';');
 
-                String tokens[] = description.split(";");
-
-                for (int i = 1; i < tokens.length; i++)
+                if (index != -1)
                 {
-                    String token = tokens[i];
+                    requireDescription = new RequireDescription(Util.checkSymbolName(description.substring(0, index)), parameters);
 
-                    if (token.contains(":="))
-                    {
-                        String[] keyval = token.split(":=");
-
-                        if (keyval.length != 2) throw new BundleException("Malformed Require-Bundle");
-
-                        String key = keyval[0].trim();
-                        String value = keyval[1].trim();
-
-                        if ("visibility".equals(key))
-                        {
-                            try
-                            {
-                                if (!Util.callSetter(description, key, Visibility.valueOf(value.toUpperCase()))) throw new BundleException("Unable to set visibility");
-                            }
-                            catch (IllegalArgumentException iae)
-                            {
-                                throw new BundleException("Unable to set visibility", iae);
-                            }
-                        }
-                        else if ("resolution".equals(key))
-                        {
-                            try
-                            {
-                                if (!Util.callSetter(description, key, Resolution.valueOf(value.toUpperCase()))) throw new BundleException("Unable to set resolution");
-                            }
-                            catch (IllegalArgumentException iae)
-                            {
-                                throw new BundleException("Unable to set resolution", iae);
-                            }
-                        }
-                    }
-                    else if (token.contains("="))
-                    {
-                        String[] keyval = token.split("=");
-
-                        if (keyval.length != 2) throw new BundleException("Malformed Require-Bundle");
-
-                        String key = keyval[0].trim();
-                        String value = keyval[1].trim();
-
-                        if ("bundle-version".equals(key))
-                        {
-                            parameters.put(key, VersionRange.parseVersionRange(value));
-                        }
-                        else
-                        {
-                            parameters.put(key, value);
-                        }
-                    }
+                    Util.parseParameters(description.substring(index + 1), requireDescription, parameters);
+                }
+                else
+                {
+                    requireDescription = new RequireDescription(Util.checkSymbolName(description), parameters);
                 }
 
-                result.add(new RequireDescription(tokens[0], parameters));
+                if (requireDescription.getVisibility() == null) Util.callSetter(requireDescription, "visibility", Visibility.PRIVATE);
+                if (requireDescription.getResolution() == null) Util.callSetter(requireDescription, "resolution", Resolution.MANDATORY);
+                if (!parameters.containsKey("bundle-version")) parameters.put("bundle-version", RequireDescription.DEFAULT_VERSION_RANGE);
+
+                result.add(requireDescription);
             }
         }
 
         return result;
     }
-
 }

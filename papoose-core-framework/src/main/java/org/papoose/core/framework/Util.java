@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.osgi.framework.BundleException;
+
 
 /**
  * @version $Revision$ $Date$
@@ -154,7 +156,13 @@ final class Util
         return j == pattern.length();
     }
 
-    public static void parseParameters(String string, Object pojo, Map<String, Object> parameters)
+    public static String checkSymbolName(String string)
+    {
+        new State(string).eatSymbolName();
+        return string;
+    }
+
+    public static void parseParameters(String string, Object pojo, Map<String, Object> parameters) throws BundleException
     {
         State state = new State(string);
         while (true)
@@ -174,6 +182,11 @@ final class Util
 
                     Object argument = state.eatArgument();
 
+                    if ("bundle-version".equals(token))
+                    {
+                        argument = VersionRange.parseVersionRange((String) argument);
+                    }
+
                     parameters.put(token, argument);
 
                     break;
@@ -184,14 +197,23 @@ final class Util
                     state.eat("=");
                     state.eatWhitespace();
 
-                    String argument = state.eatArgument();
+                    Object argument = state.eatArgument();
+
+                    if ("visibility".equals(token))
+                    {
+                        argument = Visibility.valueOf(((String) argument).toUpperCase());
+                    }
+                    else if ("resolution".equals(token))
+                    {
+                        argument = Resolution.valueOf(((String) argument).toUpperCase());
+                    }
 
                     callSetter(pojo, token, argument);
 
                     break;
                 }
                 default:
-                    throw new IllegalArgumentException("Expected ':=' or '=' in " + string);
+                    throw new BundleException("Expected ':=' or '=' in " + string);
             }
 
             state.eatWhitespace();
@@ -222,9 +244,9 @@ final class Util
             pointer += amount;
         }
 
-        public void eat(String pattern)
+        public void eat(String pattern) throws BundleException
         {
-            if (!string.startsWith(pattern, pointer)) throw new IllegalArgumentException("Expected '" + pattern + "' in " + string);
+            if (!string.startsWith(pattern, pointer)) throw new BundleException("Expected '" + pattern + "' in " + string);
             pointer += pattern.length();
         }
 
@@ -252,7 +274,7 @@ final class Util
             return builder.toString();
         }
 
-        public String eatArgument()
+        public String eatArgument() throws BundleException
         {
             if (peek() == '"')
             {
@@ -279,7 +301,7 @@ final class Util
                 }
                 catch (StringIndexOutOfBoundsException sioobe)
                 {
-                    throw new IllegalArgumentException("Invalid argument in " + string);
+                    throw new BundleException("Invalid argument in " + string);
                 }
 
                 return builder.toString();
@@ -287,6 +309,22 @@ final class Util
             else
             {
                 return eatToken();
+            }
+        }
+
+        public void eatSymbolName()
+        {
+            eatWhitespace();
+
+            eatToken();
+
+            if (isComplete()) return;
+
+            while (peek() == '.')
+            {
+                eat(1);
+                eatToken();
+                if (isComplete()) return;
             }
         }
 
