@@ -30,17 +30,17 @@ class ImportDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
     private final List<String> packageNames;
-    private final Map<String, Object> attributes;
+    private final Map<String, Object> parameters;
     private Resolution resolution;
 
-    public ImportDescription(List<String> packageNames, Map<String, Object> attributes)
+    public ImportDescription(List<String> packageNames, Map<String, Object> parameters)
     {
         assert packageNames != null;
         assert packageNames.size() > 0;
-        assert attributes != null;
+        assert parameters != null;
 
         this.packageNames = Collections.unmodifiableList(packageNames);
-        this.attributes = Collections.unmodifiableMap(attributes);
+        this.parameters = Collections.unmodifiableMap(parameters);
     }
 
     public List<String> getPackageNames()
@@ -48,9 +48,9 @@ class ImportDescription
         return packageNames;
     }
 
-    public Map<String, Object> getAttributes()
+    public Map<String, Object> getParameters()
     {
-        return attributes;
+        return parameters;
     }
 
 
