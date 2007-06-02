@@ -431,83 +431,25 @@ public class BundleManagerImpl implements BundleManager
             String[] exportDescriptions = Util.split(attributes.getValue("Export-Package"), ",");
             result = new ArrayList<ExportDescription>(exportDescriptions.length);
 
-            for (String importDescription : exportDescriptions)
+            for (String exportDescription : exportDescriptions)
             {
-                Set<String> keys = new HashSet<String>();
-                String[] packageparams = importDescription.split(";");
                 List<String> paths = new ArrayList<String>(1);
                 Map<String, Object> parameters = new HashMap<String, Object>();
                 ExportDescription description = new ExportDescription(paths, parameters);
 
-                for (String pathparam : packageparams)
+                Util.parseParameters(exportDescription, description, parameters, paths);
+
+                if (!parameters.containsKey("version"))
                 {
-                    if (pathparam.contains(":="))
-                    {
-                        String[] keyval = pathparam.split(":=");
-
-                        if (keyval.length != 2) throw new BundleException("Malformed Export-Package");
-
-                        String key = keyval[0].trim();
-                        String value = keyval[1].trim();
-
-                        if (keys.contains(key)) throw new BundleException("Attempted to reset attribute " + key);
-                        else keys.add(key);
-
-                        if ("uses".equals(key))
-                        {
-                            String[] tokens = value.split(",");
-                            List<String> uses = new ArrayList();
-                            if (!Util.callSetter(description, key, VersionRange.parseVersionRange(value))) throw new BundleException("Unable to set version");
-                        }
-                    }
-                    else if (pathparam.contains("="))
-                    {
-                        String[] keyval = pathparam.split("=");
-
-                        if (keyval.length != 2) throw new BundleException("Malformed Export-Package");
-
-                        String key = keyval[0].trim();
-                        String value = keyval[1].trim();
-
-                        if (keys.contains(key)) throw new BundleException("Attempted to reset attribute " + key);
-                        else keys.add(key);
-
-                        if ("version".equals(key))
-                        {
-                            VersionRange versionRange = VersionRange.parseVersionRange(value);
-
-                            if (!parameters.containsKey(key) && parameters.get(key).equals(versionRange)) throw new BundleException("Aliased versions do not match");
-
-                            parameters.put(key, versionRange);
-                        }
-                        else if ("specification-version".equals(key))
-                        {
-                            VersionRange versionRange = VersionRange.parseVersionRange(value);
-
-                            if (!parameters.containsKey("version") && parameters.get("version").equals(versionRange)) throw new BundleException("Aliased versions do not match");
-
-                            parameters.put("version", versionRange);
-                        }
-                        else if ("bundle-symbolic-name".equals(key))
-                        {
-                            throw new BundleException("Attempted to set bundle-symbolic-name");
-                        }
-                        else if ("bundle-version".equals(key))
-                        {
-                            throw new BundleException("Attempted to set bundle-version");
-                        }
-                        else
-                        {
-                            parameters.put(key, value);
-                        }
-                    }
-                    else
-                    {
-                        paths.add(pathparam.trim());
-                    }
+                    if (parameters.containsKey("specification-version")) parameters.put("version", parameters.get("specification-version"));
+                    else parameters.put("version", ImportDescription.DEFAULT_VERSION_RANGE);
                 }
 
-                if (!parameters.containsKey("version")) parameters.put("version", ExportDescription.DEFAULT_VERSION);
+                if (parameters.containsKey("specification-version") && !parameters.get("specification-version").equals(parameters.get("version"))) throw new BundleException("version and specification-version do not match");
+
+                if (!parameters.containsKey("bundle-symbolic-name")) throw new BundleException("Attempted to set bundle-symbolic-name");
+
+                if (!parameters.containsKey("bundle-version")) throw new BundleException("Attempted to set bundle-version");
 
                 result.add(description);
             }

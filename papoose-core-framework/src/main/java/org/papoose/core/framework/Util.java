@@ -85,13 +85,25 @@ final class Util
         }
     }
 
+    public static boolean isValidPackageName(String path)
+    {
+        String[] tokens = path.split("\\.");
+
+        return checkPath(tokens, "*".equals(tokens[tokens.length - 1]));
+    }
+
     public static boolean isValidWildcardName(String name)
     {
         if ("*".equals(name)) return true;
 
         String[] tokens = name.split("\\.");
 
-        if (!"*".equals(tokens[tokens.length - 1]) && !isJavaIdentifier(tokens[tokens.length - 1])) return false;
+        return checkPath(tokens, "*".equals(tokens[tokens.length - 1]));
+    }
+
+    private static boolean checkPath(String[] tokens, boolean skipLast)
+    {
+        if (!skipLast && !isJavaIdentifier(tokens[tokens.length - 1])) return false;
 
         for (int i = 0; i < tokens.length - 1; i++)
         {
@@ -233,6 +245,54 @@ final class Util
                     else if ("extension".equals(token))
                     {
                         argument = Extension.valueOf(((String) argument).toUpperCase());
+                    }
+                    else if ("uses".equals(token))
+                    {
+                        String[] packageNames = ((String) argument).split(",");
+                        List<String> list = new ArrayList<String>(packageNames.length);
+
+                        for (String packageName : packageNames)
+                        {
+                            if (!isValidPackageName(packageName)) throw new BundleException("Malformed package name: " + packageName);
+                            list.add(packageName);
+                        }
+
+                        argument = list;
+                    }
+                    else if ("mandatory".equals(token))
+                    {
+                        String[] attributes = ((String) argument).split(",");
+                        List<String> list = new ArrayList<String>(attributes.length);
+
+                        for (String attribute : attributes) list.add(attribute);
+
+                        argument = list;
+                    }
+                    else if ("include".equals(token))
+                    {
+                        String[] names = ((String) argument).split(",");
+                        List<String> list = new ArrayList<String>(names.length);
+
+                        for (String name : names)
+                        {
+                            if (!isValidPackageName(name)) throw new BundleException("Malformed class name: " + name);
+                            list.add(name);
+                        }
+
+                        argument = list;
+                    }
+                    else if ("exclude".equals(token))
+                    {
+                        String[] names = ((String) argument).split(",");
+                        List<String> list = new ArrayList<String>(names.length);
+
+                        for (String name : names)
+                        {
+                            if (!isValidPackageName(name)) throw new BundleException("Malformed class name: " + name);
+                            list.add(name);
+                        }
+
+                        argument = list;
                     }
 
                     callSetter(pojo, token, argument);
