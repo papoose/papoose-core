@@ -93,7 +93,7 @@ public class UtilTest extends TestCase
         MockPOJO pojo = new MockPOJO();
         Map<String, Object> parameters = new HashMap<String, Object>();
 
-        Util.parseParameters("foo:=bar,foo=bar", pojo, parameters);
+        Util.parseParameters("foo:=bar;foo=bar", pojo, parameters);
 
         assertEquals(pojo.getFoo(), "bar");
         assertEquals(parameters.size(), 1);
@@ -101,19 +101,19 @@ public class UtilTest extends TestCase
 
         parameters = new HashMap<String, Object>();
 
-        Util.parseParameters("foo:=\"bar,car,star\",foo=bar", pojo, parameters);
+        Util.parseParameters("foo:=\"bar;car;star\";foo=bar", pojo, parameters);
 
-        assertEquals(pojo.getFoo(), "bar,car,star");
+        assertEquals(pojo.getFoo(), "bar;car;star");
         assertEquals(parameters.size(), 1);
         assertEquals(parameters.get("foo"), "bar");
 
         parameters = new HashMap<String, Object>();
 
-        Util.parseParameters("foo:=bar,foo=\"bar,car,star\"", pojo, parameters);
+        Util.parseParameters("foo:=bar;foo=\"bar;car;star\"", pojo, parameters);
 
         assertEquals(pojo.getFoo(), "bar");
         assertEquals(parameters.size(), 1);
-        assertEquals(parameters.get("foo"), "bar,car,star");
+        assertEquals(parameters.get("foo"), "bar;car;star");
     }
 
     private static class MockPOJO

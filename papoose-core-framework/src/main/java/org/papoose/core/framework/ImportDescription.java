@@ -31,23 +31,16 @@ class ImportDescription
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
     private final List<String> packageNames;
     private final Map<String, Object> attributes;
-    private final Resolution resolution;
+    private Resolution resolution;
 
     public ImportDescription(List<String> packageNames, Map<String, Object> attributes)
-    {
-        this(packageNames, attributes, Resolution.MANDATORY);
-    }
-
-    public ImportDescription(List<String> packageNames, Map<String, Object> attributes, Resolution resolution)
     {
         assert packageNames != null;
         assert packageNames.size() > 0;
         assert attributes != null;
-        assert resolution != null;
 
         this.packageNames = Collections.unmodifiableList(packageNames);
         this.attributes = Collections.unmodifiableMap(attributes);
-        this.resolution = resolution;
     }
 
     public List<String> getPackageNames()
@@ -60,8 +53,14 @@ class ImportDescription
         return attributes;
     }
 
+
     public Resolution getResolution()
     {
         return resolution;
+    }
+
+    void setResolution(Resolution resolution)
+    {
+        this.resolution = resolution;
     }
 }

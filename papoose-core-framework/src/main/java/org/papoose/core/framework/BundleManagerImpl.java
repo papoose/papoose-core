@@ -610,94 +610,40 @@ public class BundleManagerImpl implements BundleManager
         return result;
     }
 
-    private List<ImportDescription> obtainBundleImportList(Attributes attributes) throws Exception
+    protected List<ImportDescription> obtainBundleImportList(Attributes attributes) throws Exception
     {
         List<ImportDescription> result;
 
         if (attributes.containsKey("Import-Package"))
         {
+            Set<String> importedPaths = new HashSet<String>();
             String[] importDescriptions = attributes.getValue("Import-Package").split(",");
             result = new ArrayList<ImportDescription>(importDescriptions.length);
 
             for (String importDescription : importDescriptions)
             {
-                Set<String> keys = new HashSet<String>();
-                String[] packageparams = importDescription.split(";");
                 List<String> paths = new ArrayList<String>(1);
                 Map<String, Object> parameters = new HashMap<String, Object>();
+
                 ImportDescription description = new ImportDescription(paths, parameters);
 
-                for (String pathparam : packageparams)
+                Util.parseParameters(importDescription, description, parameters, paths);
+
+                if (!parameters.containsKey("version"))
                 {
-                    if (pathparam.contains(":="))
-                    {
-                        String[] keyval = pathparam.split(":=");
-
-                        if (keyval.length != 2) throw new BundleException("Malformed Import-Package");
-
-                        String key = keyval[0].trim();
-                        String value = keyval[1].trim();
-
-                        if (keys.contains(key)) throw new BundleException("Attempted to reset parameter " + key);
-                        else keys.add(key);
-
-                        if ("resolution".equals(key))
-                        {
-                            try
-                            {
-                                if (!Util.callSetter(description, key, Resolution.valueOf(value.toUpperCase()))) throw new BundleException("Unable to set resolution");
-                            }
-                            catch (IllegalArgumentException iae)
-                            {
-                                throw new BundleException("Unable to set resolution", iae);
-                            }
-                        }
-                    }
-                    else if (pathparam.contains("="))
-                    {
-                        String[] keyval = pathparam.split("=");
-
-                        if (keyval.length != 2) throw new BundleException("Malformed Import-Package");
-
-                        String key = keyval[0].trim();
-                        String value = keyval[1].trim();
-
-                        if (keys.contains(key)) throw new BundleException("Attempted to reset parameter " + key);
-                        else keys.add(key);
-
-                        if ("version".equals(key))
-                        {
-                            VersionRange versionRange = VersionRange.parseVersionRange(value);
-
-                            if (!parameters.containsKey(key) && parameters.get(key).equals(versionRange)) throw new BundleException("Aliased versions do not match");
-
-                            parameters.put(key, versionRange);
-                        }
-                        else if ("specification-version".equals(key))
-                        {
-                            VersionRange versionRange = VersionRange.parseVersionRange(value);
-
-                            if (!parameters.containsKey("version") && parameters.get("version").equals(versionRange)) throw new BundleException("Aliased versions do not match");
-
-                            parameters.put("version", versionRange);
-                        }
-                        else if ("bundle-version".equals(key))
-                        {
-                            parameters.put(key, Version.parseVersion(value));
-                        }
-                        else
-                        {
-                            parameters.put(key, value);
-                        }
-                    }
-                    else
-                    {
-                        paths.add(pathparam.trim());
-                    }
+                    if (parameters.containsKey("specification-version")) parameters.put("version", parameters.get("specification-version"));
+                    else parameters.put("version", ImportDescription.DEFAULT_VERSION_RANGE);
                 }
 
-                if (!parameters.containsKey("version")) parameters.put("version", ImportDescription.DEFAULT_VERSION_RANGE);
+                if (parameters.containsKey("specification-version") && !parameters.get("specification-version").equals(parameters.get("version"))) throw new BundleException("version and specification-version do not match");
+
                 if (!parameters.containsKey("bundle-version")) parameters.put("bundle-version", ImportDescription.DEFAULT_VERSION_RANGE);
+
+                for (String path : paths)
+                {
+                    if (importedPaths.contains(path)) throw new BundleException("Duplicate import: " + path);
+                    else importedPaths.add(path);
+                }
 
                 result.add(description);
             }
@@ -710,7 +656,7 @@ public class BundleManagerImpl implements BundleManager
         return result;
     }
 
-    private List<String> obtainBundleImportService(Attributes attributes)
+    protected List<String> obtainBundleImportService(Attributes attributes)
     {
         List<String> result;
 
@@ -729,7 +675,7 @@ public class BundleManagerImpl implements BundleManager
         return result;
     }
 
-    private List<RequireDescription> obtainBundleRequireBundle(Attributes attributes) throws BundleException
+    protected List<RequireDescription> obtainBundleRequireBundle(Attributes attributes) throws BundleException
     {
         List<RequireDescription> result = null;
 

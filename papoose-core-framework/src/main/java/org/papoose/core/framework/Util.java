@@ -19,8 +19,10 @@ package org.papoose.core.framework;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.osgi.framework.BundleException;
 
@@ -164,6 +166,13 @@ final class Util
 
     public static void parseParameters(String string, Object pojo, Map<String, Object> parameters) throws BundleException
     {
+        parseParameters(string, pojo, parameters, new ArrayList<String>(0));
+    }
+
+    public static void parseParameters(String string, Object pojo, Map<String, Object> parameters, List<String> paths) throws BundleException
+    {
+        Set<String> parameterKeys = new HashSet<String>();
+        Set<String> argumentKeys = new HashSet<String>();
         State state = new State(string);
         while (true)
         {
@@ -180,9 +189,20 @@ final class Util
                     state.eat(1);
                     state.eatWhitespace();
 
+                    if (parameterKeys.contains(token)) throw new BundleException("Duplicate parameter key: " + token);
+                    else parameterKeys.add(token);
+
                     Object argument = state.eatArgument();
 
-                    if ("bundle-version".equals(token))
+                    if ("version".equals(token))
+                    {
+                        argument = VersionRange.parseVersionRange((String) argument);
+                    }
+                    else if ("specification-version".equals(token))
+                    {
+                        argument = VersionRange.parseVersionRange((String) argument);
+                    }
+                    else if ("bundle-version".equals(token))
                     {
                         argument = VersionRange.parseVersionRange((String) argument);
                     }
@@ -196,6 +216,9 @@ final class Util
                     state.eat(1);
                     state.eat("=");
                     state.eatWhitespace();
+
+                    if (argumentKeys.contains(token)) throw new BundleException("Duplicate argument key: " + token);
+                    else argumentKeys.add(token);
 
                     Object argument = state.eatArgument();
 
@@ -212,15 +235,21 @@ final class Util
 
                     break;
                 }
+                case';':
+                {
+                    paths.add(token);
+
+                    break;
+                }
                 default:
-                    throw new BundleException("Expected ':=' or '=' in " + string);
+                    throw new BundleException("misformatted parameter/path");
             }
 
             state.eatWhitespace();
 
             if (state.isComplete()) return;
 
-            state.eat(",");
+            state.eat(";");
         }
     }
 
