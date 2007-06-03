@@ -23,8 +23,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Locale;
 
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Filter;
+
+import org.papoose.core.framework.filter.Parser;
 
 
 /**
@@ -204,20 +208,7 @@ final class Util
                     if (parameterKeys.contains(token)) throw new BundleException("Duplicate parameter key: " + token);
                     else parameterKeys.add(token);
 
-                    Object argument = state.eatArgument();
-
-                    if ("version".equals(token))
-                    {
-                        argument = VersionRange.parseVersionRange((String) argument);
-                    }
-                    else if ("specification-version".equals(token))
-                    {
-                        argument = VersionRange.parseVersionRange((String) argument);
-                    }
-                    else if ("bundle-version".equals(token))
-                    {
-                        argument = VersionRange.parseVersionRange((String) argument);
-                    }
+                    String argument = state.eatArgument();
 
                     parameters.put(token, argument);
 

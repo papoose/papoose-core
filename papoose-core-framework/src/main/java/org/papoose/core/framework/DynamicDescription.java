@@ -20,19 +20,22 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.osgi.framework.Version;
+
 
 /**
  * @version $Revision$ $Date$
  */
 public class DynamicDescription
 {
+    public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
     private final List<String> packages;
-    private final Map<String, String> parameters;
+    private final Map<String, Object> parameters;
     private VersionRange version;
     private String bundleSymbolicName;
     private VersionRange bundleVersion;
 
-    public DynamicDescription(List<String> packages, Map<String, String> parameters)
+    public DynamicDescription(List<String> packages, Map<String, Object> parameters)
     {
         this.packages = Collections.unmodifiableList(packages);
         this.parameters = Collections.unmodifiableMap(parameters);
@@ -43,7 +46,7 @@ public class DynamicDescription
         return packages;
     }
 
-    public Map<String, String> getParameters()
+    public Map<String, Object> getParameters()
     {
         return parameters;
     }

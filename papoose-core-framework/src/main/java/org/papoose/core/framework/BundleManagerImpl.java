@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -139,37 +140,37 @@ public class BundleManagerImpl implements BundleManager
 
             Attributes attributes = manifest.getMainAttributes();
 
-            bundleActivatorClass = attributes.getValue("Bundle-Activator");
+            bundleActivatorClass = attributes.getValue(Constants.BUNDLE_ACTIVATOR);
 
             bundleCategories = obtainBundleCategories(attributes);
 
             bundleClasspath = obtainBundleClasspath(attributes);
 
-            bundleContactAddress = attributes.getValue("Bundle-ContactAddress");
+            bundleContactAddress = attributes.getValue(Constants.BUNDLE_CONTACTADDRESS);
 
-            bundleCopyright = attributes.getValue("Bundle-Copyright");
+            bundleCopyright = attributes.getValue(Constants.BUNDLE_COPYRIGHT);
 
-            bundleDescription = attributes.getValue("Bundle-Description");
+            bundleDescription = attributes.getValue(Constants.BUNDLE_DESCRIPTION);
 
-            bundleDocUrl = attributes.getValue("Bundle-DocUrl");
+            bundleDocUrl = attributes.getValue(Constants.BUNDLE_DOCURL);
 
-            bundleLocalization = attributes.getValue("Bundle-Localization");
+            bundleLocalization = attributes.getValue(Constants.BUNDLE_LOCALIZATION);
 
-            bundleManifestVersion = Short.parseShort(attributes.getValue("Bundle-ManifestVersion"));
+            bundleManifestVersion = Short.parseShort(attributes.getValue(Constants.BUNDLE_MANIFESTVERSION));
 
-            bundleName = attributes.getValue("Bundle-Name");
+            bundleName = attributes.getValue(Constants.BUNDLE_NAME);
 
             bundleNativeCodeList = obtainBundleNativeCodeList(attributes);
 
             bundleExecutionEnvironment = obtainBundleExecutionEnvironment(attributes);
 
-            bundleSymbolicName = attributes.getValue("Bundle-SymbolicName");
+            bundleSymbolicName = attributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
 
             bundleUpdateLocation = obtainBundleUpdateLocation(attributes);
 
-            bundleVendor = attributes.getValue("Bundle-Vendor");
+            bundleVendor = attributes.getValue(Constants.BUNDLE_VENDOR);
 
-            bundleVersion = Version.parseVersion(attributes.getValue("Bundle-Version"));
+            bundleVersion = Version.parseVersion(attributes.getValue(Constants.BUNDLE_VERSION);
 
             bundleDynamicImportList = obtainBundleDynamicImportList(attributes);
 
@@ -259,49 +260,24 @@ public class BundleManagerImpl implements BundleManager
     protected List<NativeCodeDescription> obtainBundleNativeCodeList(Attributes attributes) throws Exception
     {
         List<NativeCodeDescription> result;
-        if (attributes.containsKey("Bundle-NativeCodeList"))
+        if (attributes.containsKey(Constants.BUNDLE_NATIVECODE))
         {
-            String[] nativecodes = attributes.getValue("Bundle-NativeCodeList").split(",");
+            String[] nativecodes = Util.split(attributes.getValue(Constants.BUNDLE_NATIVECODE), ",");
             result = new ArrayList<NativeCodeDescription>(nativecodes.length);
 
             for (String nativecode : nativecodes)
             {
-                String[] pathparams = nativecode.split(";");
                 List<String> paths = new ArrayList<String>(1);
-                Map<String, String> parameters = new HashMap<String, String>();
-                NativeCodeDescription description = new NativeCodeDescription(paths, parameters);
+                Map<String, Object> parameters = new HashMap<String, Object>();
+                NativeCodeDescription nativeCodeDescription = new NativeCodeDescription(paths, parameters);
 
-                for (String pathparam : pathparams)
-                {
-                    if (pathparam.contains("="))
-                    {
-                        String[] keyval = pathparam.split("=");
+                Util.parseParameters(nativecode, nativeCodeDescription, parameters, paths);
 
-                        if (keyval.length != 2) throw new BundleException("Malformed Bundle-NativeCodeList");
+                if (parameters.containsKey("osversion")) parameters.put("osversion", VersionRange.parseVersionRange((String) parameters.get("osversion")));
+                if (parameters.containsKey("language")) parameters.put("language", new Locale((String) parameters.get("language")));
+                if (parameters.containsKey("selection-filter")) parameters.put("selection-filter", VersionRange.parseVersionRange((String) parameters.get("selection-filter")));
 
-                        String key = keyval[0].trim();
-                        String value = keyval[1].trim();
-
-                        if ("osversion".equals(key))
-                        {
-                            if (!Util.callSetter(description, key, VersionRange.parseVersionRange(value))) throw new BundleException("Unable to set osversion");
-                        }
-                        else if ("filter".equals(key))
-                        {
-                            if (!Util.callSetter(description, key, new FilterImpl(framework.getParser().parse(value)))) throw new BundleException("Unable to set filter");
-                        }
-                        else
-                        {
-                            if (!Util.callSetter(description, key, keyval[1])) parameters.put(key, value);
-                        }
-                    }
-                    else
-                    {
-                        paths.add(pathparam.trim());
-                    }
-                }
-
-                result.add(description);
+                result.add(nativeCodeDescription);
             }
         }
         else
@@ -329,48 +305,14 @@ public class BundleManagerImpl implements BundleManager
 
             for (String importDescription : importDescriptions)
             {
-                String[] packageparams = importDescription.split(";");
                 List<String> paths = new ArrayList<String>(1);
-                Map<String, String> parameters = new HashMap<String, String>();
+                Map<String, Object> parameters = new HashMap<String, Object>();
                 DynamicDescription description = new DynamicDescription(paths, parameters);
 
-                for (String pathparam : packageparams)
-                {
-                    if (pathparam.contains("="))
-                    {
-                        String[] keyval = pathparam.split("=");
+                Util.parseParameters(importDescription, description, parameters, paths);
 
-                        if (keyval.length != 2) throw new BundleException("Malformed DynamicImport-Package");
-
-                        String key = keyval[0].trim();
-                        String value = keyval[1].trim();
-
-                        if ("version".equals(key))
-                        {
-                            if (!Util.callSetter(description, key, VersionRange.parseVersionRange(value))) throw new BundleException("Unable to set version");
-                        }
-                        else if ("bundle-symbolic-name".equals(key))
-                        {
-                            if (!Util.callSetter(description, key, value)) throw new BundleException("Unable to set bundle-symbolic-name");
-                        }
-                        else if ("bundle-version".equals(key))
-                        {
-                            if (!Util.callSetter(description, key, VersionRange.parseVersionRange(value))) throw new BundleException("Unable to set bundle-version");
-                        }
-                        else
-                        {
-                            if (!Util.callSetter(description, key, value)) parameters.put(key, value);
-                        }
-                    }
-                    else
-                    {
-                        String path = pathparam.trim();
-
-                        if (!Util.isValidWildcardName(path)) throw new BundleException("Invalid wildcard name");
-
-                        paths.add(path);
-                    }
-                }
+                if (description.getVersion() == null) Util.callSetter(description, "version", DynamicDescription.DEFAULT_VERSION_RANGE);
+                if (description.getBundleVersion() == null) Util.callSetter(description, "bundle-version", DynamicDescription.DEFAULT_VERSION_RANGE);
 
                 result.add(description);
             }
@@ -383,16 +325,23 @@ public class BundleManagerImpl implements BundleManager
         return result;
     }
 
-    protected List<String> obtainBundleClasspath(Attributes attributes)
+    protected List<String> obtainBundleClasspath(Attributes attributes) throws BundleException
     {
         List<String> result;
 
-        if (attributes.containsKey("Bundle-Classpath"))
+        if (attributes.containsKey(Constants.BUNDLE_CLASSPATH))
         {
-            String[] tokens = attributes.getValue("Bundle-Classpath").split(",");
+            String[] tokens = attributes.getValue(Constants.BUNDLE_CLASSPATH).split(",");
             result = new ArrayList<String>(tokens.length);
 
-            for (String token : tokens) result.add(token.trim());
+            for (String token : tokens)
+            {
+                token = token.trim();
+
+                if (!Util.isValidPackageName(token)) throw new BundleException("Malformed package in Bundle-Classpath: " + token);
+
+                result.add(token);
+            }
         }
         else
         {
@@ -407,9 +356,9 @@ public class BundleManagerImpl implements BundleManager
     {
         List<String> result;
 
-        if (attributes.containsKey("Bundle-Category"))
+        if (attributes.containsKey(Constants.BUNDLE_CATEGORY))
         {
-            String[] tokens = attributes.getValue("Bundle-Category").split(",");
+            String[] tokens = attributes.getValue(Constants.BUNDLE_CATEGORY).split(",");
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
@@ -426,9 +375,9 @@ public class BundleManagerImpl implements BundleManager
     {
         List<ExportDescription> result;
 
-        if (attributes.containsKey("Export-Package"))
+        if (attributes.containsKey(Constants.EXPORT_PACKAGE))
         {
-            String[] exportDescriptions = Util.split(attributes.getValue("Export-Package"), ",");
+            String[] exportDescriptions = Util.split(attributes.getValue(Constants.EXPORT_PACKAGE), ",");
             result = new ArrayList<ExportDescription>(exportDescriptions.length);
 
             for (String exportDescription : exportDescriptions)
@@ -439,17 +388,23 @@ public class BundleManagerImpl implements BundleManager
 
                 Util.parseParameters(exportDescription, description, parameters, paths);
 
+                if (parameters.containsKey("specification-version")) parameters.put("specification-version", Version.parseVersion((String) parameters.get("specification-version")));
+
                 if (!parameters.containsKey("version"))
                 {
                     if (parameters.containsKey("specification-version")) parameters.put("version", parameters.get("specification-version"));
-                    else parameters.put("version", ImportDescription.DEFAULT_VERSION_RANGE);
+                    else parameters.put("version", ExportDescription.DEFAULT_VERSION);
+                }
+                else
+                {
+                    parameters.put("version", Version.parseVersion((String) parameters.get("version")));
                 }
 
                 if (parameters.containsKey("specification-version") && !parameters.get("specification-version").equals(parameters.get("version"))) throw new BundleException("version and specification-version do not match");
 
-                if (!parameters.containsKey("bundle-symbolic-name")) throw new BundleException("Attempted to set bundle-symbolic-name");
+                if (parameters.containsKey("bundle-symbolic-name")) throw new BundleException("Attempted to set bundle-symbolic-name in Export-Package");
 
-                if (!parameters.containsKey("bundle-version")) throw new BundleException("Attempted to set bundle-version");
+                if (parameters.containsKey("bundle-version")) throw new BundleException("Attempted to set bundle-version in Export-Package");
 
                 result.add(description);
             }
@@ -466,10 +421,10 @@ public class BundleManagerImpl implements BundleManager
     {
         FragmentDescription fragmentDescription = null;
 
-        if (attributes.containsKey("Fragment-Host"))
+        if (attributes.containsKey(Constants.FRAGMENT_HOST))
         {
             Map<String, Object> parameters = new HashMap<String, Object>();
-            String description = attributes.getValue("Fragment-Host");
+            String description = attributes.getValue(Constants.FRAGMENT_HOST);
             int index = description.indexOf(';');
 
             if (index != -1)
@@ -483,7 +438,8 @@ public class BundleManagerImpl implements BundleManager
                 fragmentDescription = new FragmentDescription(Util.checkSymbolName(description), parameters);
             }
 
-            if (!parameters.containsKey("bundle-version")) parameters.put("bundle-version", ImportDescription.DEFAULT_VERSION_RANGE);
+            if (parameters.containsKey("bundle-version")) parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-verison")));
+            else parameters.put("bundle-version", FragmentDescription.DEFAULT_VERSION_RANGE);
         }
 
         return fragmentDescription;
@@ -493,9 +449,9 @@ public class BundleManagerImpl implements BundleManager
     {
         List<String> result;
 
-        if (attributes.containsKey("Export-Service"))
+        if (attributes.containsKey(Constants.EXPORT_SERVICE))
         {
-            String[] tokens = attributes.getValue("Export-Service").split(",");
+            String[] tokens = attributes.getValue(Constants.EXPORT_SERVICE).split(",");
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
@@ -512,10 +468,10 @@ public class BundleManagerImpl implements BundleManager
     {
         List<ImportDescription> result;
 
-        if (attributes.containsKey("Import-Package"))
+        if (attributes.containsKey(Constants.IMPORT_PACKAGE))
         {
             Set<String> importedPaths = new HashSet<String>();
-            String[] importDescriptions = attributes.getValue("Import-Package").split(",");
+            String[] importDescriptions = attributes.getValue(Constants.IMPORT_PACKAGE).split(",");
             result = new ArrayList<ImportDescription>(importDescriptions.length);
 
             for (String importDescription : importDescriptions)
@@ -527,15 +483,22 @@ public class BundleManagerImpl implements BundleManager
 
                 Util.parseParameters(importDescription, description, parameters, paths);
 
+                if (parameters.containsKey("specification-version")) parameters.put("specification-version", VersionRange.parseVersionRange((String) parameters.get("specification-version")));
+
                 if (!parameters.containsKey("version"))
                 {
                     if (parameters.containsKey("specification-version")) parameters.put("version", parameters.get("specification-version"));
                     else parameters.put("version", ImportDescription.DEFAULT_VERSION_RANGE);
                 }
+                else
+                {
+                    parameters.put("version", VersionRange.parseVersionRange((String) parameters.get("version")));
+                }
 
                 if (parameters.containsKey("specification-version") && !parameters.get("specification-version").equals(parameters.get("version"))) throw new BundleException("version and specification-version do not match");
 
-                if (!parameters.containsKey("bundle-version")) parameters.put("bundle-version", ImportDescription.DEFAULT_VERSION_RANGE);
+                if (parameters.containsKey("bundle-version")) parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-veriosn")));
+                else parameters.put("bundle-version", ImportDescription.DEFAULT_VERSION_RANGE);
 
                 for (String path : paths)
                 {
@@ -558,9 +521,9 @@ public class BundleManagerImpl implements BundleManager
     {
         List<String> result;
 
-        if (attributes.containsKey("Import-Service"))
+        if (attributes.containsKey(Constants.IMPORT_SERVICE))
         {
-            String[] tokens = attributes.getValue("Import-Service").split(",");
+            String[] tokens = attributes.getValue(Constants.IMPORT_SERVICE).split(",");
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
@@ -600,8 +563,11 @@ public class BundleManagerImpl implements BundleManager
                 }
 
                 if (requireDescription.getVisibility() == null) Util.callSetter(requireDescription, "visibility", Visibility.PRIVATE);
+
                 if (requireDescription.getResolution() == null) Util.callSetter(requireDescription, "resolution", Resolution.MANDATORY);
-                if (!parameters.containsKey("bundle-version")) parameters.put("bundle-version", RequireDescription.DEFAULT_VERSION_RANGE);
+
+                if (parameters.containsKey("bundle-version")) parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-verison")));
+                else parameters.put("bundle-version", RequireDescription.DEFAULT_VERSION_RANGE);
 
                 result.add(requireDescription);
             }
