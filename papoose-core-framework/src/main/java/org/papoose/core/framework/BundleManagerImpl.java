@@ -170,7 +170,7 @@ public class BundleManagerImpl implements BundleManager
 
             bundleVendor = attributes.getValue(Constants.BUNDLE_VENDOR);
 
-            bundleVersion = Version.parseVersion(attributes.getValue(Constants.BUNDLE_VERSION);
+            bundleVersion = Version.parseVersion(attributes.getValue(Constants.BUNDLE_VERSION));
 
             bundleDynamicImportList = obtainBundleDynamicImportList(attributes);
 
