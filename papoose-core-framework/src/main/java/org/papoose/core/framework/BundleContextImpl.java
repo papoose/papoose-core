@@ -242,7 +242,7 @@ class BundleContextImpl implements BundleContext
     {
         public String getProperty(String key)
         {
-            return framework.getProperty(key);
+            return (String) framework.getProperty(key);
         }
 
         public Bundle getBundle()

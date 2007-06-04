@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import junit.framework.TestCase;
 
@@ -31,6 +32,7 @@ public class ImportDescriptionTest extends TestCase
 {
     public void testConstruction()
     {
+        Properties p = System.getProperties();
         List<String> packageNames = new ArrayList<String>();
         Map<String, Object> attributes = new HashMap<String, Object>();
 

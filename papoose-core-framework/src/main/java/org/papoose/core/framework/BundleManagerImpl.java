@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
-import java.util.jar.Manifest;
 import java.util.logging.Logger;
 
 import org.osgi.framework.Bundle;
@@ -97,119 +96,31 @@ public class BundleManagerImpl implements BundleManager
         if (locations.containsKey(location)) return locations.get(location);
 
         long bundleId = bundleCounter++;
+        OutputStream outputStream = null;
+        JarInputStream jarInputStream = null;
         try
         {
             BundleStore bundleStore = store.allocateBundleStore(bundleCounter++);
 
             File archive = bundleStore.getArchive();
 
-            OutputStream outputStream = new FileOutputStream(archive);
+            outputStream = new FileOutputStream(archive);
 
             byte[] buffer = new byte[1024];
             int numRead;
             while ((numRead = inputStream.read(buffer)) != -1) outputStream.write(buffer, 0, numRead);
 
-            outputStream.close();
+            jarInputStream = new JarInputStream(new FileInputStream(archive));
 
-            String bundleActivatorClass;
-            List<String> bundleCategories;
-            List<String> bundleClasspath;
-            String bundleContactAddress;
-            String bundleCopyright;
-            String bundleDescription;
-            String bundleDocUrl;
-            String bundleLocalization;
-            short bundleManifestVersion;
-            String bundleName;
-            List<NativeCodeDescription> bundleNativeCodeList;
-            List<String> bundleExecutionEnvironment;
-            String bundleSymbolicName;
-            URL bundleUpdateLocation;
-            String bundleVendor;
-            Version bundleVersion;
-            List<DynamicDescription> bundleDynamicImportList;
-            List<ExportDescription> bundleExportList;
-            List<String> bundleExportService;
-            FragmentDescription bundleFragmentHost;
-            List<ImportDescription> bundleImportList;
-            List<String> bundleImportService;
-            List<RequireDescription> bundleRequireBundle;
+            BundleImpl bundle = allocateBundle(jarInputStream.getManifest().getMainAttributes(), bundleStore, bundleId);
 
-            JarInputStream jarInputStream = new JarInputStream(new FileInputStream(archive));
-            Manifest manifest = jarInputStream.getManifest();
+            resolveNativeCodeDependencies(bundle);
 
-            Attributes attributes = manifest.getMainAttributes();
+            bundleStore.getDataRoot().mkdirs();
 
-            bundleActivatorClass = attributes.getValue(Constants.BUNDLE_ACTIVATOR);
+            confirmRequiredExecutionEnvironment(bundle);
 
-            bundleCategories = obtainBundleCategories(attributes);
-
-            bundleClasspath = obtainBundleClasspath(attributes);
-
-            bundleContactAddress = attributes.getValue(Constants.BUNDLE_CONTACTADDRESS);
-
-            bundleCopyright = attributes.getValue(Constants.BUNDLE_COPYRIGHT);
-
-            bundleDescription = attributes.getValue(Constants.BUNDLE_DESCRIPTION);
-
-            bundleDocUrl = attributes.getValue(Constants.BUNDLE_DOCURL);
-
-            bundleLocalization = attributes.getValue(Constants.BUNDLE_LOCALIZATION);
-
-            bundleManifestVersion = Short.parseShort(attributes.getValue(Constants.BUNDLE_MANIFESTVERSION));
-
-            bundleName = attributes.getValue(Constants.BUNDLE_NAME);
-
-            bundleNativeCodeList = obtainBundleNativeCodeList(attributes);
-
-            bundleExecutionEnvironment = obtainBundleExecutionEnvironment(attributes);
-
-            bundleSymbolicName = attributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
-
-            bundleUpdateLocation = obtainBundleUpdateLocation(attributes);
-
-            bundleVendor = attributes.getValue(Constants.BUNDLE_VENDOR);
-
-            bundleVersion = Version.parseVersion(attributes.getValue(Constants.BUNDLE_VERSION));
-
-            bundleDynamicImportList = obtainBundleDynamicImportList(attributes);
-
-            bundleExportList = obtainBundleExportList(attributes);
-
-            bundleFragmentHost = obtainBundleFragementHost(attributes);
-
-            bundleExportService = obtainBundleExportService(attributes);
-
-            bundleImportList = obtainBundleImportList(attributes);
-
-            bundleImportService = obtainBundleImportService(attributes);
-
-            bundleRequireBundle = obtainBundleRequireBundle(attributes);
-
-            BundleImpl bundle = new BundleImpl(null, framework, bundleStore, bundleId,
-                                               bundleActivatorClass,
-                                               bundleCategories,
-                                               bundleClasspath,
-                                               bundleContactAddress,
-                                               bundleCopyright,
-                                               bundleDescription,
-                                               bundleDocUrl,
-                                               bundleLocalization,
-                                               bundleManifestVersion,
-                                               bundleName,
-                                               bundleNativeCodeList,
-                                               bundleExecutionEnvironment,
-                                               bundleSymbolicName,
-                                               bundleUpdateLocation,
-                                               bundleVendor,
-                                               bundleVersion,
-                                               bundleDynamicImportList,
-                                               bundleExportList,
-                                               bundleExportService,
-                                               bundleFragmentHost,
-                                               bundleImportList,
-                                               bundleImportService,
-                                               bundleRequireBundle);
+            bundle.markInstalled();
 
             locations.put(location, bundle);
 
@@ -230,10 +141,90 @@ public class BundleManagerImpl implements BundleManager
             try
             {
                 inputStream.close();
+                if (outputStream != null) outputStream.close();
+                if (jarInputStream != null) jarInputStream.close();
             }
             catch (IOException ioe)
             {
                 logger.warning("Error closing stream for " + location + ". " + ioe);
+            }
+        }
+    }
+
+    protected BundleImpl allocateBundle(Attributes attributes, BundleStore bundleStore, long bundleId) throws Exception
+    {
+        String bundleActivatorClass = attributes.getValue(Constants.BUNDLE_ACTIVATOR);
+        List<String> bundleCategories = obtainBundleCategories(attributes);
+        List<String> bundleClasspath = obtainBundleClasspath(attributes);
+        String bundleContactAddress = attributes.getValue(Constants.BUNDLE_CONTACTADDRESS);
+        String bundleCopyright = attributes.getValue(Constants.BUNDLE_COPYRIGHT);
+        String bundleDescription = attributes.getValue(Constants.BUNDLE_DESCRIPTION);
+        String bundleDocUrl = attributes.getValue(Constants.BUNDLE_DOCURL);
+        String bundleLocalization = attributes.getValue(Constants.BUNDLE_LOCALIZATION);
+        short bundleManifestVersion = Short.parseShort(attributes.getValue(Constants.BUNDLE_MANIFESTVERSION));
+        String bundleName = attributes.getValue(Constants.BUNDLE_NAME);
+        List<NativeCodeDescription> bundleNativeCodeList = obtainBundleNativeCodeList(attributes);
+        List<String> bundleExecutionEnvironment = obtainBundleExecutionEnvironment(attributes);
+        String bundleSymbolicName = attributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
+        URL bundleUpdateLocation = obtainBundleUpdateLocation(attributes);
+        String bundleVendor = attributes.getValue(Constants.BUNDLE_VENDOR);
+        Version bundleVersion = Version.parseVersion(attributes.getValue(Constants.BUNDLE_VERSION));
+        List<DynamicDescription> bundleDynamicImportList = obtainBundleDynamicImportList(attributes);
+        List<ExportDescription> bundleExportList = obtainBundleExportList(attributes);
+        List<String> bundleExportService = obtainBundleExportService(attributes);
+        FragmentDescription bundleFragmentHost = obtainBundleFragementHost(attributes);
+        List<ImportDescription> bundleImportList = obtainBundleImportList(attributes);
+        List<String> bundleImportService = obtainBundleImportService(attributes);
+        List<RequireDescription> bundleRequireBundle = obtainBundleRequireBundle(attributes);
+
+
+        return new BundleImpl(null, framework, bundleStore, bundleId,
+                              bundleActivatorClass,
+                              bundleCategories,
+                              bundleClasspath,
+                              bundleContactAddress,
+                              bundleCopyright,
+                              bundleDescription,
+                              bundleDocUrl,
+                              bundleLocalization,
+                              bundleManifestVersion,
+                              bundleName,
+                              bundleNativeCodeList,
+                              bundleExecutionEnvironment,
+                              bundleSymbolicName,
+                              bundleUpdateLocation,
+                              bundleVendor,
+                              bundleVersion,
+                              bundleDynamicImportList,
+                              bundleExportList,
+                              bundleExportService,
+                              bundleFragmentHost,
+                              bundleImportList,
+                              bundleImportService,
+                              bundleRequireBundle);
+    }
+
+    protected void resolveNativeCodeDependencies(BundleImpl bundle) throws BundleException
+    {
+        // TODO: implement this
+    }
+
+    protected void confirmRequiredExecutionEnvironment(BundleImpl bundle) throws BundleException
+    {
+        if (!bundle.getBundleExecutionEnvironment().isEmpty())
+        {
+            String string = (String) framework.getProperty(Constants.FRAMEWORK_EXECUTIONENVIRONMENT);
+            if (string == null) throw new BundleException(Constants.FRAMEWORK_EXECUTIONENVIRONMENT + " not set");
+            String[] environments = string.split(",");
+
+            outer:
+            for (String requirement : bundle.getBundleExecutionEnvironment())
+            {
+                for (String environment : environments)
+                {
+                    if (requirement.equals(environment)) break outer;
+                }
+                throw new BundleException("Missing required execution environment: " + requirement);
             }
         }
     }

@@ -16,17 +16,14 @@
  */
 package org.papoose.core.framework;
 
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.File;
+import java.util.Properties;
 
 import junit.framework.TestCase;
-import org.osgi.framework.Bundle;
 
-import org.papoose.core.framework.spi.BundleManager;
-import org.papoose.core.framework.spi.ThreadPool;
-import org.papoose.core.framework.spi.Store;
 import org.papoose.core.framework.spi.BundleStore;
+import org.papoose.core.framework.spi.Store;
+import org.papoose.core.framework.spi.ThreadPool;
 
 
 /**
@@ -36,7 +33,7 @@ public class PapooseTest extends TestCase
 {
     public void test()
     {
-        Papoose poo = new Papoose(new MockStore(), new MockThreadPool());
+        Papoose poo = new Papoose(new MockStore(), new MockThreadPool(), new Properties());
         poo.start();
         poo.stop();
     }

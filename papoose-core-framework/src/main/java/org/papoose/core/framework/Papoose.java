@@ -16,11 +16,16 @@
  */
 package org.papoose.core.framework;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Logger;
+
+import org.osgi.framework.Constants;
 
 import org.papoose.core.framework.filter.Parser;
 import org.papoose.core.framework.spi.BundleManager;
@@ -40,17 +45,27 @@ public final class Papoose
 
     private final BundleManager bundleManager;
     private final ThreadPool threadPool;
+    private final Properties properties;
     private final long frameworkId;
     private long waitPeriod;
     private Parser parser;
 
-    public Papoose(Store store, ThreadPool threadPool)
+    public Papoose(Store store, ThreadPool threadPool, Properties properties)
     {
         if (store == null) throw new IllegalArgumentException("store is null");
         if (threadPool == null) throw new IllegalArgumentException("threadPool is null");
 
         this.bundleManager = new BundleManagerImpl(this, store);
         this.threadPool = threadPool;
+
+        Properties defaults = new Properties(System.getProperties());
+        initProperties(defaults);
+
+        defaults = new Properties(defaults);
+        defaults.putAll(properties);
+
+        this.properties = new Properties(defaults);
+
         this.frameworkId = frameworkCounter++;
 
         frameworks.put(frameworkId, new WeakReference<Papoose>(this));
@@ -91,9 +106,9 @@ public final class Papoose
         this.parser = parser;
     }
 
-    String getProperty(String key)
+    Object getProperty(String key)
     {
-        return null; // TODO: fix me
+        return properties.get(key);
     }
 
     static Papoose getFramework(Long frameworkId)
@@ -132,4 +147,72 @@ public final class Papoose
         return null;
     }
 
+    @SuppressWarnings({"EmptyCatchBlock"})
+    private static void initProperties(Properties defaults)
+    {
+        InputStream inputStream = null;
+        try
+        {
+            inputStream = Papoose.class.getClassLoader().getResourceAsStream("papoose.properties");
+            if (inputStream != null)
+            {
+                Properties p = new Properties();
+                p.load(inputStream);
+                defaults.putAll(p);
+            }
+        }
+        catch (IOException doNothing)
+        {
+        }
+        finally
+        {
+            try
+            {
+                if (inputStream != null) inputStream.close();
+            }
+            catch (IOException doNothing)
+            {
+            }
+        }
+
+        defaults.put(Constants.FRAMEWORK_VERSION, "1.3");
+
+        defaults.put(Constants.FRAMEWORK_PROCESSOR, System.getProperty("os.arch"));
+        defaults.put(Constants.FRAMEWORK_OS_VERSION, standardizeVersion(System.getProperty("os.version")));
+        defaults.put(Constants.FRAMEWORK_OS_NAME, System.getProperty("os.name"));
+
+        defaults.put("org.osgi.supports.framework.extension", true);
+        defaults.put("org.osgi.supports.bootclasspath.extension", true);
+        defaults.put("org.osgi.supports.framework.fragment", true);
+        defaults.put("org.osgi.supports.framework.requirebundle", true);
+    }
+
+    private static String standardizeVersion(String version)
+    {
+        StringBuilder builder = new StringBuilder();
+        boolean done = false;
+        int i = 0;
+        int digits = 0;
+        do
+        {
+            while (i < version.length() && Character.isDigit(version.charAt(i)))
+            {
+                builder.append(version.charAt(i));
+                i++;
+            }
+            if (++digits < 3)
+            {
+                if (version.charAt(i) == '.')
+                {
+                    builder.append(version.charAt(i));
+                    i++;
+                }
+                else done = true;
+            }
+            else done = true;
+        }
+        while (!done);
+
+        return builder.toString();
+    }
 }
