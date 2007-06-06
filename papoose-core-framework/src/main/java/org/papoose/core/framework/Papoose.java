@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
@@ -50,6 +51,16 @@ public final class Papoose
     private long waitPeriod;
     private Parser parser;
 
+    /**
+     * Install the store, thread pool and setup a hierarchy of properties.
+     * <p/>
+     * The framework instance gets registered and is accessable via its unique
+     * framework id.
+     *
+     * @param store      the bundle store to use
+     * @param threadPool the thread pool to use
+     * @param properties the set of framework properties to use
+     */
     public Papoose(Store store, ThreadPool threadPool, Properties properties)
     {
         if (store == null) throw new IllegalArgumentException("store is null");
@@ -109,6 +120,12 @@ public final class Papoose
     Object getProperty(String key)
     {
         return properties.get(key);
+    }
+
+
+    public Dictionary getProperties()
+    {
+        return properties;
     }
 
     static Papoose getFramework(Long frameworkId)
@@ -190,9 +207,9 @@ public final class Papoose
     private static String standardizeVersion(String version)
     {
         StringBuilder builder = new StringBuilder();
-        boolean done = false;
         int i = 0;
         int digits = 0;
+
         do
         {
             while (i < version.length() && Character.isDigit(version.charAt(i)))
@@ -202,16 +219,16 @@ public final class Papoose
             }
             if (++digits < 3)
             {
-                if (version.charAt(i) == '.')
+                if (i < version.length() && version.charAt(i) == '.')
                 {
                     builder.append(version.charAt(i));
                     i++;
                 }
-                else done = true;
+                else break;
             }
-            else done = true;
+            else break;
         }
-        while (!done);
+        while (true);
 
         return builder.toString();
     }

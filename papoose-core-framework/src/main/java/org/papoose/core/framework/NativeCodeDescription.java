@@ -20,22 +20,25 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.osgi.framework.Filter;
+import org.osgi.framework.Version;
 
 
 /**
  * @version $Revision$ $Date$
  */
-class NativeCodeDescription
+class NativeCodeDescription implements Comparable
 {
-    final static NativeCodeDescription ASTERISK = new NativeCodeDescription(null, null);
     private final List<String> paths;
     private final Map<String, Object> parameters;
+    private final int ordinal;
+    private transient Version osVersion;
+    private transient String language;
 
-    public NativeCodeDescription(List<String> paths, Map<String, Object> parameters)
+    public NativeCodeDescription(List<String> paths, Map<String, Object> parameters, int ordinal)
     {
         this.paths = Collections.unmodifiableList(paths);
         this.parameters = Collections.unmodifiableMap(parameters);
+        this.ordinal = ordinal;
     }
 
     public List<String> getPaths()
@@ -46,5 +49,58 @@ class NativeCodeDescription
     public Map<String, Object> getParameters()
     {
         return parameters;
+    }
+
+    @SuppressWarnings({"EmptyCatchBlock"})
+    public Version getOsVersion()
+    {
+        if (osVersion == null)
+        {
+            try
+            {
+                osVersion = Version.parseVersion((String) parameters.get("osversion"));
+            }
+            catch (IllegalArgumentException doNothing)
+            {
+            }
+        }
+        return osVersion;
+    }
+
+    public String getLanguage()
+    {
+        if (language == null)
+        {
+            language = (String) parameters.get("language");
+        }
+        return language;
+    }
+
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        NativeCodeDescription that = (NativeCodeDescription) o;
+
+        return parameters.equals(that.parameters) && paths.equals(that.paths);
+    }
+
+    public int hashCode()
+    {
+        int result = paths.hashCode();
+        result = 31 * result + parameters.hashCode();
+        return result;
+    }
+
+    public int compareTo(Object object)
+    {
+        NativeCodeDescription that = (NativeCodeDescription) object;
+        int result = 0;
+
+        if (getOsVersion() != null && that.getOsVersion() != null) result = getOsVersion().compareTo(that.getOsVersion());
+        if (result == 0 && getLanguage() != null && that.getLanguage() != null) result = getLanguage().compareTo(that.getLanguage());
+        if (result == 0) result = ordinal - that.ordinal;
+        return result;
     }
 }

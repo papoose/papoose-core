@@ -114,7 +114,7 @@ public class BundleManagerImpl implements BundleManager
 
             BundleImpl bundle = allocateBundle(jarInputStream.getManifest().getMainAttributes(), bundleStore, bundleId);
 
-            resolveNativeCodeDependencies(bundle);
+            if (bundle.resolveNativeCodeDependencies().isEmpty()) throw new BundleException("Unable to resolve native code descriptions");
 
             bundleStore.getDataRoot().mkdirs();
 
@@ -177,6 +177,11 @@ public class BundleManagerImpl implements BundleManager
         List<String> bundleImportService = obtainBundleImportService(attributes);
         List<RequireDescription> bundleRequireBundle = obtainBundleRequireBundle(attributes);
 
+        boolean bundleNativeCodeListOptional = false;
+        if (bundleNativeCodeList.size() > 0)
+        {
+            bundleNativeCodeListOptional = "*".equals(bundleNativeCodeList.get(bundleNativeCodeList.size() - 1));
+        }
 
         return new BundleImpl(null, framework, bundleStore, bundleId,
                               bundleActivatorClass,
@@ -189,7 +194,7 @@ public class BundleManagerImpl implements BundleManager
                               bundleLocalization,
                               bundleManifestVersion,
                               bundleName,
-                              bundleNativeCodeList,
+                              bundleNativeCodeList, bundleNativeCodeListOptional,
                               bundleExecutionEnvironment,
                               bundleSymbolicName,
                               bundleUpdateLocation,
@@ -204,11 +209,6 @@ public class BundleManagerImpl implements BundleManager
                               bundleRequireBundle);
     }
 
-    protected void resolveNativeCodeDependencies(BundleImpl bundle) throws BundleException
-    {
-        // TODO: implement this
-    }
-
     protected void confirmRequiredExecutionEnvironment(BundleImpl bundle) throws BundleException
     {
         if (!bundle.getBundleExecutionEnvironment().isEmpty())
@@ -217,12 +217,12 @@ public class BundleManagerImpl implements BundleManager
             if (string == null) throw new BundleException(Constants.FRAMEWORK_EXECUTIONENVIRONMENT + " not set");
             String[] environments = string.split(",");
 
-            outer:
+            nextRequirement:
             for (String requirement : bundle.getBundleExecutionEnvironment())
             {
                 for (String environment : environments)
                 {
-                    if (requirement.equals(environment)) break outer;
+                    if (requirement.equals(environment)) continue nextRequirement;
                 }
                 throw new BundleException("Missing required execution environment: " + requirement);
             }
@@ -255,14 +255,15 @@ public class BundleManagerImpl implements BundleManager
         {
             String[] nativecodes = Util.split(attributes.getValue(Constants.BUNDLE_NATIVECODE), ",");
             result = new ArrayList<NativeCodeDescription>(nativecodes.length);
+            int ordinal = 0;
 
             for (String nativecode : nativecodes)
             {
                 List<String> paths = new ArrayList<String>(1);
                 Map<String, Object> parameters = new HashMap<String, Object>();
-                NativeCodeDescription nativeCodeDescription = new NativeCodeDescription(paths, parameters);
+                NativeCodeDescription nativeCodeDescription = new NativeCodeDescription(paths, parameters, ordinal++);
 
-                Util.parseParameters(nativecode, nativeCodeDescription, parameters, paths);
+                Util.parseParameters(nativecode, nativeCodeDescription, parameters, false, paths);
 
                 if (parameters.containsKey("osversion")) parameters.put("osversion", VersionRange.parseVersionRange((String) parameters.get("osversion")));
                 if (parameters.containsKey("language")) parameters.put("language", new Locale((String) parameters.get("language")));
@@ -300,7 +301,7 @@ public class BundleManagerImpl implements BundleManager
                 Map<String, Object> parameters = new HashMap<String, Object>();
                 DynamicDescription description = new DynamicDescription(paths, parameters);
 
-                Util.parseParameters(importDescription, description, parameters, paths);
+                Util.parseParameters(importDescription, description, parameters, true, paths);
 
                 if (description.getVersion() == null) Util.callSetter(description, "version", DynamicDescription.DEFAULT_VERSION_RANGE);
                 if (description.getBundleVersion() == null) Util.callSetter(description, "bundle-version", DynamicDescription.DEFAULT_VERSION_RANGE);
@@ -377,7 +378,7 @@ public class BundleManagerImpl implements BundleManager
                 Map<String, Object> parameters = new HashMap<String, Object>();
                 ExportDescription description = new ExportDescription(paths, parameters);
 
-                Util.parseParameters(exportDescription, description, parameters, paths);
+                Util.parseParameters(exportDescription, description, parameters, true, paths);
 
                 if (parameters.containsKey("specification-version")) parameters.put("specification-version", Version.parseVersion((String) parameters.get("specification-version")));
 
@@ -422,7 +423,7 @@ public class BundleManagerImpl implements BundleManager
             {
                 fragmentDescription = new FragmentDescription(Util.checkSymbolName(description.substring(0, index)), parameters);
 
-                Util.parseParameters(description.substring(index + 1), fragmentDescription, parameters);
+                Util.parseParameters(description.substring(index + 1), fragmentDescription, parameters, true);
             }
             else
             {
@@ -472,7 +473,7 @@ public class BundleManagerImpl implements BundleManager
 
                 ImportDescription description = new ImportDescription(paths, parameters);
 
-                Util.parseParameters(importDescription, description, parameters, paths);
+                Util.parseParameters(importDescription, description, parameters, true, paths);
 
                 if (parameters.containsKey("specification-version")) parameters.put("specification-version", VersionRange.parseVersionRange((String) parameters.get("specification-version")));
 
@@ -546,7 +547,7 @@ public class BundleManagerImpl implements BundleManager
                 {
                     requireDescription = new RequireDescription(Util.checkSymbolName(description.substring(0, index)), parameters);
 
-                    Util.parseParameters(description.substring(index + 1), requireDescription, parameters);
+                    Util.parseParameters(description.substring(index + 1), requireDescription, parameters, true);
                 }
                 else
                 {

@@ -228,6 +228,8 @@ public final class Parser
             throw new InvalidSyntaxException("Did not expect substr value", state.getExpression());
     }
 
+
+
     private static class State
     {
         private final String expression;

@@ -66,6 +66,7 @@ class BundleClassLoader extends NamedClassLoader
         this.papoose = papoose;
     }
 
+    @SuppressWarnings({"EmptyCatchBlock"})
     public Class<?> loadClass(String className) throws ClassNotFoundException
     {
         if (className.startsWith("java.")) return getParent().loadClass(className);

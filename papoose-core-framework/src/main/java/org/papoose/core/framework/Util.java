@@ -23,12 +23,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Locale;
 
 import org.osgi.framework.BundleException;
-import org.osgi.framework.Filter;
-
-import org.papoose.core.framework.filter.Parser;
 
 
 /**
@@ -180,12 +176,12 @@ final class Util
         return string;
     }
 
-    public static void parseParameters(String string, Object pojo, Map<String, Object> parameters) throws BundleException
+    public static void parseParameters(String string, Object pojo, Map<String, Object> parameters, boolean preventDuplicates) throws BundleException
     {
-        parseParameters(string, pojo, parameters, new ArrayList<String>(0));
+        parseParameters(string, pojo, parameters, preventDuplicates, new ArrayList<String>(0));
     }
 
-    public static void parseParameters(String string, Object pojo, Map<String, Object> parameters, List<String> paths) throws BundleException
+    public static void parseParameters(String string, Object pojo, Map<String, Object> parameters, boolean preventDuplicates, List<String> paths) throws BundleException
     {
         Set<String> parameterKeys = new HashSet<String>();
         Set<String> argumentKeys = new HashSet<String>();
@@ -205,10 +201,14 @@ final class Util
                     state.eat(1);
                     state.eatWhitespace();
 
-                    if (parameterKeys.contains(token)) throw new BundleException("Duplicate parameter key: " + token);
-                    else parameterKeys.add(token);
-
                     String argument = state.eatArgument();
+
+                    if (parameterKeys.contains(token))
+                    {
+                        if (preventDuplicates) throw new BundleException("Duplicate parameter key: " + token);
+                        else parameters.put(token, parameters.get(token) + "," + argument);
+                    }
+                    else parameterKeys.add(token);
 
                     parameters.put(token, argument);
 
