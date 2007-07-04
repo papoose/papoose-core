@@ -20,6 +20,7 @@ import java.net.URL;
 import java.util.List;
 
 import org.osgi.framework.Version;
+import org.osgi.framework.BundleException;
 
 import org.papoose.core.framework.spi.BundleStore;
 
@@ -30,6 +31,7 @@ import org.papoose.core.framework.spi.BundleStore;
 class SystemBundleImpl extends BundleImpl
 {
     public SystemBundleImpl(ClassLoader classLoader, Papoose framework, BundleStore bundleStore, long bundleId, String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, boolean bundleNativeCodeListOptional, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragmentDescription bundleFragmentHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle)
+            throws BundleException
     {
         super(classLoader, framework, bundleStore, bundleId, bundleActivatorClass, bundleCategories, bundleClassPath, bundleContactAddress, bundleCopyright, bundleDescription, bundleDocUrl, bundleLocalization, bundleManifestVersion, bundleName, bundleNativeCodeList, bundleNativeCodeListOptional, bundleExecutionEnvironment, bundleSymbolicName, bundleUpdateLocation, bundleVendor, bundleVersion, bundleDynamicImportList, bundleExportList, bundleExportService, bundleFragmentHost, bundleImportList, bundleImportService, bundleRequireBundle);
     }
