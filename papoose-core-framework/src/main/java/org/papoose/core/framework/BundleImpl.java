@@ -78,23 +78,6 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             listener.frameworkEvent(event);
         }
     });
-    private static final Filter TRUE = new Filter()
-    {
-        public boolean match(ServiceReference serviceReference)
-        {
-            return true;
-        }
-
-        public boolean match(Dictionary dictionary)
-        {
-            return true;
-        }
-
-        public boolean matchCase(Dictionary dictionary)
-        {
-            return true;
-        }
-    };
     private final Listeners<ServiceListener, ServiceEvent> serviceListeners = new Listeners<ServiceListener, ServiceEvent>(new Listeners.Functor<ServiceListener, ServiceEvent>()
     {
         public void fire(ServiceListener listener, ServiceEvent event)
@@ -490,7 +473,7 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
 
     void addServiceListener(ServiceListener serviceListener)
     {
-        addServiceListener(serviceListener, TRUE);
+        addServiceListener(serviceListener, FilterImpl.TRUE);
     }
 
     void addServiceListener(ServiceListener serviceListener, Filter filter)
@@ -500,7 +483,7 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
 
     void removeServiceListener(ServiceListener serviceListener)
     {
-        serviceListeners.removeListener(new ServiceListenerWithFilter(serviceListener, TRUE));
+        serviceListeners.removeListener(new ServiceListenerWithFilter(serviceListener, FilterImpl.TRUE));
     }
 
     public ServiceRegistration registerService(String[] clazzes, Object service, Dictionary properties)

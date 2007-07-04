@@ -33,6 +33,23 @@ import org.papoose.core.framework.filter.Expr;
  */
 class FilterImpl implements Filter
 {
+    public static final Filter TRUE = new Filter()
+    {
+        public boolean match(ServiceReference serviceReference)
+        {
+            return true;
+        }
+
+        public boolean match(Dictionary dictionary)
+        {
+            return true;
+        }
+
+        public boolean matchCase(Dictionary dictionary)
+        {
+            return true;
+        }
+    };
     private final Expr expr;
 
     public FilterImpl(Expr expr)
