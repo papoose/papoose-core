@@ -139,7 +139,7 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
 
 
     public BundleImpl(ClassLoader classLoader, Papoose framework, BundleStore bundleStore, long bundleId,
-                      String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, boolean bundleNativeCodeListOptional, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragmentDescription bundleFragmentHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle)
+                      String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, boolean bundleNativeCodeListOptional, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragmentDescription bundleFragmentHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle) throws BundleException
     {
         super(bundleId);
 
@@ -172,6 +172,8 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
         this.bundleImportList = bundleImportList;
         this.bundleImportService = bundleImportService;
         this.bundleRequireBundle = bundleRequireBundle;
+
+        if (bundleManifestVersion != 2) throw new BundleException("Bundle-ManifestVersion must be 2");
     }
 
     List<String> getBundleExecutionEnvironment()

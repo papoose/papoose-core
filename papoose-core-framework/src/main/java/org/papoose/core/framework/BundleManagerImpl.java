@@ -55,6 +55,7 @@ public class BundleManagerImpl implements BundleManager
     private final Papoose framework;
     private final Store store;
     private final Map<String, BundleImpl> locations = new HashMap<String, BundleImpl>();
+    private final Map<Long, List<BundleImpl>> bundles = new HashMap<Long, List<BundleImpl>>();
     private long bundleCounter = 0;
 
 
@@ -123,6 +124,7 @@ public class BundleManagerImpl implements BundleManager
             bundle.markInstalled();
 
             locations.put(location, bundle);
+            bundles.put(bundleId, new ArrayList<BundleImpl>(Collections.singletonList(bundle)));
 
             return bundle;
         }
@@ -161,7 +163,7 @@ public class BundleManagerImpl implements BundleManager
         String bundleDescription = attributes.getValue(Constants.BUNDLE_DESCRIPTION);
         String bundleDocUrl = attributes.getValue(Constants.BUNDLE_DOCURL);
         String bundleLocalization = attributes.getValue(Constants.BUNDLE_LOCALIZATION);
-        short bundleManifestVersion = Short.parseShort(attributes.getValue(Constants.BUNDLE_MANIFESTVERSION));
+        short bundleManifestVersion = obtainBundleManifestVersion(attributes.getValue(Constants.BUNDLE_MANIFESTVERSION));
         String bundleName = attributes.getValue(Constants.BUNDLE_NAME);
         List<NativeCodeDescription> bundleNativeCodeList = obtainBundleNativeCodeList(attributes);
         List<String> bundleExecutionEnvironment = obtainBundleExecutionEnvironment(attributes);
@@ -229,13 +231,13 @@ public class BundleManagerImpl implements BundleManager
         }
     }
 
-    protected List<String> obtainBundleExecutionEnvironment(Attributes attributes)
+    protected List<String> obtainBundleCategories(Attributes attributes)
     {
         List<String> result;
 
-        if (attributes.containsKey("Bundle-ExecutionEnvironment"))
+        if (attributes.containsKey(Constants.BUNDLE_CATEGORY))
         {
-            String[] tokens = attributes.getValue("Bundle-ExecutionEnvironment").split(",");
+            String[] tokens = attributes.getValue(Constants.BUNDLE_CATEGORY).split(",");
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
@@ -246,6 +248,45 @@ public class BundleManagerImpl implements BundleManager
         }
 
         return result;
+    }
+
+    protected List<String> obtainBundleClasspath(Attributes attributes) throws BundleException
+    {
+        List<String> result;
+
+        if (attributes.containsKey(Constants.BUNDLE_CLASSPATH))
+        {
+            String[] tokens = attributes.getValue(Constants.BUNDLE_CLASSPATH).split(",");
+            result = new ArrayList<String>(tokens.length);
+
+            for (String token : tokens)
+            {
+                token = token.trim();
+
+                if (!Util.isValidPackageName(token)) throw new BundleException("Malformed package in Bundle-Classpath: " + token);
+
+                result.add(token);
+            }
+        }
+        else
+        {
+            result = new ArrayList<String>(1);
+            result.add(".");
+        }
+
+        return result;
+    }
+
+    private short obtainBundleManifestVersion(String value)
+    {
+        try
+        {
+            return Short.parseShort(value);
+        }
+        catch (NumberFormatException e)
+        {
+            return 2;
+        }
     }
 
     protected List<NativeCodeDescription> obtainBundleNativeCodeList(Attributes attributes) throws Exception
@@ -271,6 +312,25 @@ public class BundleManagerImpl implements BundleManager
 
                 result.add(nativeCodeDescription);
             }
+        }
+        else
+        {
+            result = Collections.emptyList();
+        }
+
+        return result;
+    }
+
+    protected List<String> obtainBundleExecutionEnvironment(Attributes attributes)
+    {
+        List<String> result;
+
+        if (attributes.containsKey("Bundle-ExecutionEnvironment"))
+        {
+            String[] tokens = attributes.getValue("Bundle-ExecutionEnvironment").split(",");
+            result = new ArrayList<String>(tokens.length);
+
+            for (String token : tokens) result.add(token.trim());
         }
         else
         {
@@ -308,52 +368,6 @@ public class BundleManagerImpl implements BundleManager
 
                 result.add(description);
             }
-        }
-        else
-        {
-            result = Collections.emptyList();
-        }
-
-        return result;
-    }
-
-    protected List<String> obtainBundleClasspath(Attributes attributes) throws BundleException
-    {
-        List<String> result;
-
-        if (attributes.containsKey(Constants.BUNDLE_CLASSPATH))
-        {
-            String[] tokens = attributes.getValue(Constants.BUNDLE_CLASSPATH).split(",");
-            result = new ArrayList<String>(tokens.length);
-
-            for (String token : tokens)
-            {
-                token = token.trim();
-
-                if (!Util.isValidPackageName(token)) throw new BundleException("Malformed package in Bundle-Classpath: " + token);
-
-                result.add(token);
-            }
-        }
-        else
-        {
-            result = new ArrayList<String>(1);
-            result.add(".");
-        }
-
-        return result;
-    }
-
-    protected List<String> obtainBundleCategories(Attributes attributes)
-    {
-        List<String> result;
-
-        if (attributes.containsKey(Constants.BUNDLE_CATEGORY))
-        {
-            String[] tokens = attributes.getValue(Constants.BUNDLE_CATEGORY).split(",");
-            result = new ArrayList<String>(tokens.length);
-
-            for (String token : tokens) result.add(token.trim());
         }
         else
         {
