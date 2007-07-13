@@ -24,6 +24,8 @@ import org.osgi.framework.Version;
  */
 class VersionRange
 {
+    public static final Version DEFAULT_VERSION = new Version(0, 0, 0);
+    public static final VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
     private final Version start;
     private final Version end;
     private final boolean startIncluding;
@@ -47,6 +49,7 @@ class VersionRange
 
     public boolean includes(Version version)
     {
+        if (version == null) version = DEFAULT_VERSION;
         int result = start.compareTo(version);
         if (result > 0 || (!startIncluding && result == 0)) return false;
         if (end != null)
