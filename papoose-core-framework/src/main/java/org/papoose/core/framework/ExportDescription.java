@@ -26,7 +26,7 @@ import org.osgi.framework.Version;
 /**
  * @version $Revision$ $Date$
  */
-class ExportDescription
+public class ExportDescription
 {
     public static final Version DEFAULT_VERSION = new Version(0, 0, 0);
     private final List<String> packages;
@@ -36,7 +36,7 @@ class ExportDescription
     private List<String> include;
     private List<String> exclude;
 
-    public ExportDescription(List<String> paths, Map<String, Object> parameters)
+    ExportDescription(List<String> paths, Map<String, Object> parameters)
     {
         this.packages = Collections.unmodifiableList(paths);
         this.parameters = Collections.unmodifiableMap(parameters);

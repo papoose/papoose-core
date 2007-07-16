@@ -53,7 +53,7 @@ import org.papoose.core.framework.util.ResetableLatch;
 /**
  * @version $Revision$ $Date$
  */
-class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
+public class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
 {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final ResetableLatch latch = new ResetableLatch();
@@ -85,7 +85,7 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
             listener.serviceChanged(event);
         }
     });
-    private final ClassLoader classLoader;
+    private final BundleClassLoader classLoader;
     private final Papoose framework;
     private final BundleStore bundleStore;
     private final Object LOCK = new Object();
@@ -121,8 +121,8 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
     private final List<RequireDescription> bundleRequireBundle;
 
 
-    public BundleImpl(ClassLoader classLoader, Papoose framework, BundleStore bundleStore, long bundleId,
-                      String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, boolean bundleNativeCodeListOptional, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragmentDescription bundleFragmentHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle) throws BundleException
+    BundleImpl(BundleClassLoader classLoader, Papoose framework, BundleStore bundleStore, long bundleId,
+               String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, boolean bundleNativeCodeListOptional, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragmentDescription bundleFragmentHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle) throws BundleException
     {
         super(bundleId);
 
@@ -143,7 +143,7 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
         this.bundleName = bundleName;
         this.bundleNativeCodeList = bundleNativeCodeList;
         this.bundleNativeCodeListOptional = bundleNativeCodeListOptional;
-        this.bundleExecutionEnvironment = bundleExecutionEnvironment;
+        this.bundleExecutionEnvironment = Collections.unmodifiableList(bundleExecutionEnvironment);
         this.bundleSymbolicName = bundleSymbolicName;
         this.bundleUpdateLocation = bundleUpdateLocation;
         this.bundleVendor = bundleVendor;
@@ -159,9 +159,30 @@ class BundleImpl extends AbstractBundle implements org.osgi.framework.Bundle
         if (bundleManifestVersion != 2) throw new BundleException("Bundle-ManifestVersion must be 2");
     }
 
-    List<String> getBundleExecutionEnvironment()
+    public BundleClassLoader getClassLoader()
     {
-        return Collections.unmodifiableList(bundleExecutionEnvironment);
+        return classLoader;
+    }
+
+    public List<ExportDescription> getBundleExportList()
+    {
+        return bundleExportList;
+    }
+
+    String getBundleName()
+    {
+        return bundleName;
+    }
+
+
+    Version getBundleVersion()
+    {
+        return bundleVersion;
+    }
+
+    public List<String> getBundleExecutionEnvironment()
+    {
+        return bundleExecutionEnvironment;
     }
 
     /**

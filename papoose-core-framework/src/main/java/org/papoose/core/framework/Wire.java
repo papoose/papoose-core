@@ -16,18 +16,23 @@
  */
 package org.papoose.core.framework;
 
+import org.osgi.framework.Version;
+
+
 /**
  * @version $Revision$ $Date$
  */
-class Wire
+public class Wire
 {
     private final String packageName;
-    private final BundleClassLoader bundleClassLoader;
+    private final ExportDescription exportDescription;
+    private final BundleImpl bundle;
 
-    public Wire(String packageName, BundleClassLoader bundleClassLoader)
+     Wire(String packageName, ExportDescription exportDescription, BundleImpl bundle)
     {
         this.packageName = packageName;
-        this.bundleClassLoader = bundleClassLoader;
+        this.exportDescription = exportDescription;
+        this.bundle = bundle;
     }
 
     public String getPackageName()
@@ -35,8 +40,18 @@ class Wire
         return packageName;
     }
 
+    public ExportDescription getExportDescription()
+    {
+        return exportDescription;
+    }
+
+    public BundleImpl getBundle()
+    {
+        return bundle;
+    }
+
     public BundleClassLoader getBundleClassLoader()
     {
-        return bundleClassLoader;
+        return bundle.getClassLoader();
     }
 }

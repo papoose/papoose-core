@@ -18,6 +18,7 @@ package org.papoose.core.framework;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -29,7 +30,7 @@ import org.apache.xbean.classloader.NamedClassLoader;
 /**
  * @version $Revision$ $Date$
  */
-class BundleClassLoader extends NamedClassLoader
+public class BundleClassLoader extends NamedClassLoader
 {
     private static final URL[] EMPTY_URLS = new URL[0];
     private final Set<Wire> wires;
@@ -41,13 +42,13 @@ class BundleClassLoader extends NamedClassLoader
     private final Set<ImportDescription> dynamicImports;
     private final Papoose papoose;
 
-    public BundleClassLoader(String name, URL[] bundleClasspath, ClassLoader parent,
-                             Set<Wire> wires,
-                             String[] bootDelegates,
-                             Wire[] requiredBundles,
-                             URL[] fragmentsClasspath,
-                             String[] exportedPackages,
-                             Set<ImportDescription> dynamicImports, Papoose papoose)
+    BundleClassLoader(String name, URL[] bundleClasspath, ClassLoader parent,
+                      Set<Wire> wires,
+                      String[] bootDelegates,
+                      Wire[] requiredBundles,
+                      URL[] fragmentsClasspath,
+                      String[] exportedPackages,
+                      Set<ImportDescription> dynamicImports, Papoose papoose)
     {
         super(name, EMPTY_URLS, parent);
 
@@ -56,7 +57,7 @@ class BundleClassLoader extends NamedClassLoader
         assert bootDelegates != null;
         assert requiredBundles != null;
 
-        this.wires = wires;
+        this.wires = Collections.unmodifiableSet(wires);
         this.bootDelegates = bootDelegates;
         this.requiredBundles = requiredBundles;
         this.bundleClasspathClassloader = new JarFileClassLoader("bundleClasspath." + name, bundleClasspath, DO_NOTHING);
@@ -64,6 +65,11 @@ class BundleClassLoader extends NamedClassLoader
         this.exportedPackages = exportedPackages;
         this.dynamicImports = dynamicImports;
         this.papoose = papoose;
+    }
+
+    public Set<Wire> getWires()
+    {
+        return wires;
     }
 
     @SuppressWarnings({"EmptyCatchBlock"})

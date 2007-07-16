@@ -15,8 +15,8 @@
  */
 package org.papoose.core.framework.util;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 
 /**
@@ -24,7 +24,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class Listeners<L, E>
 {
-    private final List<L> listeners = new CopyOnWriteArrayList<L>();
+    private final Set<L> listeners = new CopyOnWriteArraySet<L>();
     private final Functor<L, E> functor;
 
     public Listeners(Functor<L, E> functor)
