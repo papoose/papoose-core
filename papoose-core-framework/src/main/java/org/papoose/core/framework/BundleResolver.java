@@ -22,6 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.osgi.framework.Version;
 
@@ -53,11 +55,11 @@ public class BundleResolver
 
             if (nameMatch && versionMatch)
             {
-                for (ExportDescription exportDescription : bundle.getBundleExportList())
+                for (ExportDescriptionWrapper wrapper : wrapToSort(bundle))
                 {
-                    if (match(pkg.getPackageName(), pkg.getImportDescription(), exportDescription))
+                    if (match(pkg.getPackageName(), pkg.getImportDescription(), wrapper.getExportDescription()))
                     {
-                        Set<Candidate> used = collectUsed(exportDescription.getUses(), bundle);
+                        Set<Candidate> used = collectUsed(wrapper.getExportDescription().getUses(), bundle);
 
                         assert used != null;
 
@@ -89,6 +91,18 @@ public class BundleResolver
         }
 
         return Collections.emptySet();
+    }
+
+    private SortedSet<ExportDescriptionWrapper> wrapToSort(BundleImpl bundle)
+    {
+        SortedSet<ExportDescriptionWrapper> sorted = new TreeSet<ExportDescriptionWrapper>();
+
+        for (ExportDescription exportDescription : bundle.getBundleExportList())
+        {
+            sorted.add(new ExportDescriptionWrapper(exportDescription, bundle));
+        }
+
+        return sorted;
     }
 
     protected Set<Candidate> collectUsed(List<String> uses, BundleImpl bundle)
@@ -259,6 +273,38 @@ public class BundleResolver
         public int hashCode()
         {
             return packageName.hashCode();
+        }
+    }
+
+    /**
+     * A simple wrapper to make sure that export descriptions are searched in
+     * the proper order.  This wrapper assumes that <code>BundleImpl</code>
+     * classes initially sort by their resolution status, i.e. resolved bundles
+     * appear before un-resolved bundles.
+     */
+    private static class ExportDescriptionWrapper implements Comparable<ExportDescriptionWrapper>
+    {
+        private final ExportDescription exportDescription;
+        private final long bundleId;
+        private final Version version;
+
+        public ExportDescriptionWrapper(ExportDescription exportDescription, BundleImpl bundle)
+        {
+            this.exportDescription = exportDescription;
+            this.bundleId = bundle.getBundleId();
+            this.version = (Version) exportDescription.getParameters().get("version");
+        }
+
+        public ExportDescription getExportDescription()
+        {
+            return exportDescription;
+        }
+
+        public int compareTo(ExportDescriptionWrapper o)
+        {
+            int result = version.compareTo(o.version);
+            if (result == 0) result = (int) (bundleId - o.bundleId);
+            return result;
         }
     }
 }
