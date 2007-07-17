@@ -38,16 +38,55 @@ public class BundleResolver
         return resolve(buildPackages(bundleImportList), bundles, new HashSet<Candidate>(), new HashSet<Candidate>());
     }
 
-    private Set<Wire> resolve(List<Package> packages, Set<BundleImpl> bundles, Set<Candidate> candidates, Set<Candidate> usedSet)
+    private Set<Wire> resolve(List<Package> packages, Set<BundleImpl> bundles, Set<Candidate> candidates, Set<Candidate> impliedSet)
     {
         packages = new ArrayList<Package>(packages);
 
         Package pkg = packages.remove(0);
 
+        for (ExportDescriptionWrapper wrapper : wrapEligibleExports(pkg, bundles))
+        {
+            if (match(pkg.getPackageName(), pkg.getImportDescription(), wrapper.getExportDescription()))
+            {
+                Set<Candidate> implied = collectImpliedConstraints(wrapper.getExportDescription().getUses(), wrapper.getBundle());
+
+                assert implied != null;
+
+                if (isConsistent(impliedSet, implied))
+                {
+                    Set<Candidate> intersection = new HashSet<Candidate>(implied);
+                    intersection.retainAll(candidates);
+
+                    candidates = new HashSet<Candidate>(candidates);
+                    candidates.addAll(intersection);
+
+                    impliedSet = new HashSet<Candidate>(impliedSet);
+                    impliedSet.addAll(implied);
+
+                    if (packages.isEmpty())
+                    {
+                        return collectWires(candidates);
+                    }
+                    else
+                    {
+                        Set<Wire> result = resolve(packages, bundles, candidates, impliedSet);
+                        if (!result.isEmpty()) return result;
+                    }
+                }
+            }
+        }
+
+
+        return Collections.emptySet();
+    }
+
+    private SortedSet<ExportDescriptionWrapper> wrapEligibleExports(Package pkg, Set<BundleImpl> bundles)
+    {
         String bundleName = (String) pkg.getParameters().get("bundle-symbolic-name");
         VersionRange bundleVersionRange = (VersionRange) pkg.getParameters().get("bundle-version");
 
-        nextBundle:
+        SortedSet<ExportDescriptionWrapper> sorted = new TreeSet<ExportDescriptionWrapper>();
+
         for (BundleImpl bundle : bundles)
         {
             boolean nameMatch = (bundleName == null || bundleName.equals(bundle.getBundleName()));
@@ -55,57 +94,17 @@ public class BundleResolver
 
             if (nameMatch && versionMatch)
             {
-                for (ExportDescriptionWrapper wrapper : wrapToSort(bundle))
+                for (ExportDescription exportDescription : bundle.getBundleExportList())
                 {
-                    if (match(pkg.getPackageName(), pkg.getImportDescription(), wrapper.getExportDescription()))
-                    {
-                        Set<Candidate> used = collectUsed(wrapper.getExportDescription().getUses(), bundle);
-
-                        assert used != null;
-
-                        if (isConsistent(usedSet, used))
-                        {
-                            Set<Candidate> intersection = new HashSet<Candidate>(used);
-                            intersection.retainAll(candidates);
-
-                            candidates = new HashSet<Candidate>(candidates);
-                            candidates.addAll(intersection);
-
-                            usedSet = new HashSet<Candidate>(usedSet);
-                            usedSet.addAll(used);
-
-                            if (packages.isEmpty())
-                            {
-                                return collectWires(candidates);
-                            }
-                            else
-                            {
-                                Set<Wire> result = resolve(packages, bundles, candidates, usedSet);
-                                if (!result.isEmpty()) return result;
-                            }
-                        }
-                        continue nextBundle;
-                    }
+                    sorted.add(new ExportDescriptionWrapper(exportDescription, bundle));
                 }
             }
-        }
-
-        return Collections.emptySet();
-    }
-
-    private SortedSet<ExportDescriptionWrapper> wrapToSort(BundleImpl bundle)
-    {
-        SortedSet<ExportDescriptionWrapper> sorted = new TreeSet<ExportDescriptionWrapper>();
-
-        for (ExportDescription exportDescription : bundle.getBundleExportList())
-        {
-            sorted.add(new ExportDescriptionWrapper(exportDescription, bundle));
         }
 
         return sorted;
     }
 
-    protected Set<Candidate> collectUsed(List<String> uses, BundleImpl bundle)
+    protected Set<Candidate> collectImpliedConstraints(List<String> uses, BundleImpl bundle)
     {
         Set<Candidate> result = new HashSet<Candidate>();
 
@@ -118,7 +117,7 @@ public class BundleResolver
                 {
                     ExportDescription exportDescription = wire.getExportDescription();
 
-                    result.addAll(collectUsed(exportDescription.getUses(), wire.getBundle()));
+                    result.addAll(collectImpliedConstraints(exportDescription.getUses(), wire.getBundle()));
                     result.add(new Candidate(packageName, exportDescription, wire.getBundle()));
 
                     continue nextPackage;
@@ -285,12 +284,14 @@ public class BundleResolver
     private static class ExportDescriptionWrapper implements Comparable<ExportDescriptionWrapper>
     {
         private final ExportDescription exportDescription;
+        private final BundleImpl bundle;
         private final long bundleId;
         private final Version version;
 
         public ExportDescriptionWrapper(ExportDescription exportDescription, BundleImpl bundle)
         {
             this.exportDescription = exportDescription;
+            this.bundle = bundle;
             this.bundleId = bundle.getBundleId();
             this.version = (Version) exportDescription.getParameters().get("version");
         }
@@ -298,6 +299,11 @@ public class BundleResolver
         public ExportDescription getExportDescription()
         {
             return exportDescription;
+        }
+
+        public BundleImpl getBundle()
+        {
+            return bundle;
         }
 
         public int compareTo(ExportDescriptionWrapper o)

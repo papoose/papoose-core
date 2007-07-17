@@ -32,7 +32,7 @@ import org.papoose.core.framework.Wire;
  */
 public class BundleResolver extends org.papoose.core.framework.BundleResolver
 {
-    protected Set<Candidate> collectUsed(List<String> uses, BundleImpl bundle)
+    protected Set<Candidate> collectImpliedConstraints(List<String> uses, BundleImpl bundle)
     {
         Set<Candidate> result = new HashSet<Candidate>();
 
@@ -47,7 +47,7 @@ public class BundleResolver extends org.papoose.core.framework.BundleResolver
                     {
                         if (exportDescription.getPackages().contains(packageName))
                         {
-                            result.addAll(collectUsed(exportDescription.getUses(), wire.getBundle()));
+                            result.addAll(collectImpliedConstraints(exportDescription.getUses(), wire.getBundle()));
                             result.add(new Candidate(packageName, exportDescription, wire.getBundle()));
 
                             continue nextPackage;
