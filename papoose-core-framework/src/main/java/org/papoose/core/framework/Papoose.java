@@ -50,6 +50,7 @@ public final class Papoose
     private final long frameworkId;
     private long waitPeriod;
     private Parser parser;
+    private BundleResolver resolver = new BundleResolver();
 
     /**
      * Install the store, thread pool and setup a hierarchy of properties.
@@ -122,10 +123,19 @@ public final class Papoose
         return properties.get(key);
     }
 
-
     public Dictionary getProperties()
     {
         return properties;
+    }
+
+    public BundleResolver getResolver()
+    {
+        return resolver;
+    }
+
+    public void setResolver(BundleResolver resolver)
+    {
+        this.resolver = resolver;
     }
 
     static Papoose getFramework(Long frameworkId)
