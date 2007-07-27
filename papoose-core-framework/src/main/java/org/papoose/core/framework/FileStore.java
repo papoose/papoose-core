@@ -39,9 +39,9 @@ public class FileStore implements Store
         return root;
     }
 
-    public BundleStore allocateBundleStore(long bundleId)
+    public BundleStore allocateBundleStore(long bundleId, int generation)
     {
-        File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId);
+        File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator + generation);
 
         BundleStore result = new FileBundleStore(bundleRoot);
 
@@ -54,7 +54,14 @@ public class FileStore implements Store
     {
         File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId);
 
-        if (bundleRoot.exists()) bundleRoot.delete();
+        if (bundleRoot.exists()) Util.delete(bundleRoot);
+    }
+
+    public void removeBundleStore(long bundleId, int generation)
+    {
+        File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator + generation);
+
+        if (bundleRoot.exists()) Util.delete(bundleRoot);
     }
 
     private class FileBundleStore implements BundleStore

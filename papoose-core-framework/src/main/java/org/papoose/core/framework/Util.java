@@ -16,6 +16,10 @@
  */
 package org.papoose.core.framework;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -32,6 +36,23 @@ import org.osgi.framework.BundleException;
  */
 final class Util
 {
+    public static void copy(InputStream input, OutputStream output) throws IOException
+    {
+        byte[] buffer = new byte[4096];
+        int len;
+
+        while ((len = input.read(buffer)) != -1) output.write(buffer, 0, len);
+    }
+
+    public static void delete(File file)
+    {
+        if (file.isDirectory())
+        {
+            for (File f : file.listFiles()) delete(f);
+        }
+        file.delete();
+    }
+
     @SuppressWarnings({"EmptyCatchBlock"})
     public static boolean callSetter(Object pojo, String property, Object value)
     {
