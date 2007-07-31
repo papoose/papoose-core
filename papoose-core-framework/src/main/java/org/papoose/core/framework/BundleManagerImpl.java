@@ -16,9 +16,7 @@
  */
 package org.papoose.core.framework;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -80,7 +78,7 @@ public class BundleManagerImpl implements BundleManager
         BundleImpl bundleImpl = (BundleImpl) bundle;
         Set<Wire> wires = framework.getResolver().resolve(bundleImpl.getBundleImportList(), new HashSet<BundleImpl>(bundles.values()));
 
-        bundleImpl.getClassLoader().setWires(wires);        
+        bundleImpl.getClassLoader().setWires(wires);
     }
 
     public Bundle getBundle(long bundleId)
@@ -106,21 +104,13 @@ public class BundleManagerImpl implements BundleManager
         {
             BundleStore bundleStore = store.allocateBundleStore(bundleCounter++, 0);
 
-            File archive = bundleStore.getArchive();
+            bundleStore.loadArchive(inputStream);
 
-            outputStream = new FileOutputStream(archive);
-
-            byte[] buffer = new byte[1024];
-            int numRead;
-            while ((numRead = inputStream.read(buffer)) != -1) outputStream.write(buffer, 0, numRead);
-
-            jarInputStream = new JarInputStream(new FileInputStream(archive));
+            jarInputStream = new JarInputStream(new FileInputStream(bundleStore.getArchive()));
 
             BundleImpl bundle = allocateBundle(jarInputStream.getManifest().getMainAttributes(), bundleStore, bundleId);
 
-            if (bundle.resolveNativeCodeDependencies().isEmpty()) throw new BundleException("Unable to resolve native code descriptions");
-
-            bundleStore.getDataRoot().mkdirs();
+            bundleStore.setNativeCodeDescriptions(bundle.resolveNativeCodeDependencies());
 
             confirmRequiredExecutionEnvironment(bundle);
 

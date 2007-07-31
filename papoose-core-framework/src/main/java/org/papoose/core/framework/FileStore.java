@@ -17,6 +17,17 @@
 package org.papoose.core.framework;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Enumeration;
+import java.util.SortedSet;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import org.osgi.framework.BundleException;
 
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.spi.Store;
@@ -66,7 +77,10 @@ public class FileStore implements Store
 
     private class FileBundleStore implements BundleStore
     {
+        private final static String ARCHIVE_JAR_NAME = "archive.jar";
+        private final static String ARCHIVE_NAME = "archive";
         private final File bundleRoot;
+        private SortedSet<NativeCodeDescription> nativeCodeDescriptions;
 
         public FileBundleStore(File bundleRoot)
         {
@@ -80,7 +94,82 @@ public class FileStore implements Store
 
         public File getArchive()
         {
-            return new File(bundleRoot, "archive");
+            return new File(bundleRoot, ARCHIVE_JAR_NAME);
+        }
+
+        public void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException
+        {
+            this.nativeCodeDescriptions = nativeCodeDescriptions;
+
+            File archiveDir = new File(bundleRoot, ARCHIVE_NAME);
+            for (NativeCodeDescription description : nativeCodeDescriptions)
+            {
+                for (String path : description.getPaths())
+                {
+                    if (!new File(archiveDir, path).exists()) throw new BundleException("Native code library " + path + " cannot be found.");
+                }
+            }
+        }
+
+        public void loadArchive(InputStream inputStream) throws BundleException
+        {
+            try
+            {
+                File archiveFile = new File(bundleRoot, ARCHIVE_JAR_NAME);
+                OutputStream outputStream = new FileOutputStream(archiveFile);
+
+                Util.copy(inputStream, outputStream);
+
+                outputStream.close();
+
+                File archiveDir = new File(bundleRoot, ARCHIVE_NAME);
+                archiveDir.mkdirs();
+
+                JarFile jarFile = new JarFile(archiveFile);
+                Enumeration list = jarFile.entries();
+                while (list.hasMoreElements())
+                {
+                    dump(archiveDir, jarFile, (ZipEntry) list.nextElement());
+                }
+            }
+            catch (IOException ioe)
+            {
+                throw new BundleException("Error saving archive", ioe);
+            }
+        }
+
+        public String loadLibrary(String libname)
+        {
+            String s = System.mapLibraryName(libname);
+
+            for (NativeCodeDescription description : nativeCodeDescriptions)
+            {
+                for (String path : description.getPaths())
+                {
+                    if (path.endsWith(s)) return path;
+                }
+            }
+            return null;
         }
     }
+
+    private void dump(File root, ZipFile zipFile, ZipEntry zipEntry) throws IOException
+    {
+        File file = new File(root, zipEntry.getName());
+        if (zipEntry.isDirectory())
+        {
+            file.mkdirs();
+        }
+        else
+        {
+            InputStream inputStream = zipFile.getInputStream(zipEntry);
+            FileOutputStream outputStream = new FileOutputStream(file);
+
+            Util.copy(inputStream, outputStream);
+
+            inputStream.close();
+            outputStream.close();
+        }
+    }
+
 }

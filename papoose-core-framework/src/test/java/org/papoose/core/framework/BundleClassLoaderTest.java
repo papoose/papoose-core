@@ -20,6 +20,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.TreeSet;
 
 import junit.framework.TestCase;
 
@@ -74,7 +75,8 @@ public class BundleClassLoaderTest extends TestCase
                                                                     new URL[]{},
                                                                     new String[]{},
                                                                     Collections.EMPTY_SET,
-                                                                    papoose);
+                                                                    papoose,
+                                                                    new TreeSet());
         bundleClassLoader.setWires(Collections.<Wire>emptySet());
 
         try

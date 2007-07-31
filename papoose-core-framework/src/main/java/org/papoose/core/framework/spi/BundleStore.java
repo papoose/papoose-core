@@ -17,6 +17,12 @@
 package org.papoose.core.framework.spi;
 
 import java.io.File;
+import java.io.InputStream;
+import java.util.SortedSet;
+
+import org.osgi.framework.BundleException;
+
+import org.papoose.core.framework.NativeCodeDescription;
 
 
 /**
@@ -27,4 +33,17 @@ public interface BundleStore
     File getDataRoot();
 
     File getArchive();
+
+    /**
+     * Set the native code descriptions that the bundle store is to use
+     * when loading native code libraries.
+     *
+     * @param nativeCodeDescriptions the sorted set of native code descriptions
+     * @throws BundleException if the set of native code descriptions is empty
+     */
+    void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException;
+
+    void loadArchive(InputStream inputStream) throws BundleException;
+
+    String loadLibrary(String libname);
 }

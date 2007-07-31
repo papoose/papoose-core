@@ -26,7 +26,7 @@ import org.osgi.framework.Version;
 /**
  * @version $Revision$ $Date$
  */
-class NativeCodeDescription implements Comparable
+public class NativeCodeDescription implements Comparable
 {
     private final List<String> paths;
     private final Map<String, Object> parameters;
