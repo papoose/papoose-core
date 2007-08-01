@@ -19,6 +19,8 @@ package org.papoose.core.framework.filter;
 import java.util.Collection;
 import java.util.Dictionary;
 
+import org.papoose.core.framework.Util;
+
 
 /**
  * @version $Revision$ $Date$
@@ -62,27 +64,7 @@ class Substr implements Expr
 
     protected boolean match(String test)
     {
-        if (!values[0].regionMatches(0, test, 0, values[0].length())) return false;
-
-        int pointer = values[0].length();
-
-        done:
-        for (int i = 1; i < values.length - 1; i++)
-        {
-            int length = values[i].length();
-            int limit = test.length() - length;
-            while (pointer <= limit)
-            {
-                if (values[i].regionMatches(0, test, pointer++, length))
-                {
-                    pointer += values[i].length() - 1;
-                    continue done;
-                }
-            }
-            return false;
-        }
-
-        return test.substring(pointer).endsWith(values[values.length - 1]);
+        return Util.match(values, test);
     }
 
     public String toString()

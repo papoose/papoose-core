@@ -38,33 +38,33 @@ public class UtilTest extends TestCase
         assertEquals(pojo.getHowNowBrownCow(), "cats");
     }
 
-    public void testIsValidWildcardName()
-    {
-        assertTrue(Util.isValidWildcardName("*"));
-        assertTrue(Util.isValidWildcardName("foo.*"));
-        assertTrue(Util.isValidWildcardName("foo.bar.*"));
-
-        assertTrue(Util.isValidWildcardName("f123.*"));
-        assertTrue(Util.isValidWildcardName("f123.b456.*"));
-
-        assertTrue(Util.isValidWildcardName("f.*"));
-        assertTrue(Util.isValidWildcardName("f.b.*"));
-
-        assertTrue(Util.isValidWildcardName("foo"));
-        assertTrue(Util.isValidWildcardName("foo.bar"));
-
-        assertTrue(Util.isValidWildcardName("f123"));
-        assertTrue(Util.isValidWildcardName("f123.b456"));
-
-        assertTrue(Util.isValidWildcardName("f"));
-        assertTrue(Util.isValidWildcardName("f.b"));
-
-        assertFalse(Util.isValidWildcardName(".*"));
-        assertFalse(Util.isValidWildcardName("123.*"));
-        assertFalse(Util.isValidWildcardName("123.456.*"));
-        assertFalse(Util.isValidWildcardName("f123..*"));
-        assertFalse(Util.isValidWildcardName("*.bar"));
-    }
+//    public void testIsValidWildcardName()
+//    {
+//        assertTrue(Util.isValidWildcardName("*"));
+//        assertTrue(Util.isValidWildcardName("foo.*"));
+//        assertTrue(Util.isValidWildcardName("foo.bar.*"));
+//
+//        assertTrue(Util.isValidWildcardName("f123.*"));
+//        assertTrue(Util.isValidWildcardName("f123.b456.*"));
+//
+//        assertTrue(Util.isValidWildcardName("f.*"));
+//        assertTrue(Util.isValidWildcardName("f.b.*"));
+//
+//        assertTrue(Util.isValidWildcardName("foo"));
+//        assertTrue(Util.isValidWildcardName("foo.bar"));
+//
+//        assertTrue(Util.isValidWildcardName("f123"));
+//        assertTrue(Util.isValidWildcardName("f123.b456"));
+//
+//        assertTrue(Util.isValidWildcardName("f"));
+//        assertTrue(Util.isValidWildcardName("f.b"));
+//
+//        assertFalse(Util.isValidWildcardName(".*"));
+//        assertFalse(Util.isValidWildcardName("123.*"));
+//        assertFalse(Util.isValidWildcardName("123.456.*"));
+//        assertFalse(Util.isValidWildcardName("f123..*"));
+//        assertFalse(Util.isValidWildcardName("*.bar"));
+//    }
 
     public void testMatch()
     {

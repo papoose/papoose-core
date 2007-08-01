@@ -16,9 +16,6 @@
  */
 package org.papoose.core.framework;
 
-import org.osgi.framework.Version;
-
-
 /**
  * @version $Revision$ $Date$
  */
@@ -28,7 +25,7 @@ public class Wire
     private final ExportDescription exportDescription;
     private final BundleImpl bundle;
 
-     Wire(String packageName, ExportDescription exportDescription, BundleImpl bundle)
+    Wire(String packageName, ExportDescription exportDescription, BundleImpl bundle)
     {
         this.packageName = packageName;
         this.exportDescription = exportDescription;
@@ -53,5 +50,34 @@ public class Wire
     public BundleClassLoader getBundleClassLoader()
     {
         return bundle.getClassLoader();
+    }
+
+    /**
+     * Check if the resource name passes the class/resource filtering for the
+     * wire.
+     *
+     * @param resource the resource name to be tested
+     * @return the results of the test
+     */
+    public boolean validFor(String resource)
+    {
+        int packageIndex = resource.lastIndexOf('.');
+        packageIndex = (packageIndex < 0 ? 0 : packageIndex);
+        String packageName = resource.substring(0, packageIndex);
+        resource = resource.substring(packageIndex + 1);
+
+        if (this.packageName.equals(packageName))
+        {
+            for (String[] include : exportDescription.getIncluded())
+            {
+                if (!Util.match(include, resource)) return false;
+            }
+
+            for (String[] exclude : exportDescription.getExcluded())
+            {
+                if (Util.match(exclude, resource)) return false;
+            }
+        }
+        return true;
     }
 }

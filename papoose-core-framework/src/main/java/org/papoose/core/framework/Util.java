@@ -34,7 +34,7 @@ import org.osgi.framework.BundleException;
 /**
  * @version $Revision$ $Date$
  */
-final class Util
+public final class Util
 {
     public static void copy(InputStream input, OutputStream output) throws IOException
     {
@@ -108,30 +108,53 @@ final class Util
 
     public static boolean isValidPackageName(String path)
     {
-        String[] tokens = path.split("\\.");
-
-        return checkPath(tokens, "*".equals(tokens[tokens.length - 1]));
-    }
-
-    public static boolean isValidWildcardName(String name)
-    {
-        if ("*".equals(name)) return true;
-
-        String[] tokens = name.split("\\.");
-
-        return checkPath(tokens, "*".equals(tokens[tokens.length - 1]));
-    }
-
-    private static boolean checkPath(String[] tokens, boolean skipLast)
-    {
-        if (!skipLast && !isJavaIdentifier(tokens[tokens.length - 1])) return false;
-
-        for (int i = 0; i < tokens.length - 1; i++)
+        for (String token : path.split("\\."))
         {
-            if (!isJavaIdentifier(tokens[i])) return false;
+            if (!isJavaIdentifier(token)) return false;
         }
 
         return true;
+    }
+
+    /**
+     * Parse the class/resource name which may have any number of wildcards.
+     *
+     * @param name the class/resource name
+     * @return an array of strings split on wildcard, "*", boundaries
+     */
+    public static String[] parseNameAndValidate(String name)
+    {
+        if ("*".equals(name)) return new String[]{};
+
+        List<String> values = new ArrayList<String>();
+        StringBuilder builder = new StringBuilder();
+        int pointer = 0;
+        char c;
+
+        for (int i = 0; i < name.length(); i++)
+        {
+            c = name.charAt(pointer);
+
+            switch (c)
+            {
+                case'*':
+                {
+                    pointer++;
+                    values.add(builder.toString());
+                    builder = new StringBuilder();
+                    break;
+                }
+                default:
+                {
+                    pointer++;
+                    builder.append(c);
+                }
+            }
+        }
+
+        values.add(builder.toString());
+
+        return values.toArray(new String[values.size()]);
     }
 
     public static boolean isJavaIdentifier(String token)
@@ -283,12 +306,11 @@ final class Util
                     else if ("include".equals(token))
                     {
                         String[] names = ((String) argument).split(",");
-                        List<String> list = new ArrayList<String>(names.length);
+                        List<String[]> list = new ArrayList<String[]>(names.length);
 
                         for (String name : names)
                         {
-                            if (!isValidPackageName(name)) throw new BundleException("Malformed class name: " + name);
-                            list.add(name);
+                            list.add(parseNameAndValidate(name));
                         }
 
                         argument = list;
@@ -296,12 +318,11 @@ final class Util
                     else if ("exclude".equals(token))
                     {
                         String[] names = ((String) argument).split(",");
-                        List<String> list = new ArrayList<String>(names.length);
+                        List<String[]> list = new ArrayList<String[]>(names.length);
 
                         for (String name : names)
                         {
-                            if (!isValidPackageName(name)) throw new BundleException("Malformed class name: " + name);
-                            list.add(name);
+                            list.add(parseNameAndValidate(name));
                         }
 
                         argument = list;
@@ -327,6 +348,33 @@ final class Util
 
             state.eat(";");
         }
+    }
+
+    public static boolean match(String[] values, String test)
+    {
+        if (values.length == 1) return test.equals(values[0]);
+
+        if (!values[0].regionMatches(0, test, 0, values[0].length())) return false;
+
+        int pointer = values[0].length();
+
+        done:
+        for (int i = 1; i < values.length - 1; i++)
+        {
+            int length = values[i].length();
+            int limit = test.length() - length;
+            while (pointer <= limit)
+            {
+                if (values[i].regionMatches(0, test, pointer++, length))
+                {
+                    pointer += values[i].length() - 1;
+                    continue done;
+                }
+            }
+            return false;
+        }
+
+        return test.substring(pointer).endsWith(values[values.length - 1]);
     }
 
     private static class State

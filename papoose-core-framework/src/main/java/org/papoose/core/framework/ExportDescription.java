@@ -31,10 +31,10 @@ public class ExportDescription
     public static final Version DEFAULT_VERSION = new Version(0, 0, 0);
     private final List<String> packages;
     private final Map<String, Object> parameters;
-    private List<String> uses;
-    private List<String> mandatory;
-    private List<String> include;
-    private List<String> exclude;
+    private List<String> uses = Collections.emptyList();
+    private List<String> mandatory = Collections.emptyList();
+    private List<String[]> included = Collections.emptyList();
+    private List<String[]> excluded = Collections.emptyList();
 
     ExportDescription(List<String> paths, Map<String, Object> parameters)
     {
@@ -72,23 +72,23 @@ public class ExportDescription
         this.mandatory = mandatory;
     }
 
-    public List<String> getInclude()
+    public List<String[]> getIncluded()
     {
-        return include;
+        return included;
     }
 
-    void setInclude(List<String> include)
+    void setIncluded(List<String[]> included)
     {
-        this.include = include;
+        this.included = included;
     }
 
-    public List<String> getExclude()
+    public List<String[]> getExcluded()
     {
-        return exclude;
+        return excluded;
     }
 
-    void setExclude(List<String> exclude)
+    void setExcluded(List<String[]> excluded)
     {
-        this.exclude = exclude;
+        this.excluded = excluded;
     }
 }

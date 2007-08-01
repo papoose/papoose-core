@@ -82,6 +82,14 @@ public class ParserTest extends TestCase
 
         assertTrue(filter.match(dictionary));
 
+        filter = parser.parse(" ( substr =*own*) ");
+
+        assertTrue(filter.match(dictionary));
+
+        filter = parser.parse(" ( substr =*own*o*) ");
+
+        assertTrue(filter.match(dictionary));
+
         filter = parser.parse(" ( substr =H*no*brown*w) ");
 
         assertTrue(filter.match(dictionary));

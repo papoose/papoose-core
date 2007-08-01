@@ -104,9 +104,46 @@ public class BundleClassLoader extends NamedClassLoader
             }
         }
 
+        return delegateLoadClass(className);
+    }
+
+    public URL getResource(String resourceName)
+    {
+        URL url = bundleClasspathClassloader.getResource(resourceName);
+
+        if (url == null) url = fragmentsClasspathClassloader.getResource(resourceName);
+
+        return url;
+    }
+
+    public Enumeration<URL> findResources(final String resourceName) throws IOException
+    {
+        URL url = bundleClasspathClassloader.getResource(resourceName);
+
+        if (url == null) url = fragmentsClasspathClassloader.getResource(resourceName);
+
+        return null;
+    }
+
+    protected String findLibrary(String libname)
+    {
+        String path = null;
+        for (BundleStore store : bundleStores)
+        {
+            if ((path = store.loadLibrary(libname)) != null) break;
+        }
+        return path;
+    }
+
+    @SuppressWarnings({"EmptyCatchBlock"})
+    protected Class<?> delegateLoadClass(String className) throws ClassNotFoundException
+    {
+        int packageIndex = className.lastIndexOf('.');
+        String packageName = className.substring(0, (packageIndex < 0 ? 0 : packageIndex));
+
         for (Wire wire : wires)
         {
-            if (packageName.equals(wire.getPackageName())) return wire.getBundleClassLoader().loadClass(className);
+            if (wire.validFor(className)) return wire.getBundleClassLoader().delegateLoadClass(className);
         }
 
         for (Wire wire : requiredBundles)
@@ -152,34 +189,6 @@ public class BundleClassLoader extends NamedClassLoader
         }
 
         throw new ClassNotFoundException();
-    }
-
-    public URL getResource(String resourceName)
-    {
-        URL url = bundleClasspathClassloader.getResource(resourceName);
-
-        if (url == null) url = fragmentsClasspathClassloader.getResource(resourceName);
-
-        return url;
-    }
-
-    public Enumeration<URL> findResources(final String resourceName) throws IOException
-    {
-        URL url = bundleClasspathClassloader.getResource(resourceName);
-
-        if (url == null) url = fragmentsClasspathClassloader.getResource(resourceName);
-
-        return null;
-    }
-
-    protected String findLibrary(String libname)
-    {
-        String path = null;
-        for (BundleStore store : bundleStores)
-        {
-            if ((path = store.loadLibrary(libname)) != null) break;
-        }
-        return path;
     }
 
     private final static ClassLoader DO_NOTHING = new ClassLoader()
