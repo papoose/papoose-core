@@ -150,7 +150,7 @@ public class BundleClassLoader extends NamedClassLoader
         {
             try
             {
-                return wire.getBundleClassLoader().loadClass(className);
+                if (wire.validFor(className)) return wire.getBundleClassLoader().delegateLoadClass(className);
             }
             catch (ClassNotFoundException doNothing)
             {
