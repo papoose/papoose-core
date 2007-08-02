@@ -88,7 +88,6 @@ public class BundleClassLoader extends NamedClassLoader
 
         int packageIndex = className.lastIndexOf('.');
         String packageName = className.substring(0, (packageIndex < 0 ? 0 : packageIndex));
-        String resourceName = className.replace('.', '/') + ".class";
 
         for (String delegate : bootDelegates)
         {
