@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedSet;
@@ -35,7 +36,14 @@ import org.papoose.core.framework.spi.ArchiveStore;
  */
 public class BundleClassLoader extends NamedClassLoader
 {
-    private static final URL[] EMPTY_URLS = new URL[0];
+    private final static ThreadLocal<Set<BundleClassLoader>> LOADER_SET = new ThreadLocal<Set<BundleClassLoader>>()
+    {
+        protected Set<BundleClassLoader> initialValue()
+        {
+            return new HashSet<BundleClassLoader>();
+        }
+    };
+    private final static URL[] EMPTY_URLS = new URL[0];
     private final String[] bootDelegates;
     private final Wire[] requiredBundles;
     private final JarFileClassLoader bundleClasspathClassloader;
@@ -137,57 +145,83 @@ public class BundleClassLoader extends NamedClassLoader
     @SuppressWarnings({"EmptyCatchBlock"})
     protected Class<?> delegateLoadClass(String className) throws ClassNotFoundException
     {
-        int packageIndex = className.lastIndexOf('.');
-        String packageName = className.substring(0, (packageIndex < 0 ? 0 : packageIndex));
+        assert !inSet(this);
 
-        for (Wire wire : wires)
-        {
-            if (wire.validFor(className)) return wire.getBundleClassLoader().delegateLoadClass(className);
-        }
+        register(this);
 
-        for (Wire wire : requiredBundles)
+        try
         {
+            int packageIndex = className.lastIndexOf('.');
+            String packageName = className.substring(0, (packageIndex < 0 ? 0 : packageIndex));
+
+            for (Wire wire : wires)
+            {
+                if (wire.validFor(className) && !inSet(wire.getBundleClassLoader())) return wire.getBundleClassLoader().delegateLoadClass(className);
+            }
+
+            for (Wire wire : requiredBundles)
+            {
+                try
+                {
+                    if (wire.validFor(className) && !inSet(wire.getBundleClassLoader())) return wire.getBundleClassLoader().delegateLoadClass(className);
+                }
+                catch (ClassNotFoundException doNothing)
+                {
+                }
+            }
+
             try
             {
-                if (wire.validFor(className)) return wire.getBundleClassLoader().delegateLoadClass(className);
+                return bundleClasspathClassloader.loadClass(className);
             }
             catch (ClassNotFoundException doNothing)
             {
             }
-        }
 
-        try
-        {
-            return bundleClasspathClassloader.loadClass(className);
-        }
-        catch (ClassNotFoundException doNothing)
-        {
-        }
-
-        try
-        {
-            return fragmentsClasspathClassloader.loadClass(className);
-        }
-        catch (ClassNotFoundException doNothing)
-        {
-        }
-
-        for (String exportedPackage : exportedPackages)
-        {
-            if (exportedPackage.equals(packageName)) throw new ClassNotFoundException();
-        }
-
-        for (ImportDescription importDescription : dynamicImports)
-        {
-            Wire wire = papoose.resolve(importDescription);
-            if (wire != null)
+            try
             {
-                wires.add(wire);
-                return wire.getBundleClassLoader().loadClass(className);
+                return fragmentsClasspathClassloader.loadClass(className);
             }
-        }
+            catch (ClassNotFoundException doNothing)
+            {
+            }
 
-        throw new ClassNotFoundException();
+            for (String exportedPackage : exportedPackages)
+            {
+                if (exportedPackage.equals(packageName)) throw new ClassNotFoundException();
+            }
+
+            for (ImportDescription importDescription : dynamicImports)
+            {
+                Wire wire = papoose.resolve(importDescription);
+                if (wire != null)
+                {
+                    wires.add(wire);
+                    if (!inSet(wire.getBundleClassLoader())) return wire.getBundleClassLoader().delegateLoadClass(className);
+                }
+            }
+
+            throw new ClassNotFoundException();
+        }
+        finally
+        {
+            unregister(this);
+        }
+    }
+
+    private static boolean inSet(BundleClassLoader bundleClassLoader)
+    {
+        return LOADER_SET.get().contains(bundleClassLoader);
+    }
+
+    private static void register(BundleClassLoader bundleClassLoader)
+    {
+        LOADER_SET.get().add(bundleClassLoader);
+    }
+
+    private static void unregister(BundleClassLoader bundleClassLoader)
+    {
+        LOADER_SET.get().remove(bundleClassLoader);
     }
 
     private final static ClassLoader DO_NOTHING = new ClassLoader()
