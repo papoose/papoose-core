@@ -29,6 +29,7 @@ import java.util.zip.ZipFile;
 
 import org.osgi.framework.BundleException;
 
+import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.spi.Store;
 
@@ -50,9 +51,9 @@ public class FileStore implements Store
         return root;
     }
 
-    public BundleStore allocateBundleStore(long bundleId, int generation)
+    public BundleStore allocateBundleStore(long bundleId)
     {
-        File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator + generation);
+        File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId);
 
         BundleStore result = new FileBundleStore(bundleRoot);
 
@@ -68,7 +69,14 @@ public class FileStore implements Store
         if (bundleRoot.exists()) Util.delete(bundleRoot);
     }
 
-    public void removeBundleStore(long bundleId, int generation)
+    public ArchiveStore allocateArchiveStore(long bundleId, int generaton)
+    {
+        File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator + generaton);
+
+        return new FileArchiveStore(bundleRoot);
+    }
+
+    public void removeArchiveStore(long bundleId, int generation)
     {
         File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator + generation);
 
@@ -77,12 +85,27 @@ public class FileStore implements Store
 
     private class FileBundleStore implements BundleStore
     {
+        private final File bundleRoot;
+
+        public FileBundleStore(File bundleRoot)
+        {
+            this.bundleRoot = bundleRoot;
+        }
+
+        public File getDataRoot()
+        {
+            return new File(bundleRoot, "data");
+        }
+    }
+
+    private class FileArchiveStore implements ArchiveStore
+    {
         private final static String ARCHIVE_JAR_NAME = "archive.jar";
         private final static String ARCHIVE_NAME = "archive";
         private final File bundleRoot;
         private SortedSet<NativeCodeDescription> nativeCodeDescriptions;
 
-        public FileBundleStore(File bundleRoot)
+        public FileArchiveStore(File bundleRoot)
         {
             this.bundleRoot = bundleRoot;
         }

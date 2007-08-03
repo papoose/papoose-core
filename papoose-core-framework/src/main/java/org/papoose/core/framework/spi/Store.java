@@ -26,9 +26,11 @@ public interface Store
 {
     File getRoot();
 
-    BundleStore allocateBundleStore(long bundleId, int generaton);
+    BundleStore allocateBundleStore(long bundleId);
 
     void removeBundleStore(long bundleId);
 
-    void removeBundleStore(long bundleId, int generation);
+    ArchiveStore allocateArchiveStore(long bundleId, int generaton);
+
+    void removeArchiveStore(long bundleId, int generation);
 }

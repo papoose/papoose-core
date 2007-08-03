@@ -28,7 +28,20 @@ import org.papoose.core.framework.NativeCodeDescription;
 /**
  * @version $Revision$ $Date$
  */
-public interface BundleStore
+public interface ArchiveStore
 {
-    File getDataRoot();
+    File getArchive();
+
+    /**
+     * Set the native code descriptions that the bundle store is to use
+     * when loading native code libraries.
+     *
+     * @param nativeCodeDescriptions the sorted set of native code descriptions
+     * @throws org.osgi.framework.BundleException if the set of native code descriptions is empty
+     */
+    void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException;
+
+    void loadArchive(InputStream inputStream) throws BundleException;
+
+    String loadLibrary(String libname);
 }
