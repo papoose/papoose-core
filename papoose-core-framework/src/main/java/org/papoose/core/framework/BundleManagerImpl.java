@@ -38,6 +38,7 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 
+import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleManager;
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.spi.Store;
@@ -102,15 +103,16 @@ public class BundleManagerImpl implements BundleManager
         JarInputStream jarInputStream = null;
         try
         {
-            BundleStore bundleStore = store.allocateBundleStore(bundleCounter++, 0);
+            BundleStore bundleStore = store.allocateBundleStore(bundleCounter++);
 
-            bundleStore.loadArchive(inputStream);
+            ArchiveStore archiveStore = store.allocateArchiveStore(bundleCounter++, 0);
+            archiveStore.loadArchive(inputStream);
 
-            jarInputStream = new JarInputStream(new FileInputStream(bundleStore.getArchive()));
+            jarInputStream = new JarInputStream(new FileInputStream(archiveStore.getArchive()));
 
-            BundleImpl bundle = allocateBundle(jarInputStream.getManifest().getMainAttributes(), bundleStore, bundleId);
+            BundleImpl bundle = allocateBundle(jarInputStream.getManifest().getMainAttributes(), bundleStore, archiveStore, bundleId);
 
-            bundleStore.setNativeCodeDescriptions(bundle.resolveNativeCodeDependencies());
+            archiveStore.setNativeCodeDescriptions(bundle.resolveNativeCodeDependencies());
 
             confirmRequiredExecutionEnvironment(bundle);
 
@@ -146,7 +148,7 @@ public class BundleManagerImpl implements BundleManager
         }
     }
 
-    protected BundleImpl allocateBundle(Attributes attributes, BundleStore bundleStore, long bundleId) throws Exception
+    protected BundleImpl allocateBundle(Attributes attributes, BundleStore bundleStore, ArchiveStore archiveStore, long bundleId) throws Exception
     {
         String bundleActivatorClass = attributes.getValue(Constants.BUNDLE_ACTIVATOR);
         List<String> bundleCategories = obtainBundleCategories(attributes);
@@ -178,7 +180,7 @@ public class BundleManagerImpl implements BundleManager
             bundleNativeCodeListOptional = "*".equals(bundleNativeCodeList.get(bundleNativeCodeList.size() - 1));
         }
 
-        return new BundleImpl(null, framework, bundleStore, bundleId,
+        return new BundleImpl(null, framework, bundleStore, archiveStore, bundleId,
                               bundleActivatorClass,
                               bundleCategories,
                               bundleClasspath,

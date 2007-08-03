@@ -27,7 +27,7 @@ import java.util.SortedSet;
 import org.apache.xbean.classloader.JarFileClassLoader;
 import org.apache.xbean.classloader.NamedClassLoader;
 
-import org.papoose.core.framework.spi.BundleStore;
+import org.papoose.core.framework.spi.ArchiveStore;
 
 
 /**
@@ -43,7 +43,7 @@ public class BundleClassLoader extends NamedClassLoader
     private final String[] exportedPackages;
     private final Set<ImportDescription> dynamicImports;
     private final Papoose papoose;
-    private final SortedSet<BundleStore> bundleStores;
+    private final SortedSet<ArchiveStore> archiveStores;
     private Set<Wire> wires;
 
     BundleClassLoader(String name, URL[] bundleClasspath, ClassLoader parent,
@@ -52,7 +52,7 @@ public class BundleClassLoader extends NamedClassLoader
                       URL[] fragmentsClasspath,
                       String[] exportedPackages,
                       Set<ImportDescription> dynamicImports, Papoose papoose,
-                      SortedSet<BundleStore> stores)
+                      SortedSet<ArchiveStore> stores)
     {
         super(name, EMPTY_URLS, parent);
 
@@ -67,7 +67,7 @@ public class BundleClassLoader extends NamedClassLoader
         this.exportedPackages = exportedPackages;
         this.dynamicImports = dynamicImports;
         this.papoose = papoose;
-        this.bundleStores = stores;
+        this.archiveStores = stores;
     }
 
 
@@ -127,7 +127,7 @@ public class BundleClassLoader extends NamedClassLoader
     protected String findLibrary(String libname)
     {
         String path = null;
-        for (BundleStore store : bundleStores)
+        for (ArchiveStore store : archiveStores)
         {
             if ((path = store.loadLibrary(libname)) != null) break;
         }

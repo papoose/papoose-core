@@ -45,6 +45,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
 
+import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.util.Listeners;
 import org.papoose.core.framework.util.ResetableLatch;
@@ -88,6 +89,7 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     private final BundleClassLoader classLoader;
     private final Papoose framework;
     private final BundleStore bundleStore;
+    private final ArchiveStore archiveStore;
     private final Object LOCK = new Object();
     private int startLevel;
     private volatile State state;
@@ -121,7 +123,7 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     private final List<RequireDescription> bundleRequireBundle;
 
 
-    BundleImpl(BundleClassLoader classLoader, Papoose framework, BundleStore bundleStore, long bundleId,
+    BundleImpl(BundleClassLoader classLoader, Papoose framework, BundleStore bundleStore, ArchiveStore archiveStore, long bundleId,
                String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, boolean bundleNativeCodeListOptional, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragmentDescription bundleFragmentHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle) throws BundleException
     {
         super(bundleId);
@@ -129,6 +131,7 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         this.classLoader = classLoader;
         this.framework = framework;
         this.bundleStore = bundleStore;
+        this.archiveStore = archiveStore;
         this.state = UNINSTALLED_STATE;
 
         this.bundleActivatorClass = bundleActivatorClass;
@@ -424,6 +427,11 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     BundleStore getBundleStore()
     {
         return bundleStore;
+    }
+
+    ArchiveStore getArchiveStore()
+    {
+        return archiveStore;
     }
 
     void addBundleListener(BundleListener bundleListener)
