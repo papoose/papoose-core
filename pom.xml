@@ -19,7 +19,7 @@
     </modules>
 
     <properties>
-        <jettyVersion>6.1-SNAPSHOT</jettyVersion>
+        <jettyVersion>6.1.5</jettyVersion>
     </properties>
 
     <build>
