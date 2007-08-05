@@ -18,15 +18,27 @@ package org.papoose.core.framework;
 
 import java.io.IOException;
 import java.net.URL;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.CodeSigner;
+import java.security.CodeSource;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.security.cert.Certificate;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 import org.apache.xbean.classloader.JarFileClassLoader;
 import org.apache.xbean.classloader.NamedClassLoader;
+import org.apache.xbean.classloader.ResourceHandle;
 
 import org.papoose.core.framework.spi.ArchiveStore;
 
@@ -36,13 +48,14 @@ import org.papoose.core.framework.spi.ArchiveStore;
  */
 public class BundleClassLoader extends NamedClassLoader
 {
-    private final static ThreadLocal<Set<BundleClassLoader>> LOADER_SET = new ThreadLocal<Set<BundleClassLoader>>()
+    private final static ThreadLocal<Set<BundleClassLoader>> LOADER_VISITED = new ThreadLocal<Set<BundleClassLoader>>()
     {
         protected Set<BundleClassLoader> initialValue()
         {
             return new HashSet<BundleClassLoader>();
         }
     };
+    private final AccessControlContext acc = AccessController.getContext();
     private final static URL[] EMPTY_URLS = new URL[0];
     private final String[] bootDelegates;
     private final Wire[] requiredBundles;
@@ -142,6 +155,21 @@ public class BundleClassLoader extends NamedClassLoader
         return path;
     }
 
+    protected PermissionCollection getPermissions(CodeSource codesource)
+    {
+        PermissionCollection collection = super.getPermissions(codesource);
+
+        if (codesource instanceof BundleCodeSource)
+        {
+            for (Permission permission : ((BundleCodeSource) codesource).getArchiveStore().getPermissionCollection())
+            {
+                collection.add(permission);
+            }
+        }
+
+        return collection;
+    }
+
     @SuppressWarnings({"EmptyCatchBlock"})
     protected Class<?> delegateLoadClass(String className) throws ClassNotFoundException
     {
@@ -178,12 +206,15 @@ public class BundleClassLoader extends NamedClassLoader
             {
             }
 
-            try
+            for (ArchiveStore archiveStore : archiveStores)
             {
-                return fragmentsClasspathClassloader.loadClass(className);
-            }
-            catch (ClassNotFoundException doNothing)
-            {
+                try
+                {
+                    return findClass(archiveStore, className);
+                }
+                catch (ClassNotFoundException doNothing)
+                {
+                }
             }
 
             for (String exportedPackage : exportedPackages)
@@ -209,19 +240,189 @@ public class BundleClassLoader extends NamedClassLoader
         }
     }
 
+    protected Class<?> findClass(final ArchiveStore archiveStore, final String className) throws ClassNotFoundException
+    {
+        try
+        {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<Class>()
+            {
+                public Class run() throws ClassNotFoundException
+                {
+                    // first think check if we are allowed to define the package
+                    SecurityManager securityManager = System.getSecurityManager();
+                    if (securityManager != null)
+                    {
+                        String packageName;
+                        int packageEnd = className.lastIndexOf('.');
+                        if (packageEnd >= 0)
+                        {
+                            packageName = className.substring(0, packageEnd);
+                            securityManager.checkPackageDefinition(packageName);
+                        }
+                    }
+
+                    // convert the class name to a file name
+                    String resourceName = className.replace('.', '/') + ".class";
+
+                    // find the class file resource
+                    ResourceHandle resourceHandle = archiveStore.getResource(resourceName);
+                    if (resourceHandle == null)
+                    {
+                        throw new ClassNotFoundException(className);
+                    }
+
+                    byte[] bytes;
+                    Manifest manifest;
+                    try
+                    {
+                        // get the bytes from the class file
+                        bytes = resourceHandle.getBytes();
+
+                        // get the manifest for defining the packages
+                        manifest = resourceHandle.getManifest();
+                    }
+                    catch (IOException e)
+                    {
+                        throw new ClassNotFoundException(className, e);
+                    }
+
+                    // get the certificates for the code source
+                    Certificate[] certificates = resourceHandle.getCertificates();
+
+                    // the code source url is used to define the package and as the security context for the class
+                    URL codeSourceUrl = resourceHandle.getCodeSourceUrl();
+
+                    // define the package (required for security)
+                    definePackage(className, codeSourceUrl, manifest);
+
+                    // this is the security context of the class
+                    CodeSource codeSource = new CodeSource(codeSourceUrl, certificates);
+
+                    // load the class into the vm
+                    return defineClass(className, bytes, 0, bytes.length, codeSource);
+                }
+            }, acc);
+        }
+        catch (PrivilegedActionException e)
+        {
+            throw (ClassNotFoundException) e.getException();
+        }
+    }
+
+    private void definePackage(String className, URL jarUrl, Manifest manifest)
+    {
+        int packageEnd = className.lastIndexOf('.');
+        if (packageEnd < 0)
+        {
+            return;
+        }
+
+        String packageName = className.substring(0, packageEnd);
+        String packagePath = packageName.replace('.', '/') + "/";
+
+        Attributes packageAttributes = null;
+        Attributes mainAttributes = null;
+        if (manifest != null)
+        {
+            packageAttributes = manifest.getAttributes(packagePath);
+            mainAttributes = manifest.getMainAttributes();
+        }
+        Package pkg = getPackage(packageName);
+        if (pkg != null)
+        {
+            if (pkg.isSealed())
+            {
+                if (!pkg.isSealed(jarUrl))
+                {
+                    throw new SecurityException("Package was already sealed with another URL: package=" + packageName + ", url=" + jarUrl);
+                }
+            }
+            else
+            {
+                if (isSealed(packageAttributes, mainAttributes))
+                {
+                    throw new SecurityException("Package was already been loaded and not sealed: package=" + packageName + ", url=" + jarUrl);
+                }
+            }
+        }
+        else
+        {
+            String specTitle = getAttribute(Attributes.Name.SPECIFICATION_TITLE, packageAttributes, mainAttributes);
+            String specVendor = getAttribute(Attributes.Name.SPECIFICATION_VENDOR, packageAttributes, mainAttributes);
+            String specVersion = getAttribute(Attributes.Name.SPECIFICATION_VERSION, packageAttributes, mainAttributes);
+            String implTitle = getAttribute(Attributes.Name.IMPLEMENTATION_TITLE, packageAttributes, mainAttributes);
+            String implVendor = getAttribute(Attributes.Name.IMPLEMENTATION_VENDOR, packageAttributes, mainAttributes);
+            String implVersion = getAttribute(Attributes.Name.IMPLEMENTATION_VERSION, packageAttributes, mainAttributes);
+
+            URL sealBase = null;
+            if (isSealed(packageAttributes, mainAttributes))
+            {
+                sealBase = jarUrl;
+            }
+
+            definePackage(packageName, specTitle, specVersion, specVendor, implTitle, implVersion, implVendor, sealBase);
+        }
+    }
+
+    private String getAttribute(Attributes.Name name, Attributes packageAttributes, Attributes mainAttributes)
+    {
+        if (packageAttributes != null)
+        {
+            String value = packageAttributes.getValue(name);
+            if (value != null)
+            {
+                return value;
+            }
+        }
+        if (mainAttributes != null)
+        {
+            return mainAttributes.getValue(name);
+        }
+        return null;
+    }
+
+    private boolean isSealed(Attributes packageAttributes, Attributes mainAttributes)
+    {
+        String sealed = getAttribute(Attributes.Name.SEALED, packageAttributes, mainAttributes);
+        return sealed != null && "true".equalsIgnoreCase(sealed);
+    }
+
+
     private static boolean inSet(BundleClassLoader bundleClassLoader)
     {
-        return LOADER_SET.get().contains(bundleClassLoader);
+        return LOADER_VISITED.get().contains(bundleClassLoader);
     }
 
     private static void register(BundleClassLoader bundleClassLoader)
     {
-        LOADER_SET.get().add(bundleClassLoader);
+        LOADER_VISITED.get().add(bundleClassLoader);
     }
 
     private static void unregister(BundleClassLoader bundleClassLoader)
     {
-        LOADER_SET.get().remove(bundleClassLoader);
+        LOADER_VISITED.get().remove(bundleClassLoader);
+    }
+
+    private final static class BundleCodeSource extends CodeSource
+    {
+        private final ArchiveStore archiveStore;
+
+        public BundleCodeSource(URL url, Certificate certs[], ArchiveStore archiveStore)
+        {
+            super(url, certs);
+            this.archiveStore = archiveStore;
+        }
+
+        public BundleCodeSource(URL url, CodeSigner[] signers, ArchiveStore archiveStore)
+        {
+            super(url, signers);
+            this.archiveStore = archiveStore;
+        }
+
+        public ArchiveStore getArchiveStore()
+        {
+            return archiveStore;
+        }
     }
 
     private final static ClassLoader DO_NOTHING = new ClassLoader()

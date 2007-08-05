@@ -18,9 +18,13 @@ package org.papoose.core.framework.spi;
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.SortedSet;
+import java.security.Permission;
 
 import org.osgi.framework.BundleException;
+import org.apache.xbean.classloader.ResourceHandle;
 
 import org.papoose.core.framework.NativeCodeDescription;
 
@@ -37,11 +41,18 @@ public interface ArchiveStore
      * when loading native code libraries.
      *
      * @param nativeCodeDescriptions the sorted set of native code descriptions
-     * @throws org.osgi.framework.BundleException if the set of native code descriptions is empty
+     * @throws org.osgi.framework.BundleException
+     *          if the set of native code descriptions is empty
      */
     void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException;
 
     void loadArchive(InputStream inputStream) throws BundleException;
 
     String loadLibrary(String libname);
+
+    Enumeration<URL> findResources(String resourceName);
+
+    Permission[] getPermissionCollection();
+
+    ResourceHandle getResource(String resourceName);
 }
