@@ -21,16 +21,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Enumeration;
-import java.util.SortedSet;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import java.net.URL;
 import java.security.Permission;
+import java.security.cert.Certificate;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
-import org.osgi.framework.BundleException;
 import org.apache.xbean.classloader.ResourceHandle;
+import org.osgi.framework.BundleException;
 
 import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleStore;
@@ -105,6 +107,7 @@ public class FileStore implements Store
     {
         private final static String ARCHIVE_JAR_NAME = "archive.jar";
         private final static String ARCHIVE_NAME = "archive";
+        private final Map<String, Certificate[]> certificates = new HashMap<String, Certificate[]>();
         private final File bundleRoot;
         private SortedSet<NativeCodeDescription> nativeCodeDescriptions;
 
@@ -155,7 +158,11 @@ public class FileStore implements Store
                 Enumeration list = jarFile.entries();
                 while (list.hasMoreElements())
                 {
-                    dump(archiveDir, jarFile, (ZipEntry) list.nextElement());
+                    JarEntry jarEntry = (JarEntry) list.nextElement();
+
+                    dump(archiveDir, jarFile, jarEntry);
+
+                    if (jarEntry.getCertificates() != null) certificates.put(jarEntry.getName(), jarEntry.getCertificates());
                 }
             }
             catch (IOException ioe)
@@ -194,16 +201,16 @@ public class FileStore implements Store
         }
     }
 
-    private void dump(File root, ZipFile zipFile, ZipEntry zipEntry) throws IOException
+    private void dump(File root, JarFile jarFile, JarEntry jarEntry) throws IOException
     {
-        File file = new File(root, zipEntry.getName());
-        if (zipEntry.isDirectory())
+        File file = new File(root, jarEntry.getName());
+        if (jarEntry.isDirectory())
         {
             file.mkdirs();
         }
         else
         {
-            InputStream inputStream = zipFile.getInputStream(zipEntry);
+            InputStream inputStream = jarFile.getInputStream(jarEntry);
             FileOutputStream outputStream = new FileOutputStream(file);
 
             Util.copy(inputStream, outputStream);

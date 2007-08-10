@@ -40,20 +40,19 @@ public class BundleURLStreamHandler extends URLStreamHandler
     {
         try
         {
-            Long frameworkId = Long.parseLong(url.getHost());
+            Long frameworkId = Long.parseLong(url.getUserInfo());
+
+            if (frameworkId < 0) throw new MalformedURLException("Invalid format");
+
             Papoose framework = Papoose.getFramework(frameworkId);
 
             if (framework == null) throw new MalformedURLException("Invalid format");
 
-            int bundleId = url.getPort();
+            int bundleId = Integer.parseInt(url.getHost());
 
-            if (bundleId == -1) throw new MalformedURLException("Invalid format");
+            if (bundleId < 0) throw new MalformedURLException("Invalid format");
 
-            String userInfo = url.getUserInfo();
-
-            int generation = 0;
-
-            if (userInfo != null) generation = Integer.parseInt(userInfo);
+            int generation = url.getPort();
 
             return new BundleURLConnection(url, framework.getBundleManager(), bundleId, generation);
         }
