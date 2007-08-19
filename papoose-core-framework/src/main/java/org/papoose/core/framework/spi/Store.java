@@ -17,6 +17,9 @@
 package org.papoose.core.framework.spi;
 
 import java.io.File;
+import java.io.InputStream;
+
+import org.osgi.framework.BundleException;
 
 
 /**
@@ -26,11 +29,11 @@ public interface Store
 {
     File getRoot();
 
-    BundleStore allocateBundleStore(long bundleId);
+    BundleStore allocateBundleStore(long bundleId) throws BundleException;
 
-    void removeBundleStore(long bundleId);
+    void removeBundleStore(long bundleId) throws BundleException;
 
-    ArchiveStore allocateArchiveStore(long bundleId, int generaton);
+    ArchiveStore allocateArchiveStore(long bundleId, int generaton, InputStream inputStream) throws BundleException;
 
-    void removeArchiveStore(long bundleId, int generation);
+    void removeArchiveStore(long bundleId, int generation) throws BundleException;
 }

@@ -46,11 +46,7 @@ public interface ArchiveStore
      */
     void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException;
 
-    void loadArchive(InputStream inputStream) throws BundleException;
-
     String loadLibrary(String libname);
-
-    Enumeration<URL> findResources(String resourceName);
 
     Permission[] getPermissionCollection();
 

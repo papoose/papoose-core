@@ -19,7 +19,6 @@ package org.papoose.core.framework;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -99,20 +98,18 @@ public class BundleManagerImpl implements BundleManager
         if (locations.containsKey(location)) return locations.get(location);
 
         long bundleId = bundleCounter++;
-        OutputStream outputStream = null;
         JarInputStream jarInputStream = null;
         try
         {
             BundleStore bundleStore = store.allocateBundleStore(bundleCounter++);
 
-            ArchiveStore archiveStore = store.allocateArchiveStore(bundleCounter++, 0);
-            archiveStore.loadArchive(inputStream);
+            ArchiveStore archiveStore = store.allocateArchiveStore(bundleCounter++, 0, inputStream);
 
             jarInputStream = new JarInputStream(new FileInputStream(archiveStore.getArchive()));
 
-            BundleImpl bundle = allocateBundle(jarInputStream.getManifest().getMainAttributes(), bundleStore, archiveStore, bundleId);
+            BundleImpl bundle = allocateBundle(jarInputStream.getManifest().getMainAttributes(), bundleStore, bundleId);
 
-            archiveStore.setNativeCodeDescriptions(bundle.resolveNativeCodeDependencies());
+            bundle.assignArchiveStore(archiveStore);
 
             confirmRequiredExecutionEnvironment(bundle);
 
@@ -137,8 +134,6 @@ public class BundleManagerImpl implements BundleManager
         {
             try
             {
-                inputStream.close();
-                if (outputStream != null) outputStream.close();
                 if (jarInputStream != null) jarInputStream.close();
             }
             catch (IOException ioe)
@@ -148,7 +143,7 @@ public class BundleManagerImpl implements BundleManager
         }
     }
 
-    protected BundleImpl allocateBundle(Attributes attributes, BundleStore bundleStore, ArchiveStore archiveStore, long bundleId) throws Exception
+    protected BundleImpl allocateBundle(Attributes attributes, BundleStore bundleStore, long bundleId) throws Exception
     {
         String bundleActivatorClass = attributes.getValue(Constants.BUNDLE_ACTIVATOR);
         List<String> bundleCategories = obtainBundleCategories(attributes);
@@ -180,7 +175,7 @@ public class BundleManagerImpl implements BundleManager
             bundleNativeCodeListOptional = "*".equals(bundleNativeCodeList.get(bundleNativeCodeList.size() - 1));
         }
 
-        return new BundleImpl(null, framework, bundleStore, archiveStore, bundleId,
+        return new BundleImpl(null, framework, bundleStore, bundleId,
                               bundleActivatorClass,
                               bundleCategories,
                               bundleClasspath,

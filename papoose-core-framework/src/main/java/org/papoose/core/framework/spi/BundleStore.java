@@ -17,12 +17,8 @@
 package org.papoose.core.framework.spi;
 
 import java.io.File;
-import java.io.InputStream;
-import java.util.SortedSet;
 
 import org.osgi.framework.BundleException;
-
-import org.papoose.core.framework.NativeCodeDescription;
 
 
 /**
@@ -31,4 +27,8 @@ import org.papoose.core.framework.NativeCodeDescription;
 public interface BundleStore
 {
     File getDataRoot();
+
+    boolean isStarted() throws BundleException;
+
+    void setStarted(boolean started) throws BundleException;
 }

@@ -89,7 +89,6 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     private final BundleClassLoader classLoader;
     private final Papoose framework;
     private final BundleStore bundleStore;
-    private final ArchiveStore archiveStore;
     private final Object LOCK = new Object();
     private int startLevel;
     private volatile State state;
@@ -97,6 +96,7 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     /**
      * Manifest
      */
+    private ArchiveStore archiveStore;
     private final String bundleActivatorClass;
     private final List<String> bundleCategories;
     private final List<String> bundleClassPath;
@@ -121,9 +121,10 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     private final List<ImportDescription> bundleImportList;
     private final List<String> bundleImportService;
     private final List<RequireDescription> bundleRequireBundle;
+    private final SortedSet<NativeCodeDescription> nativeCodeDescriptions;
 
 
-    BundleImpl(BundleClassLoader classLoader, Papoose framework, BundleStore bundleStore, ArchiveStore archiveStore, long bundleId,
+    BundleImpl(BundleClassLoader classLoader, Papoose framework, BundleStore bundleStore, long bundleId,
                String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, boolean bundleNativeCodeListOptional, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragmentDescription bundleFragmentHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle) throws BundleException
     {
         super(bundleId);
@@ -131,7 +132,6 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         this.classLoader = classLoader;
         this.framework = framework;
         this.bundleStore = bundleStore;
-        this.archiveStore = archiveStore;
         this.state = UNINSTALLED_STATE;
 
         this.bundleActivatorClass = bundleActivatorClass;
@@ -159,6 +159,8 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         this.bundleImportService = bundleImportService;
         this.bundleRequireBundle = bundleRequireBundle;
 
+        this.nativeCodeDescriptions = resolveNativeCodeDependencies();
+
         if (bundleManifestVersion != 2) throw new BundleException("Bundle-ManifestVersion must be 2");
     }
 
@@ -176,7 +178,6 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     {
         return bundleName;
     }
-
 
     Version getBundleVersion()
     {
@@ -203,7 +204,7 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
      * @return a list of resolvable native code descriptions
      * @throws BundleException if the method is unable to find at least one valid native code description
      */
-    SortedSet<NativeCodeDescription> resolveNativeCodeDependencies() throws BundleException
+    private SortedSet<NativeCodeDescription> resolveNativeCodeDependencies() throws BundleException
     {
         SortedSet<NativeCodeDescription> set = new TreeSet<NativeCodeDescription>();
 
@@ -243,10 +244,6 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         }
 
         return set;
-    }
-
-    public void zstart() throws BundleException
-    {
     }
 
     void markInstalled()
@@ -432,6 +429,12 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     ArchiveStore getArchiveStore()
     {
         return archiveStore;
+    }
+
+    void assignArchiveStore(ArchiveStore archiveStore) throws BundleException
+    {
+        this.archiveStore = archiveStore;
+        this.archiveStore.setNativeCodeDescriptions(nativeCodeDescriptions);
     }
 
     void addBundleListener(BundleListener bundleListener)

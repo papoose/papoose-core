@@ -16,21 +16,25 @@
  */
 package org.papoose.core.framework;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.Permission;
 import java.security.cert.Certificate;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
+import org.apache.xbean.classloader.JarResourceHandle;
 import org.apache.xbean.classloader.ResourceHandle;
 import org.osgi.framework.BundleException;
 
@@ -45,10 +49,17 @@ import org.papoose.core.framework.spi.Store;
 public class FileStore implements Store
 {
     private final File root;
+    private final long frameworkId;
+    private final long bundleId;
+    private final int generation;
 
-    public FileStore(File root)
+
+    public FileStore(File root, long frameworkId, long bundleId, int generation)
     {
         this.root = root;
+        this.frameworkId = frameworkId;
+        this.bundleId = bundleId;
+        this.generation = generation;
     }
 
     public File getRoot()
@@ -74,11 +85,18 @@ public class FileStore implements Store
         if (bundleRoot.exists()) Util.delete(bundleRoot);
     }
 
-    public ArchiveStore allocateArchiveStore(long bundleId, int generaton)
+    public ArchiveStore allocateArchiveStore(long bundleId, int generaton, InputStream inputStream) throws BundleException
     {
-        File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator + generaton);
+        try
+        {
+            File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator + generaton);
 
-        return new FileArchiveStore(bundleRoot);
+            return new FileArchiveStore(bundleRoot, inputStream);
+        }
+        catch (IOException e)
+        {
+            throw new BundleException("Unable to allocate archive store", e);
+        }
     }
 
     public void removeArchiveStore(long bundleId, int generation)
@@ -91,6 +109,7 @@ public class FileStore implements Store
     private class FileBundleStore implements BundleStore
     {
         private final File bundleRoot;
+        private transient volatile byte started = -1;
 
         public FileBundleStore(File bundleRoot)
         {
@@ -100,6 +119,52 @@ public class FileStore implements Store
         public File getDataRoot()
         {
             return new File(bundleRoot, "data");
+        }
+
+        public boolean isStarted() throws BundleException
+        {
+            try
+            {
+                if (started == -1)
+                {
+                    File state = new File(bundleRoot, "state");
+                    if (state.exists())
+                    {
+                        DataInputStream input = new DataInputStream(new FileInputStream(state));
+                        started = input.readByte();
+                    }
+                    else
+                    {
+                        started = 0;
+                    }
+                }
+                return started == 1;
+            }
+            catch (FileNotFoundException fnfe)
+            {
+                throw new BundleException("Unable to obtain bundle state", fnfe);
+            }
+            catch (IOException ioe)
+            {
+                throw new BundleException("Unable to obtain bundle state", ioe);
+            }
+        }
+
+        public void setStarted(boolean started) throws BundleException
+        {
+            try
+            {
+                this.started = (byte) (started ? 1 : 0);
+                File state = new File(bundleRoot, "state");
+                DataOutputStream output = new DataOutputStream(new FileOutputStream(state));
+                output.writeByte(this.started);
+                output.close();
+            }
+            catch (IOException ioe)
+            {
+                this.started = -1;
+                throw new BundleException("Unable to set and save bundle state", ioe);
+            }
         }
     }
 
@@ -111,14 +176,19 @@ public class FileStore implements Store
         private final File bundleRoot;
         private SortedSet<NativeCodeDescription> nativeCodeDescriptions;
 
-        public FileArchiveStore(File bundleRoot)
+        public FileArchiveStore(File bundleRoot, InputStream inputStream) throws IOException
         {
             this.bundleRoot = bundleRoot;
-        }
 
-        public File getDataRoot()
-        {
-            return new File(bundleRoot, "data");
+            File archiveFile = new File(bundleRoot, ARCHIVE_JAR_NAME);
+            OutputStream outputStream = new FileOutputStream(archiveFile);
+
+            Util.copy(inputStream, outputStream);
+
+            outputStream.close();
+
+            File archiveDir = new File(bundleRoot, ARCHIVE_NAME);
+            archiveDir.mkdirs();
         }
 
         public File getArchive()
@@ -140,37 +210,6 @@ public class FileStore implements Store
             }
         }
 
-        public void loadArchive(InputStream inputStream) throws BundleException
-        {
-            try
-            {
-                File archiveFile = new File(bundleRoot, ARCHIVE_JAR_NAME);
-                OutputStream outputStream = new FileOutputStream(archiveFile);
-
-                Util.copy(inputStream, outputStream);
-
-                outputStream.close();
-
-                File archiveDir = new File(bundleRoot, ARCHIVE_NAME);
-                archiveDir.mkdirs();
-
-                JarFile jarFile = new JarFile(archiveFile);
-                Enumeration list = jarFile.entries();
-                while (list.hasMoreElements())
-                {
-                    JarEntry jarEntry = (JarEntry) list.nextElement();
-
-                    dump(archiveDir, jarFile, jarEntry);
-
-                    if (jarEntry.getCertificates() != null) certificates.put(jarEntry.getName(), jarEntry.getCertificates());
-                }
-            }
-            catch (IOException ioe)
-            {
-                throw new BundleException("Error saving archive", ioe);
-            }
-        }
-
         public String loadLibrary(String libname)
         {
             String s = System.mapLibraryName(libname);
@@ -185,11 +224,6 @@ public class FileStore implements Store
             return null;
         }
 
-        public Enumeration<URL> findResources(String resourceName)
-        {
-            return null;  //todo: consider this autogenerated code
-        }
-
         public Permission[] getPermissionCollection()
         {
             return new Permission[0];  //todo: consider this autogenerated code
@@ -197,27 +231,18 @@ public class FileStore implements Store
 
         public ResourceHandle getResource(String resourceName)
         {
-            return null;  //todo: consider this autogenerated code
+            JarEntry jarEntry = jarFile.getJarEntry(resourceName);
+            if (jarEntry != null)
+            {
+                try
+                {
+                    return new JarResourceHandle(jarFile, jarEntry, new URL("bundle", frameworkId + "@" + bundleId, generation, resourceName));
+                }
+                catch (MalformedURLException murle)
+                {
+                }
+            }
+            return null;
         }
     }
-
-    private void dump(File root, JarFile jarFile, JarEntry jarEntry) throws IOException
-    {
-        File file = new File(root, jarEntry.getName());
-        if (jarEntry.isDirectory())
-        {
-            file.mkdirs();
-        }
-        else
-        {
-            InputStream inputStream = jarFile.getInputStream(jarEntry);
-            FileOutputStream outputStream = new FileOutputStream(file);
-
-            Util.copy(inputStream, outputStream);
-
-            inputStream.close();
-            outputStream.close();
-        }
-    }
-
 }
