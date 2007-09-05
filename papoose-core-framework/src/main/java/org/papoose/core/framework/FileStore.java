@@ -212,13 +212,13 @@ public class FileStore implements Store
 
         public String loadLibrary(String libname)
         {
-            String s = System.mapLibraryName(libname);
+            String fullNativePath = System.mapLibraryName(libname);
 
             for (NativeCodeDescription description : nativeCodeDescriptions)
             {
                 for (String path : description.getPaths())
                 {
-                    if (s.endsWith(path)) return path;
+                    if (fullNativePath.endsWith(path)) return path;
                 }
             }
             return null;
