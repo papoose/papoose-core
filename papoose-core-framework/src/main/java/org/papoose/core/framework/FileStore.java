@@ -218,7 +218,7 @@ public class FileStore implements Store
             {
                 for (String path : description.getPaths())
                 {
-                    if (path.endsWith(s)) return path;
+                    if (s.endsWith(path)) return path;
                 }
             }
             return null;
