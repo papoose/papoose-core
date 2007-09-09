@@ -46,6 +46,8 @@ import org.osgi.framework.Version;
 public abstract class ArchiveStore
 {
     private final Papoose framework;
+    private final long bundleId;
+    private final int generation;
     private final String bundleActivatorClass;
     private final List<String> bundleCategories;
     private final List<String> bundleClassPath;
@@ -72,9 +74,11 @@ public abstract class ArchiveStore
     private final List<String> bundleImportService;
     private final List<RequireDescription> bundleRequireBundle;
 
-    protected ArchiveStore(Papoose framework, Attributes attributes) throws BundleException
+    protected ArchiveStore(Papoose framework, long bundleId, int generation, Attributes attributes) throws BundleException
     {
         this.framework = framework;
+        this.bundleId = bundleId;
+        this.generation = generation;
 
         this.bundleActivatorClass = attributes.getValue(Constants.BUNDLE_ACTIVATOR);
         this.bundleCategories = obtainBundleCategories(attributes);
@@ -111,8 +115,6 @@ public abstract class ArchiveStore
 
     abstract File getArchive();
 
-    abstract void markInstalled();
-
     /**
      * Set the native code descriptions that the bundle store is to use
      * when loading native code libraries.
@@ -128,6 +130,16 @@ public abstract class ArchiveStore
     abstract Permission[] getPermissionCollection();
 
     abstract ResourceHandle getResource(String resourceName);
+
+    long getBundleId()
+    {
+        return bundleId;
+    }
+
+    int getGeneration()
+    {
+        return generation;
+    }
 
     String getBundleActivatorClass()
     {
@@ -454,6 +466,7 @@ public abstract class ArchiveStore
         return fragmentDescription;
     }
 
+    @SuppressWarnings({"deprecation"})
     protected static List<String> obtainBundleExportService(Attributes attributes)
     {
         List<String> result;
@@ -526,6 +539,7 @@ public abstract class ArchiveStore
         return result;
     }
 
+    @SuppressWarnings({"deprecation"})
     protected static List<String> obtainBundleImportService(Attributes attributes)
     {
         List<String> result;

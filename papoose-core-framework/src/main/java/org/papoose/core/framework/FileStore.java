@@ -27,7 +27,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Permission;
 import java.security.cert.Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
@@ -48,33 +50,46 @@ public class FileStore implements Store
     private final static String ARCHIVE_JAR_NAME = "archive.jar";
     private final static String ARCHIVE_NAME = "archive";
     private final File root;
-    private final long frameworkId;
-    private final long bundleId;
-    private final int generation;
 
 
-    public FileStore(File root, long frameworkId, long bundleId, int generation)
+    public FileStore(File root)
     {
         this.root = root;
-        this.frameworkId = frameworkId;
-        this.bundleId = bundleId;
-        this.generation = generation;
     }
 
-    public File getRoot()
+    File getRoot()
     {
         return root;
     }
 
-    public BundleStore allocateBundleStore(long bundleId)
+    public List<BundleStore> loadBundleStores() throws BundleException
+    {
+        File bundlesRoot = new File(root, "bundles" + File.pathSeparator);
+        List<BundleStore> result = new ArrayList<BundleStore>();
+
+        for (String bundleId : bundlesRoot.list())
+        {
+            result.add(new FileBundleStore(new File(bundlesRoot, bundleId), Long.valueOf(bundleId)));
+        }
+
+        return result;
+    }
+
+    public BundleStore allocateBundleStore(long bundleId, String location) throws BundleException
     {
         File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId);
 
-        BundleStore result = new FileBundleStore(bundleRoot);
+        BundleStore result = new FileBundleStore(bundleRoot, bundleId, location);
 
         result.getDataRoot().mkdirs();
 
         return result;
+    }
+
+    public BundleStore loadBundleStore(long bundleId) throws BundleException
+    {
+        File bundlesRoot = new File(root, "bundles" + File.pathSeparator);
+        return new FileBundleStore(new File(bundlesRoot, String.valueOf(bundleId)), bundleId);
     }
 
     public void removeBundleStore(long bundleId)
@@ -86,9 +101,22 @@ public class FileStore implements Store
 
     public ArchiveStore allocateArchiveStore(Papoose framework, long bundleId, int generaton, InputStream inputStream) throws BundleException
     {
-        File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator + generaton);
+        File archiveRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator + generaton);
 
-        return new FileArchiveStore(framework, bundleRoot, inputStream);
+        return new FileArchiveStore(framework, bundleId, generaton, archiveRoot, inputStream);
+    }
+
+    public List<ArchiveStore> loadArchiveStores(Papoose framework, long bundleId) throws BundleException
+    {
+        File archivesRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator);
+        List<ArchiveStore> result = new ArrayList<ArchiveStore>();
+
+        for (String generation : archivesRoot.list())
+        {
+            result.add(new FileArchiveStore(framework, bundleId, Integer.valueOf(generation), new File(archivesRoot, generation)));
+        }
+
+        return result;
     }
 
     public void removeArchiveStore(long bundleId, int generation)
@@ -101,11 +129,64 @@ public class FileStore implements Store
     private class FileBundleStore implements BundleStore
     {
         private final File bundleRoot;
+        private final long bundleId;
+        private final String location;
         private transient volatile byte started = -1;
 
-        public FileBundleStore(File bundleRoot)
+        public FileBundleStore(File bundleRoot, long bundleId, String location) throws BundleException
         {
             this.bundleRoot = bundleRoot;
+            this.bundleId = bundleId;
+            try
+            {
+                this.location = location;
+                File file = new File(bundleRoot, "location");
+                DataOutputStream output = new DataOutputStream(new FileOutputStream(file));
+                output.writeUTF(this.location);
+                output.close();
+            }
+            catch (IOException ioe)
+            {
+                throw new BundleException("Unable to set and save bundle location", ioe);
+            }
+        }
+
+        public FileBundleStore(File bundleRoot, long bundleId) throws BundleException
+        {
+            this.bundleRoot = bundleRoot;
+            this.bundleId = bundleId;
+            try
+            {
+                File file = new File(bundleRoot, "location");
+                if (file.exists())
+                {
+                    DataInputStream input = new DataInputStream(new FileInputStream(file));
+                    this.location = input.readUTF();
+                    input.close();
+                }
+                else
+                {
+                    throw new BundleException("Unable to obtain bundle location");
+                }
+            }
+            catch (FileNotFoundException fnfe)
+            {
+                throw new BundleException("Unable to obtain bundle location", fnfe);
+            }
+            catch (IOException ioe)
+            {
+                throw new BundleException("Unable to obtain bundle location", ioe);
+            }
+        }
+
+        public long getBundleId()
+        {
+            return bundleId;
+        }
+
+        public String getLocation()
+        {
+            return location;
         }
 
         public File getDataRoot()
@@ -124,6 +205,7 @@ public class FileStore implements Store
                     {
                         DataInputStream input = new DataInputStream(new FileInputStream(state));
                         started = input.readByte();
+                        input.close();
                     }
                     else
                     {
@@ -166,9 +248,15 @@ public class FileStore implements Store
         private final File bundleRoot;
         private SortedSet<NativeCodeDescription> nativeCodeDescriptions;
 
-        public FileArchiveStore(Papoose framework, File bundleRoot, InputStream inputStream) throws BundleException
+        public FileArchiveStore(Papoose framework, long bundleId, int generation, File bundleRoot, InputStream inputStream) throws BundleException
         {
-            super(framework, loadAndProvideAttributes(bundleRoot, inputStream));
+            super(framework, bundleId, generation, loadAndProvideAttributes(bundleRoot, inputStream));
+            this.bundleRoot = bundleRoot;
+        }
+
+        public FileArchiveStore(Papoose framework, long bundleId, int generation, File bundleRoot) throws BundleException
+        {
+            super(framework, bundleId, generation, loadAndProvideAttributes(bundleRoot, new File(bundleRoot, ARCHIVE_JAR_NAME)));
             this.bundleRoot = bundleRoot;
         }
 
@@ -176,12 +264,6 @@ public class FileStore implements Store
         {
             return new File(bundleRoot, ARCHIVE_JAR_NAME);
         }
-
-        void markInstalled()
-        {
-            //todo: consider this autogenerated code
-        }
-
 
         public void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException
         {
@@ -219,6 +301,18 @@ public class FileStore implements Store
         public ResourceHandle getResource(String resourceName)
         {
             return null;  //todo: consider this autogenerated code
+        }
+    }
+
+    static Attributes loadAndProvideAttributes(File bundleRoot, File archiveFile) throws BundleException
+    {
+        try
+        {
+            return loadAndProvideAttributes(bundleRoot, new FileInputStream(archiveFile));
+        }
+        catch (IOException ioe)
+        {
+            throw new BundleException("Problems with the bundle archive", ioe);
         }
     }
 

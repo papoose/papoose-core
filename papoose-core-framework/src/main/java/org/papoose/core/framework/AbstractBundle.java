@@ -19,6 +19,7 @@ package org.papoose.core.framework;
 import java.util.List;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleException;
 
 import org.papoose.core.framework.spi.BundleStore;
 
@@ -59,9 +60,9 @@ abstract class AbstractBundle implements Bundle
         return archiveStore;
     }
 
-    void markInstalled()
+    void markInstalled() throws BundleException
     {
-        archiveStore.markInstalled();
+        bundleStore.setStarted(true);
     }
 
     abstract class State implements org.osgi.framework.Bundle

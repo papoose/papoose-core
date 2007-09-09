@@ -92,7 +92,7 @@ public class BundleManagerImpl implements BundleManager
         JarInputStream jarInputStream = null;
         try
         {
-            BundleStore bundleStore = store.allocateBundleStore(bundleId);
+            BundleStore bundleStore = store.allocateBundleStore(bundleId, location);
 
             ArchiveStore archiveStore = store.allocateArchiveStore(framework, bundleId, 0, inputStream);
 

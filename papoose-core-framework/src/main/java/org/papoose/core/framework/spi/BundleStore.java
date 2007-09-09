@@ -26,6 +26,10 @@ import org.osgi.framework.BundleException;
  */
 public interface BundleStore
 {
+    long getBundleId();
+
+    String getLocation();
+
     File getDataRoot();
 
     boolean isStarted() throws BundleException;
