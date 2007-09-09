@@ -17,17 +17,10 @@
 package org.papoose.core.framework;
 
 import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Constants;
-import org.osgi.framework.Filter;
-import org.osgi.framework.InvalidSyntaxException;
 
-import org.papoose.core.framework.spi.ArchiveStore;
+import org.papoose.core.framework.spi.BundleStore;
 
 
 /**
@@ -35,25 +28,15 @@ import org.papoose.core.framework.spi.ArchiveStore;
  */
 abstract class AbstractBundle implements Bundle
 {
-    private final Papoose framework;
     protected final long bundleId;
-    private final List<NativeCodeDescription> bundleNativeCodeList;
-    private final boolean bundleNativeCodeListOptional;
-    private final SortedSet<NativeCodeDescription> nativeCodeDescriptions;
-    private ArchiveStore archiveStore;
+    private final BundleStore bundleStore;
+    private final ArchiveStore archiveStore;
 
-    protected AbstractBundle(Papoose framework, long bundleId, List<NativeCodeDescription> bundleNativeCodeList, boolean bundleNativeCodeListOptional) throws BundleException
+    protected AbstractBundle(long bundleId, BundleStore bundleStore, ArchiveStore archiveStore)
     {
-        this.framework = framework;
         this.bundleId = bundleId;
-        this.bundleNativeCodeList = bundleNativeCodeList;
-        this.bundleNativeCodeListOptional = bundleNativeCodeListOptional;
-        this.nativeCodeDescriptions = resolveNativeCodeDependencies();
-    }
-
-    Papoose getFramework()
-    {
-        return framework;
+        this.bundleStore = bundleStore;
+        this.archiveStore = archiveStore;
     }
 
     public long getBundleId()
@@ -61,68 +44,27 @@ abstract class AbstractBundle implements Bundle
         return bundleId;
     }
 
+    public List<ExportDescription> getBundleExportList()
+    {
+        return archiveStore.getBundleExportList();
+    }
+
+    BundleStore getBundleStore()
+    {
+        return bundleStore;
+    }
+
     ArchiveStore getArchiveStore()
     {
         return archiveStore;
     }
 
-    void assignArchiveStore(ArchiveStore archiveStore) throws BundleException
+    void markInstalled()
     {
-        this.archiveStore = archiveStore;
-        this.archiveStore.setNativeCodeDescriptions(nativeCodeDescriptions);
+        archiveStore.markInstalled();
     }
 
-    abstract void markInstalled();
-
-    /**
-     * Make sure that at least one native code description is valid.
-     * <p/>
-     * This could be done during the <code>BundleImpl</code> constructor but
-     * it seems to be more transparent to have the bundle manager call this
-     * method.
-     *
-     * @return a list of resolvable native code descriptions
-     * @throws BundleException if the method is unable to find at least one valid native code description
-     */
-    private SortedSet<NativeCodeDescription> resolveNativeCodeDependencies() throws BundleException
+    abstract class State implements org.osgi.framework.Bundle
     {
-        SortedSet<NativeCodeDescription> set = new TreeSet<NativeCodeDescription>();
-
-        if (!bundleNativeCodeList.isEmpty())
-        {
-            VersionRange osVersionRange = VersionRange.parseVersionRange((String) framework.getProperty(Constants.FRAMEWORK_OS_VERSION));
-
-            nextDescription:
-            for (NativeCodeDescription description : bundleNativeCodeList)
-            {
-                Map<String, Object> parameters = description.getParameters();
-                for (String key : parameters.keySet())
-                {
-                    if ("osname".equals(key) && !framework.getProperty(Constants.FRAMEWORK_OS_NAME).equals(parameters.get(key))) continue nextDescription;
-                    else if ("processor".equals(key) && !framework.getProperty(Constants.FRAMEWORK_PROCESSOR).equals(parameters.get(key))) continue nextDescription;
-                    else if ("osversion".equals(key))
-                    {
-                        if (!osVersionRange.includes(description.getOsVersion())) continue nextDescription;
-                    }
-                    else if ("language".equals(key) && !framework.getProperty(Constants.FRAMEWORK_LANGUAGE).equals(description.getLanguage())) continue nextDescription;
-                    else if ("selection-filter".equals(key))
-                    {
-                        try
-                        {
-                            Filter selectionFilter = new FilterImpl(framework.getParser().parse((String) parameters.get(key)));
-                            if (!selectionFilter.match(framework.getProperties())) continue nextDescription;
-                        }
-                        catch (InvalidSyntaxException ise)
-                        {
-                            throw new BundleException("Invalid selection filter", ise);
-                        }
-                    }
-                }
-
-                set.add(description);
-            }
-        }
-
-        return set;
     }
 }

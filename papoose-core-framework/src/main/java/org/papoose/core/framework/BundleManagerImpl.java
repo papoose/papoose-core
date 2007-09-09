@@ -16,28 +16,18 @@
  */
 package org.papoose.core.framework;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
 import java.util.logging.Logger;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
-import org.osgi.framework.Constants;
-import org.osgi.framework.Version;
 
-import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleManager;
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.spi.Store;
@@ -53,6 +43,7 @@ public class BundleManagerImpl implements BundleManager
     private final Papoose framework;
     private final Store store;
     private final Map<String, AbstractBundle> locations = new HashMap<String, AbstractBundle>();
+    private final Map<Long, AbstractBundle> installedbundles = new HashMap<Long, AbstractBundle>();
     private final Map<Long, BundleImpl> bundles = new HashMap<Long, BundleImpl>();
     private long bundleCounter = 0;
 
@@ -76,7 +67,7 @@ public class BundleManagerImpl implements BundleManager
     public void resolve(Bundle bundle)
     {
         BundleImpl bundleImpl = (BundleImpl) bundle;
-        Set<Wire> wires = framework.getResolver().resolve(bundleImpl.getBundleImportList(), new HashSet<BundleImpl>(bundles.values()));
+        Set<Wire> wires = framework.getResolver().resolve(bundleImpl.getArchiveStore().getBundleImportList(), new HashSet<BundleImpl>(bundles.values()));
 
         bundleImpl.getClassLoader().setWires(wires);
     }
@@ -101,21 +92,16 @@ public class BundleManagerImpl implements BundleManager
         JarInputStream jarInputStream = null;
         try
         {
-            BundleStore bundleStore = store.allocateBundleStore(bundleCounter++);
+            BundleStore bundleStore = store.allocateBundleStore(bundleId);
 
-            ArchiveStore archiveStore = store.allocateArchiveStore(bundleCounter++, 0, inputStream);
+            ArchiveStore archiveStore = store.allocateArchiveStore(framework, bundleId, 0, inputStream);
 
-            jarInputStream = new JarInputStream(new FileInputStream(archiveStore.getArchive()));
-
-            AbstractBundle bundle = allocateBundle(jarInputStream.getManifest().getMainAttributes(), bundleStore, bundleId);
-
-            bundle.assignArchiveStore(archiveStore);
-
-            if (bundle instanceof BundleImpl) confirmRequiredExecutionEnvironment((BundleImpl) bundle);
+            AbstractBundle bundle = allocateBundle(bundleId, bundleStore, archiveStore);
 
             bundle.markInstalled();
 
             locations.put(location, bundle);
+            installedbundles.put(bundleId, bundle);
             if (bundle instanceof BundleImpl) bundles.put(bundleId, (BundleImpl) bundle);
 
             return bundle;
@@ -143,438 +129,8 @@ public class BundleManagerImpl implements BundleManager
         }
     }
 
-    protected AbstractBundle allocateBundle(Attributes attributes, BundleStore bundleStore, long bundleId) throws Exception
+    private AbstractBundle allocateBundle(long bundleId, BundleStore bundleStore, ArchiveStore archiveStore)
     {
-        String bundleActivatorClass = attributes.getValue(Constants.BUNDLE_ACTIVATOR);
-        List<String> bundleCategories = obtainBundleCategories(attributes);
-        List<String> bundleClasspath = obtainBundleClasspath(attributes);
-        String bundleContactAddress = attributes.getValue(Constants.BUNDLE_CONTACTADDRESS);
-        String bundleCopyright = attributes.getValue(Constants.BUNDLE_COPYRIGHT);
-        String bundleDescription = attributes.getValue(Constants.BUNDLE_DESCRIPTION);
-        String bundleDocUrl = attributes.getValue(Constants.BUNDLE_DOCURL);
-        String bundleLocalization = attributes.getValue(Constants.BUNDLE_LOCALIZATION);
-        short bundleManifestVersion = obtainBundleManifestVersion(attributes.getValue(Constants.BUNDLE_MANIFESTVERSION));
-        String bundleName = attributes.getValue(Constants.BUNDLE_NAME);
-        List<NativeCodeDescription> bundleNativeCodeList = obtainBundleNativeCodeList(attributes);
-        List<String> bundleExecutionEnvironment = obtainBundleExecutionEnvironment(attributes);
-        String bundleSymbolicName = attributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
-        URL bundleUpdateLocation = obtainBundleUpdateLocation(attributes);
-        String bundleVendor = attributes.getValue(Constants.BUNDLE_VENDOR);
-        Version bundleVersion = Version.parseVersion(attributes.getValue(Constants.BUNDLE_VERSION));
-        List<DynamicDescription> bundleDynamicImportList = obtainBundleDynamicImportList(attributes);
-        List<ExportDescription> bundleExportList = obtainBundleExportList(attributes);
-        List<String> bundleExportService = obtainBundleExportService(attributes);
-        FragmentDescription bundleFragmentHost = obtainBundleFragementHost(attributes);
-        List<ImportDescription> bundleImportList = obtainBundleImportList(attributes);
-        List<String> bundleImportService = obtainBundleImportService(attributes);
-        List<RequireDescription> bundleRequireBundle = obtainBundleRequireBundle(attributes);
-
-        boolean bundleNativeCodeListOptional = false;
-        if (bundleNativeCodeList.size() > 0)
-        {
-            bundleNativeCodeListOptional = "*".equals(bundleNativeCodeList.get(bundleNativeCodeList.size() - 1));
-        }
-
-        if (bundleFragmentHost == null)
-        {
-            return new BundleImpl(null, framework, bundleStore, bundleId,
-                                  bundleActivatorClass,
-                                  bundleCategories,
-                                  bundleClasspath,
-                                  bundleContactAddress,
-                                  bundleCopyright,
-                                  bundleDescription,
-                                  bundleDocUrl,
-                                  bundleLocalization,
-                                  bundleManifestVersion,
-                                  bundleName,
-                                  bundleNativeCodeList, bundleNativeCodeListOptional,
-                                  bundleExecutionEnvironment,
-                                  bundleSymbolicName,
-                                  bundleUpdateLocation,
-                                  bundleVendor,
-                                  bundleVersion,
-                                  bundleDynamicImportList,
-                                  bundleExportList,
-                                  bundleExportService,
-                                  bundleImportList,
-                                  bundleImportService,
-                                  bundleRequireBundle);
-        }
-        else
-        {
-            return new FragmentImpl(framework, bundleId, bundleNativeCodeList, bundleNativeCodeListOptional, bundleFragmentHost);
-        }
-    }
-
-    protected void confirmRequiredExecutionEnvironment(BundleImpl bundle) throws BundleException
-    {
-        if (!bundle.getBundleExecutionEnvironment().isEmpty())
-        {
-            String string = (String) framework.getProperty(Constants.FRAMEWORK_EXECUTIONENVIRONMENT);
-            if (string == null) throw new BundleException(Constants.FRAMEWORK_EXECUTIONENVIRONMENT + " not set");
-            String[] environments = string.split(",");
-
-            nextRequirement:
-            for (String requirement : bundle.getBundleExecutionEnvironment())
-            {
-                for (String environment : environments)
-                {
-                    if (requirement.equals(environment)) continue nextRequirement;
-                }
-                throw new BundleException("Missing required execution environment: " + requirement);
-            }
-        }
-    }
-
-    protected List<String> obtainBundleCategories(Attributes attributes)
-    {
-        List<String> result;
-
-        if (attributes.containsKey(Constants.BUNDLE_CATEGORY))
-        {
-            String[] tokens = attributes.getValue(Constants.BUNDLE_CATEGORY).split(",");
-            result = new ArrayList<String>(tokens.length);
-
-            for (String token : tokens) result.add(token.trim());
-        }
-        else
-        {
-            result = Collections.emptyList();
-        }
-
-        return result;
-    }
-
-    protected List<String> obtainBundleClasspath(Attributes attributes) throws BundleException
-    {
-        List<String> result;
-
-        if (attributes.containsKey(Constants.BUNDLE_CLASSPATH))
-        {
-            String[] tokens = attributes.getValue(Constants.BUNDLE_CLASSPATH).split(",");
-            result = new ArrayList<String>(tokens.length);
-
-            for (String token : tokens)
-            {
-                token = token.trim();
-
-                if (!Util.isValidPackageName(token)) throw new BundleException("Malformed package in Bundle-Classpath: " + token);
-
-                result.add(token);
-            }
-        }
-        else
-        {
-            result = new ArrayList<String>(1);
-            result.add(".");
-        }
-
-        return result;
-    }
-
-    private short obtainBundleManifestVersion(String value)
-    {
-        try
-        {
-            return Short.parseShort(value);
-        }
-        catch (NumberFormatException e)
-        {
-            return 2;
-        }
-    }
-
-    protected List<NativeCodeDescription> obtainBundleNativeCodeList(Attributes attributes) throws BundleException
-    {
-        List<NativeCodeDescription> result;
-        if (attributes.containsKey(Constants.BUNDLE_NATIVECODE))
-        {
-            String[] nativecodes = Util.split(attributes.getValue(Constants.BUNDLE_NATIVECODE), ",");
-            result = new ArrayList<NativeCodeDescription>(nativecodes.length);
-            int ordinal = 0;
-
-            for (String nativecode : nativecodes)
-            {
-                List<String> paths = new ArrayList<String>(1);
-                Map<String, Object> parameters = new HashMap<String, Object>();
-                NativeCodeDescription nativeCodeDescription = new NativeCodeDescription(paths, parameters, ordinal++);
-
-                Util.parseParameters(nativecode, nativeCodeDescription, parameters, false, paths);
-
-                if (parameters.containsKey("osversion")) parameters.put("osversion", VersionRange.parseVersionRange((String) parameters.get("osversion")));
-                if (parameters.containsKey("language")) parameters.put("language", new Locale((String) parameters.get("language")));
-                if (parameters.containsKey("selection-filter")) parameters.put("selection-filter", VersionRange.parseVersionRange((String) parameters.get("selection-filter")));
-
-                result.add(nativeCodeDescription);
-            }
-        }
-        else
-        {
-            result = Collections.emptyList();
-        }
-
-        return result;
-    }
-
-    protected List<String> obtainBundleExecutionEnvironment(Attributes attributes)
-    {
-        List<String> result;
-
-        if (attributes.containsKey("Bundle-ExecutionEnvironment"))
-        {
-            String[] tokens = attributes.getValue("Bundle-ExecutionEnvironment").split(",");
-            result = new ArrayList<String>(tokens.length);
-
-            for (String token : tokens) result.add(token.trim());
-        }
-        else
-        {
-            result = Collections.emptyList();
-        }
-
-        return result;
-    }
-
-    protected URL obtainBundleUpdateLocation(Attributes attributes) throws Exception
-    {
-        if (attributes.containsKey("Bundle-UpdateLocation")) return new URL(attributes.getValue("Bundle-UpdateLocation"));
-        else return null;
-    }
-
-    protected List<DynamicDescription> obtainBundleDynamicImportList(Attributes attributes) throws BundleException
-    {
-        List<DynamicDescription> result;
-
-        if (attributes.containsKey("DynamicImport-Package"))
-        {
-            String[] importDescriptions = attributes.getValue("DynamicImport-Package").split(",");
-            result = new ArrayList<DynamicDescription>(importDescriptions.length);
-
-            for (String importDescription : importDescriptions)
-            {
-                List<String> paths = new ArrayList<String>(1);
-                Map<String, Object> parameters = new HashMap<String, Object>();
-                DynamicDescription description = new DynamicDescription(paths, parameters);
-
-                Util.parseParameters(importDescription, description, parameters, true, paths);
-
-                if (description.getVersion() == null) Util.callSetter(description, "version", DynamicDescription.DEFAULT_VERSION_RANGE);
-                if (description.getBundleVersion() == null) Util.callSetter(description, "bundle-version", DynamicDescription.DEFAULT_VERSION_RANGE);
-
-                result.add(description);
-            }
-        }
-        else
-        {
-            result = Collections.emptyList();
-        }
-
-        return result;
-    }
-
-    protected List<ExportDescription> obtainBundleExportList(Attributes attributes) throws BundleException
-    {
-        List<ExportDescription> result;
-
-        if (attributes.containsKey(Constants.EXPORT_PACKAGE))
-        {
-            String[] exportDescriptions = Util.split(attributes.getValue(Constants.EXPORT_PACKAGE), ",");
-            result = new ArrayList<ExportDescription>(exportDescriptions.length);
-
-            for (String exportDescription : exportDescriptions)
-            {
-                List<String> paths = new ArrayList<String>(1);
-                Map<String, Object> parameters = new HashMap<String, Object>();
-                ExportDescription description = new ExportDescription(paths, parameters);
-
-                Util.parseParameters(exportDescription, description, parameters, true, paths);
-
-                if (parameters.containsKey("specification-version")) parameters.put("specification-version", Version.parseVersion((String) parameters.get("specification-version")));
-
-                if (!parameters.containsKey("version"))
-                {
-                    if (parameters.containsKey("specification-version")) parameters.put("version", parameters.get("specification-version"));
-                    else parameters.put("version", ExportDescription.DEFAULT_VERSION);
-                }
-                else
-                {
-                    parameters.put("version", Version.parseVersion((String) parameters.get("version")));
-                }
-
-                if (parameters.containsKey("specification-version") && !parameters.get("specification-version").equals(parameters.get("version"))) throw new BundleException("version and specification-version do not match");
-
-                if (parameters.containsKey("bundle-symbolic-name")) throw new BundleException("Attempted to set bundle-symbolic-name in Export-Package");
-
-                if (parameters.containsKey("bundle-version")) throw new BundleException("Attempted to set bundle-version in Export-Package");
-
-                result.add(description);
-            }
-        }
-        else
-        {
-            result = Collections.emptyList();
-        }
-
-        return result;
-    }
-
-    private FragmentDescription obtainBundleFragementHost(Attributes attributes) throws BundleException
-    {
-        FragmentDescription fragmentDescription = null;
-
-        if (attributes.containsKey(Constants.FRAGMENT_HOST))
-        {
-            Map<String, Object> parameters = new HashMap<String, Object>();
-            String description = attributes.getValue(Constants.FRAGMENT_HOST);
-            int index = description.indexOf(';');
-
-            if (index != -1)
-            {
-                fragmentDescription = new FragmentDescription(Util.checkSymbolName(description.substring(0, index)), parameters);
-
-                Util.parseParameters(description.substring(index + 1), fragmentDescription, parameters, true);
-            }
-            else
-            {
-                fragmentDescription = new FragmentDescription(Util.checkSymbolName(description), parameters);
-            }
-
-            if (parameters.containsKey("bundle-version")) parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-verison")));
-            else parameters.put("bundle-version", FragmentDescription.DEFAULT_VERSION_RANGE);
-        }
-
-        return fragmentDescription;
-    }
-
-    protected List<String> obtainBundleExportService(Attributes attributes)
-    {
-        List<String> result;
-
-        if (attributes.containsKey(Constants.EXPORT_SERVICE))
-        {
-            String[] tokens = attributes.getValue(Constants.EXPORT_SERVICE).split(",");
-            result = new ArrayList<String>(tokens.length);
-
-            for (String token : tokens) result.add(token.trim());
-        }
-        else
-        {
-            result = Collections.emptyList();
-        }
-
-        return result;
-    }
-
-    protected List<ImportDescription> obtainBundleImportList(Attributes attributes) throws BundleException
-    {
-        List<ImportDescription> result;
-
-        if (attributes.containsKey(Constants.IMPORT_PACKAGE))
-        {
-            Set<String> importedPaths = new HashSet<String>();
-            String[] importDescriptions = attributes.getValue(Constants.IMPORT_PACKAGE).split(",");
-            result = new ArrayList<ImportDescription>(importDescriptions.length);
-
-            for (String importDescription : importDescriptions)
-            {
-                List<String> paths = new ArrayList<String>(1);
-                Map<String, Object> parameters = new HashMap<String, Object>();
-
-                ImportDescription description = new ImportDescription(paths, parameters);
-
-                Util.parseParameters(importDescription, description, parameters, true, paths);
-
-                if (parameters.containsKey("specification-version")) parameters.put("specification-version", VersionRange.parseVersionRange((String) parameters.get("specification-version")));
-
-                if (!parameters.containsKey("version"))
-                {
-                    if (parameters.containsKey("specification-version")) parameters.put("version", parameters.get("specification-version"));
-                    else parameters.put("version", ImportDescription.DEFAULT_VERSION_RANGE);
-                }
-                else
-                {
-                    parameters.put("version", VersionRange.parseVersionRange((String) parameters.get("version")));
-                }
-
-                if (parameters.containsKey("specification-version") && !parameters.get("specification-version").equals(parameters.get("version"))) throw new BundleException("version and specification-version do not match");
-
-                if (parameters.containsKey("bundle-version")) parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-veriosn")));
-                else parameters.put("bundle-version", ImportDescription.DEFAULT_VERSION_RANGE);
-
-                for (String path : paths)
-                {
-                    if (importedPaths.contains(path)) throw new BundleException("Duplicate import: " + path);
-                    else importedPaths.add(path);
-                }
-
-                result.add(description);
-            }
-        }
-        else
-        {
-            result = Collections.emptyList();
-        }
-
-        return result;
-    }
-
-    protected List<String> obtainBundleImportService(Attributes attributes)
-    {
-        List<String> result;
-
-        if (attributes.containsKey(Constants.IMPORT_SERVICE))
-        {
-            String[] tokens = attributes.getValue(Constants.IMPORT_SERVICE).split(",");
-            result = new ArrayList<String>(tokens.length);
-
-            for (String token : tokens) result.add(token.trim());
-        }
-        else
-        {
-            result = Collections.emptyList();
-        }
-
-        return result;
-    }
-
-    protected List<RequireDescription> obtainBundleRequireBundle(Attributes attributes) throws BundleException
-    {
-        List<RequireDescription> result = null;
-
-        if (attributes.containsKey(Constants.REQUIRE_BUNDLE))
-        {
-            result = new ArrayList<RequireDescription>();
-
-            String[] descriptions = Util.split(attributes.getValue(Constants.REQUIRE_BUNDLE), ",");
-            for (String description : descriptions)
-            {
-                Map<String, Object> parameters = new HashMap<String, Object>();
-                RequireDescription requireDescription;
-                int index = description.indexOf(';');
-
-                if (index != -1)
-                {
-                    requireDescription = new RequireDescription(Util.checkSymbolName(description.substring(0, index)), parameters);
-
-                    Util.parseParameters(description.substring(index + 1), requireDescription, parameters, true);
-                }
-                else
-                {
-                    requireDescription = new RequireDescription(Util.checkSymbolName(description), parameters);
-                }
-
-                if (requireDescription.getVisibility() == null) Util.callSetter(requireDescription, "visibility", Visibility.PRIVATE);
-
-                if (requireDescription.getResolution() == null) Util.callSetter(requireDescription, "resolution", Resolution.MANDATORY);
-
-                if (parameters.containsKey("bundle-version")) parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-verison")));
-                else parameters.put("bundle-version", RequireDescription.DEFAULT_VERSION_RANGE);
-
-                result.add(requireDescription);
-            }
-        }
-
-        return result;
+        return new BundleImpl(framework, bundleId, bundleStore, archiveStore);
     }
 }

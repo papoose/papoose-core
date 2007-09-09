@@ -19,10 +19,8 @@ package org.papoose.core.framework;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.logging.Logger;
 
 import org.osgi.framework.Bundle;
@@ -39,7 +37,6 @@ import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
-import org.osgi.framework.Version;
 
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.util.Listeners;
@@ -81,105 +78,29 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
             listener.serviceChanged(event);
         }
     });
-    private final BundleClassLoader classLoader;
-    private final BundleStore bundleStore;
     private final Object LOCK = new Object();
+    private final Papoose framework;
+    private BundleClassLoader classLoader;
     private int startLevel;
     private volatile State state;
 
-    /**
-     * Manifest
-     */
-    private final String bundleActivatorClass;
-    private final List<String> bundleCategories;
-    private final List<String> bundleClassPath;
-    private final String bundleContactAddress;
-    private final String bundleCopyright;
-    private final String bundleDescription;
-    private final String bundleDocUrl;
-    private final String bundleLocalization;
-    private final short bundleManifestVersion;
-    private final String bundleName;
-    private final List<String> bundleExecutionEnvironment;
-    private final String bundleSymbolicName;
-    private final URL bundleUpdateLocation;
-    private final String bundleVendor;
-    private final Version bundleVersion;
-    private final List<DynamicDescription> bundleDynamicImportList;
-    private final List<ExportDescription> bundleExportList;
-    private final List<String> bundleExportService;
-    private final List<ImportDescription> bundleImportList;
-    private final List<String> bundleImportService;
-    private final List<RequireDescription> bundleRequireBundle;
 
-
-    BundleImpl(BundleClassLoader classLoader, Papoose framework, BundleStore bundleStore, long bundleId,
-               String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, boolean bundleNativeCodeListOptional, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle) throws BundleException
+    BundleImpl(Papoose framework, long bundleId, BundleStore bundleStore, ArchiveStore archiveStore)
     {
-        super(framework, bundleId, bundleNativeCodeList, bundleNativeCodeListOptional);
+        super(bundleId, bundleStore, archiveStore);
 
-        this.classLoader = classLoader;
-        this.bundleStore = bundleStore;
+        this.framework = framework;
         this.state = UNINSTALLED_STATE;
+    }
 
-        this.bundleActivatorClass = bundleActivatorClass;
-        this.bundleCategories = bundleCategories;
-        this.bundleClassPath = bundleClassPath;
-        this.bundleContactAddress = bundleContactAddress;
-        this.bundleCopyright = bundleCopyright;
-        this.bundleDescription = bundleDescription;
-        this.bundleDocUrl = bundleDocUrl;
-        this.bundleLocalization = bundleLocalization;
-        this.bundleManifestVersion = bundleManifestVersion;
-        this.bundleName = bundleName;
-        this.bundleExecutionEnvironment = Collections.unmodifiableList(bundleExecutionEnvironment);
-        this.bundleSymbolicName = bundleSymbolicName;
-        this.bundleUpdateLocation = bundleUpdateLocation;
-        this.bundleVendor = bundleVendor;
-        this.bundleVersion = bundleVersion;
-        this.bundleDynamicImportList = bundleDynamicImportList;
-        this.bundleExportList = bundleExportList;
-        this.bundleExportService = bundleExportService;
-        this.bundleImportList = bundleImportList;
-        this.bundleImportService = bundleImportService;
-        this.bundleRequireBundle = bundleRequireBundle;
-
-        if (bundleManifestVersion != 2) throw new BundleException("Bundle-ManifestVersion must be 2");
+    Papoose getFramework()
+    {
+        return framework;
     }
 
     public BundleClassLoader getClassLoader()
     {
         return classLoader;
-    }
-
-    public List<ExportDescription> getBundleExportList()
-    {
-        return bundleExportList;
-    }
-
-    String getBundleName()
-    {
-        return bundleName;
-    }
-
-    Version getBundleVersion()
-    {
-        return bundleVersion;
-    }
-
-    public List<String> getBundleExecutionEnvironment()
-    {
-        return bundleExecutionEnvironment;
-    }
-
-    List<ImportDescription> getBundleImportList()
-    {
-        return bundleImportList;
-    }
-
-    void markInstalled()
-    {
-        state = INSTALLED_STATE;
     }
 
     public int getState()
@@ -347,11 +268,6 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
         }
     }
 
-    BundleStore getBundleStore()
-    {
-        return bundleStore;
-    }
-
     void addBundleListener(BundleListener bundleListener)
     {
         bundleListeners.addListener(bundleListener);
@@ -424,10 +340,6 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
         if (this.getState() != o.getState()) return -1 * (int) (this.bundleId - o.bundleId);
         if (this.bundleId != o.bundleId) return (int) (this.bundleId - o.bundleId);
         return 0;
-    }
-
-    abstract class State implements org.osgi.framework.Bundle
-    {
     }
 
     class UninstalledState extends State
@@ -563,7 +475,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
             try
             {
-                Class clazz = classLoader.loadClass(bundleActivatorClass);
+                Class clazz = classLoader.loadClass(getArchiveStore().getBundleActivatorClass());
                 BundleActivator bundleActivator = (BundleActivator) clazz.newInstance();
                 if (bundleActivator != null) bundleActivator.start(null);
             }
@@ -700,7 +612,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
             try
             {
-                Class clazz = classLoader.loadClass(bundleActivatorClass);
+                Class clazz = classLoader.loadClass(getArchiveStore().getBundleActivatorClass());
                 BundleActivator bundleActivator = (BundleActivator) clazz.newInstance();
                 if (bundleActivator != null) bundleActivator.start(null);
             }

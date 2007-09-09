@@ -40,7 +40,7 @@ import org.apache.xbean.classloader.JarFileClassLoader;
 import org.apache.xbean.classloader.NamedClassLoader;
 import org.apache.xbean.classloader.ResourceHandle;
 
-import org.papoose.core.framework.spi.ArchiveStore;
+import org.papoose.core.framework.ArchiveStore;
 
 
 /**

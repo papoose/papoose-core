@@ -21,6 +21,9 @@ import java.io.InputStream;
 
 import org.osgi.framework.BundleException;
 
+import org.papoose.core.framework.ArchiveStore;
+import org.papoose.core.framework.Papoose;
+
 
 /**
  * @version $Revision$ $Date$
@@ -33,7 +36,7 @@ public interface Store
 
     void removeBundleStore(long bundleId) throws BundleException;
 
-    ArchiveStore allocateArchiveStore(long bundleId, int generaton, InputStream inputStream) throws BundleException;
+    ArchiveStore allocateArchiveStore(Papoose framework, long bundleId, int generaton, InputStream inputStream) throws BundleException;
 
     void removeArchiveStore(long bundleId, int generation) throws BundleException;
 }
