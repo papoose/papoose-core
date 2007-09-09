@@ -23,9 +23,6 @@ import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import org.osgi.framework.Bundle;
@@ -33,7 +30,6 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.BundleListener;
-import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
@@ -45,7 +41,6 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
 
-import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.util.Listeners;
 import org.papoose.core.framework.util.ResetableLatch;
@@ -54,7 +49,7 @@ import org.papoose.core.framework.util.ResetableLatch;
 /**
  * @version $Revision$ $Date$
  */
-public class BundleImpl extends AbstractBundle implements Bundle, Comparable<BundleImpl>
+public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final ResetableLatch latch = new ResetableLatch();
@@ -87,7 +82,6 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         }
     });
     private final BundleClassLoader classLoader;
-    private final Papoose framework;
     private final BundleStore bundleStore;
     private final Object LOCK = new Object();
     private int startLevel;
@@ -96,7 +90,6 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     /**
      * Manifest
      */
-    private ArchiveStore archiveStore;
     private final String bundleActivatorClass;
     private final List<String> bundleCategories;
     private final List<String> bundleClassPath;
@@ -107,8 +100,6 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     private final String bundleLocalization;
     private final short bundleManifestVersion;
     private final String bundleName;
-    private final List<NativeCodeDescription> bundleNativeCodeList;
-    private final boolean bundleNativeCodeListOptional;
     private final List<String> bundleExecutionEnvironment;
     private final String bundleSymbolicName;
     private final URL bundleUpdateLocation;
@@ -117,20 +108,17 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     private final List<DynamicDescription> bundleDynamicImportList;
     private final List<ExportDescription> bundleExportList;
     private final List<String> bundleExportService;
-    private final FragmentDescription bundleFragmentHost;
     private final List<ImportDescription> bundleImportList;
     private final List<String> bundleImportService;
     private final List<RequireDescription> bundleRequireBundle;
-    private final SortedSet<NativeCodeDescription> nativeCodeDescriptions;
 
 
     BundleImpl(BundleClassLoader classLoader, Papoose framework, BundleStore bundleStore, long bundleId,
-               String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, boolean bundleNativeCodeListOptional, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, FragmentDescription bundleFragmentHost, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle) throws BundleException
+               String bundleActivatorClass, List<String> bundleCategories, List<String> bundleClassPath, String bundleContactAddress, String bundleCopyright, String bundleDescription, String bundleDocUrl, String bundleLocalization, short bundleManifestVersion, String bundleName, List<NativeCodeDescription> bundleNativeCodeList, boolean bundleNativeCodeListOptional, List<String> bundleExecutionEnvironment, String bundleSymbolicName, URL bundleUpdateLocation, String bundleVendor, Version bundleVersion, List<DynamicDescription> bundleDynamicImportList, List<ExportDescription> bundleExportList, List<String> bundleExportService, List<ImportDescription> bundleImportList, List<String> bundleImportService, List<RequireDescription> bundleRequireBundle) throws BundleException
     {
-        super(bundleId);
+        super(framework, bundleId, bundleNativeCodeList, bundleNativeCodeListOptional);
 
         this.classLoader = classLoader;
-        this.framework = framework;
         this.bundleStore = bundleStore;
         this.state = UNINSTALLED_STATE;
 
@@ -144,8 +132,6 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         this.bundleLocalization = bundleLocalization;
         this.bundleManifestVersion = bundleManifestVersion;
         this.bundleName = bundleName;
-        this.bundleNativeCodeList = bundleNativeCodeList;
-        this.bundleNativeCodeListOptional = bundleNativeCodeListOptional;
         this.bundleExecutionEnvironment = Collections.unmodifiableList(bundleExecutionEnvironment);
         this.bundleSymbolicName = bundleSymbolicName;
         this.bundleUpdateLocation = bundleUpdateLocation;
@@ -154,12 +140,9 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         this.bundleDynamicImportList = bundleDynamicImportList;
         this.bundleExportList = bundleExportList;
         this.bundleExportService = bundleExportService;
-        this.bundleFragmentHost = bundleFragmentHost;
         this.bundleImportList = bundleImportList;
         this.bundleImportService = bundleImportService;
         this.bundleRequireBundle = bundleRequireBundle;
-
-        this.nativeCodeDescriptions = resolveNativeCodeDependencies();
 
         if (bundleManifestVersion != 2) throw new BundleException("Bundle-ManifestVersion must be 2");
     }
@@ -192,58 +175,6 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
     List<ImportDescription> getBundleImportList()
     {
         return bundleImportList;
-    }
-
-    /**
-     * Make sure that at least one native code description is valid.
-     * <p/>
-     * This could be done during the <code>BundleImpl</code> constructor but
-     * it seems to be more transparent to have the bundle manager call this
-     * method.
-     *
-     * @return a list of resolvable native code descriptions
-     * @throws BundleException if the method is unable to find at least one valid native code description
-     */
-    private SortedSet<NativeCodeDescription> resolveNativeCodeDependencies() throws BundleException
-    {
-        SortedSet<NativeCodeDescription> set = new TreeSet<NativeCodeDescription>();
-
-        if (!bundleNativeCodeList.isEmpty())
-        {
-            VersionRange osVersionRange = VersionRange.parseVersionRange((String) framework.getProperty(Constants.FRAMEWORK_OS_VERSION));
-
-            nextDescription:
-            for (NativeCodeDescription description : bundleNativeCodeList)
-            {
-                Map<String, Object> parameters = description.getParameters();
-                for (String key : parameters.keySet())
-                {
-                    if ("osname".equals(key) && !framework.getProperty(Constants.FRAMEWORK_OS_NAME).equals(parameters.get(key))) continue nextDescription;
-                    else if ("processor".equals(key) && !framework.getProperty(Constants.FRAMEWORK_PROCESSOR).equals(parameters.get(key))) continue nextDescription;
-                    else if ("osversion".equals(key))
-                    {
-                        if (!osVersionRange.includes(description.getOsVersion())) continue nextDescription;
-                    }
-                    else if ("language".equals(key) && !framework.getProperty(Constants.FRAMEWORK_LANGUAGE).equals(description.getLanguage())) continue nextDescription;
-                    else if ("selection-filter".equals(key))
-                    {
-                        try
-                        {
-                            Filter selectionFilter = new FilterImpl(framework.getParser().parse((String) parameters.get(key)));
-                            if (!selectionFilter.match(framework.getProperties())) continue nextDescription;
-                        }
-                        catch (InvalidSyntaxException ise)
-                        {
-                            throw new BundleException("Invalid selection filter", ise);
-                        }
-                    }
-                }
-
-                set.add(description);
-            }
-        }
-
-        return set;
     }
 
     void markInstalled()
@@ -416,25 +347,9 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         }
     }
 
-    Papoose getFramework()
-    {
-        return framework;
-    }
-
     BundleStore getBundleStore()
     {
         return bundleStore;
-    }
-
-    ArchiveStore getArchiveStore()
-    {
-        return archiveStore;
-    }
-
-    void assignArchiveStore(ArchiveStore archiveStore) throws BundleException
-    {
-        this.archiveStore = archiveStore;
-        this.archiveStore.setNativeCodeDescriptions(nativeCodeDescriptions);
     }
 
     void addBundleListener(BundleListener bundleListener)
@@ -634,11 +549,11 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         {
             logger.entering(getClass().getName(), "start");
 
-            framework.getBundleManager().recordBundleHasStarted(this);
+            getFramework().getBundleManager().recordBundleHasStarted(this);
 
             syncListeners.fireEvent(new BundleEvent(org.osgi.framework.Bundle.RESOLVED, BundleImpl.this));
 
-            framework.getBundleManager().resolve(this);
+            getFramework().getBundleManager().resolve(this);
 
             state = STARTING_STATE;
 
@@ -656,8 +571,8 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
             {
                 state = RESOLVED_STATE;
 
-                framework.unregisterServices(BundleImpl.this);
-                framework.releaseServices(BundleImpl.this);
+                getFramework().unregisterServices(BundleImpl.this);
+                getFramework().releaseServices(BundleImpl.this);
 
                 bundleListeners.clear();
                 syncListeners.clear();
@@ -775,7 +690,7 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         {
             logger.entering(getClass().getName(), "start");
 
-            framework.getBundleManager().recordBundleHasStarted(this);
+            getFramework().getBundleManager().recordBundleHasStarted(this);
 
             state = STARTING_STATE;
 
@@ -793,8 +708,8 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
             {
                 state = RESOLVED_STATE;
 
-                framework.unregisterServices(BundleImpl.this);
-                framework.releaseServices(BundleImpl.this);
+                getFramework().unregisterServices(BundleImpl.this);
+                getFramework().releaseServices(BundleImpl.this);
 
                 bundleListeners.clear();
                 syncListeners.clear();
@@ -912,7 +827,7 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         {
             try
             {
-                latch.await(framework.getWaitPeriod());
+                latch.await(getFramework().getWaitPeriod());
             }
             catch (InterruptedException ie)
             {
@@ -932,7 +847,7 @@ public class BundleImpl extends AbstractBundle implements Bundle, Comparable<Bun
         {
             try
             {
-                latch.await(framework.getWaitPeriod());
+                latch.await(getFramework().getWaitPeriod());
                 RESOLVED_STATE.start();
             }
             catch (InterruptedException ie)

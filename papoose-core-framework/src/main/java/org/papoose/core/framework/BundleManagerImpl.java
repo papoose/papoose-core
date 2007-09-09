@@ -52,7 +52,7 @@ public class BundleManagerImpl implements BundleManager
 
     private final Papoose framework;
     private final Store store;
-    private final Map<String, BundleImpl> locations = new HashMap<String, BundleImpl>();
+    private final Map<String, AbstractBundle> locations = new HashMap<String, AbstractBundle>();
     private final Map<Long, BundleImpl> bundles = new HashMap<Long, BundleImpl>();
     private long bundleCounter = 0;
 
@@ -107,16 +107,16 @@ public class BundleManagerImpl implements BundleManager
 
             jarInputStream = new JarInputStream(new FileInputStream(archiveStore.getArchive()));
 
-            BundleImpl bundle = allocateBundle(jarInputStream.getManifest().getMainAttributes(), bundleStore, bundleId);
+            AbstractBundle bundle = allocateBundle(jarInputStream.getManifest().getMainAttributes(), bundleStore, bundleId);
 
             bundle.assignArchiveStore(archiveStore);
 
-            confirmRequiredExecutionEnvironment(bundle);
+            if (bundle instanceof BundleImpl) confirmRequiredExecutionEnvironment((BundleImpl) bundle);
 
             bundle.markInstalled();
 
             locations.put(location, bundle);
-            bundles.put(bundleId, bundle);
+            if (bundle instanceof BundleImpl) bundles.put(bundleId, (BundleImpl) bundle);
 
             return bundle;
         }
@@ -143,7 +143,7 @@ public class BundleManagerImpl implements BundleManager
         }
     }
 
-    protected BundleImpl allocateBundle(Attributes attributes, BundleStore bundleStore, long bundleId) throws Exception
+    protected AbstractBundle allocateBundle(Attributes attributes, BundleStore bundleStore, long bundleId) throws Exception
     {
         String bundleActivatorClass = attributes.getValue(Constants.BUNDLE_ACTIVATOR);
         List<String> bundleCategories = obtainBundleCategories(attributes);
@@ -175,30 +175,36 @@ public class BundleManagerImpl implements BundleManager
             bundleNativeCodeListOptional = "*".equals(bundleNativeCodeList.get(bundleNativeCodeList.size() - 1));
         }
 
-        return new BundleImpl(null, framework, bundleStore, bundleId,
-                              bundleActivatorClass,
-                              bundleCategories,
-                              bundleClasspath,
-                              bundleContactAddress,
-                              bundleCopyright,
-                              bundleDescription,
-                              bundleDocUrl,
-                              bundleLocalization,
-                              bundleManifestVersion,
-                              bundleName,
-                              bundleNativeCodeList, bundleNativeCodeListOptional,
-                              bundleExecutionEnvironment,
-                              bundleSymbolicName,
-                              bundleUpdateLocation,
-                              bundleVendor,
-                              bundleVersion,
-                              bundleDynamicImportList,
-                              bundleExportList,
-                              bundleExportService,
-                              bundleFragmentHost,
-                              bundleImportList,
-                              bundleImportService,
-                              bundleRequireBundle);
+        if (bundleFragmentHost == null)
+        {
+            return new BundleImpl(null, framework, bundleStore, bundleId,
+                                  bundleActivatorClass,
+                                  bundleCategories,
+                                  bundleClasspath,
+                                  bundleContactAddress,
+                                  bundleCopyright,
+                                  bundleDescription,
+                                  bundleDocUrl,
+                                  bundleLocalization,
+                                  bundleManifestVersion,
+                                  bundleName,
+                                  bundleNativeCodeList, bundleNativeCodeListOptional,
+                                  bundleExecutionEnvironment,
+                                  bundleSymbolicName,
+                                  bundleUpdateLocation,
+                                  bundleVendor,
+                                  bundleVersion,
+                                  bundleDynamicImportList,
+                                  bundleExportList,
+                                  bundleExportService,
+                                  bundleImportList,
+                                  bundleImportService,
+                                  bundleRequireBundle);
+        }
+        else
+        {
+            return new FragmentImpl(framework, bundleId, bundleNativeCodeList, bundleNativeCodeListOptional, bundleFragmentHost);
+        }
     }
 
     protected void confirmRequiredExecutionEnvironment(BundleImpl bundle) throws BundleException
