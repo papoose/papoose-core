@@ -16,7 +16,6 @@
  */
 package org.papoose.core.framework;
 
-import java.util.List;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.io.InputStream;
@@ -34,7 +33,7 @@ import org.papoose.core.framework.spi.BundleStore;
  */
 class ExtensionImpl extends AbstractBundle
 {
-    public ExtensionImpl(long bundleId, BundleStore bundleStore, ArchiveStore archiveStore)
+    public ExtensionImpl(long bundleId, BundleStore bundleStore, AbstractStore archiveStore)
     {
         super(bundleId, bundleStore, archiveStore);
     }

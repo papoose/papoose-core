@@ -35,7 +35,7 @@ class FragmentImpl extends AbstractBundle
 {
     private final FragmentDescription bundleFragmentHost;
 
-    public FragmentImpl(long bundleId, BundleStore bundleStore, ArchiveStore archiveStore, FragmentDescription bundleFragmentHost)
+    public FragmentImpl(long bundleId, BundleStore bundleStore, AbstractStore archiveStore, FragmentDescription bundleFragmentHost)
     {
         super(bundleId, bundleStore, archiveStore);
         this.bundleFragmentHost = bundleFragmentHost;

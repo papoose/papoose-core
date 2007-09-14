@@ -31,9 +31,9 @@ abstract class AbstractBundle implements Bundle
 {
     protected final long bundleId;
     private final BundleStore bundleStore;
-    private final ArchiveStore archiveStore;
+    private final AbstractStore archiveStore;
 
-    protected AbstractBundle(long bundleId, BundleStore bundleStore, ArchiveStore archiveStore)
+    protected AbstractBundle(long bundleId, BundleStore bundleStore, AbstractStore archiveStore)
     {
         this.bundleId = bundleId;
         this.bundleStore = bundleStore;
@@ -55,7 +55,7 @@ abstract class AbstractBundle implements Bundle
         return bundleStore;
     }
 
-    ArchiveStore getArchiveStore()
+    AbstractStore getArchiveStore()
     {
         return archiveStore;
     }

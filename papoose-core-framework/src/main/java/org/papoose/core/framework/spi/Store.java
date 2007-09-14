@@ -16,13 +16,12 @@
  */
 package org.papoose.core.framework.spi;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 
 import org.osgi.framework.BundleException;
 
-import org.papoose.core.framework.ArchiveStore;
+import org.papoose.core.framework.AbstractStore;
 import org.papoose.core.framework.Papoose;
 
 
@@ -39,9 +38,9 @@ public interface Store
 
     void removeBundleStore(long bundleId) throws BundleException;
 
-    ArchiveStore allocateArchiveStore(Papoose framework, long bundleId, int generaton, InputStream inputStream) throws BundleException;
+    AbstractStore allocateArchiveStore(Papoose framework, long bundleId, int generaton, InputStream inputStream) throws BundleException;
 
-    List<ArchiveStore> loadArchiveStores(Papoose framework, long bundleId) throws BundleException;
+    List<AbstractStore> loadArchiveStores(Papoose framework, long bundleId) throws BundleException;
 
     void removeArchiveStore(long bundleId, int generation) throws BundleException;
 }

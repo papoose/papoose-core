@@ -20,13 +20,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.lang.reflect.Proxy;
+import java.util.*;
 
 import org.osgi.framework.BundleException;
 
@@ -53,7 +51,7 @@ public final class Util
         file.delete();
     }
 
-    @SuppressWarnings({"EmptyCatchBlock"})
+    @SuppressWarnings({ "EmptyCatchBlock" })
     public static boolean callSetter(Object pojo, String property, Object value)
     {
         try
@@ -94,8 +92,14 @@ public final class Util
             {
                 char c = property.charAt(pointer);
 
-                if (c == '-') builder.append(property.substring(++pointer, pointer + 1).toUpperCase());
-                else builder.append(c);
+                if (c == '-')
+                {
+                    builder.append(property.substring(++pointer, pointer + 1).toUpperCase());
+                }
+                else
+                {
+                    builder.append(c);
+                }
             }
 
             return builder.toString();
@@ -124,7 +128,7 @@ public final class Util
      */
     public static String[] parseNameAndValidate(String name)
     {
-        if ("*".equals(name)) return new String[]{};
+        if ("*".equals(name)) return new String[]{ };
 
         List<String> values = new ArrayList<String>();
         StringBuilder builder = new StringBuilder();
@@ -249,10 +253,19 @@ public final class Util
 
                     if (parameterKeys.contains(token))
                     {
-                        if (preventDuplicates) throw new BundleException("Duplicate parameter key: " + token);
-                        else parameters.put(token, parameters.get(token) + "," + argument);
+                        if (preventDuplicates)
+                        {
+                            throw new BundleException("Duplicate parameter key: " + token);
+                        }
+                        else
+                        {
+                            parameters.put(token, parameters.get(token) + "," + argument);
+                        }
                     }
-                    else parameterKeys.add(token);
+                    else
+                    {
+                        parameterKeys.add(token);
+                    }
 
                     parameters.put(token, argument);
 
@@ -264,8 +277,14 @@ public final class Util
                     state.eat("=");
                     state.eatWhitespace();
 
-                    if (argumentKeys.contains(token)) throw new BundleException("Duplicate argument key: " + token);
-                    else argumentKeys.add(token);
+                    if (argumentKeys.contains(token))
+                    {
+                        throw new BundleException("Duplicate argument key: " + token);
+                    }
+                    else
+                    {
+                        argumentKeys.add(token);
+                    }
 
                     Object argument = state.eatArgument();
 

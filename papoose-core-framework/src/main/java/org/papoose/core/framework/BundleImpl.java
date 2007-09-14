@@ -85,7 +85,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
     private volatile State state;
 
 
-    BundleImpl(Papoose framework, long bundleId, BundleStore bundleStore, ArchiveStore archiveStore)
+    BundleImpl(Papoose framework, long bundleId, BundleStore bundleStore, AbstractStore archiveStore)
     {
         super(bundleId, bundleStore, archiveStore);
 

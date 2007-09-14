@@ -39,11 +39,13 @@ import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.Version;
 
+import org.papoose.core.framework.spi.ArchiveStore;
+
 
 /**
  * @version $Revision$ $Date$
  */
-public abstract class ArchiveStore
+public abstract class AbstractStore implements ArchiveStore
 {
     private final Papoose framework;
     private final long bundleId;
@@ -74,7 +76,7 @@ public abstract class ArchiveStore
     private final List<String> bundleImportService;
     private final List<RequireDescription> bundleRequireBundle;
 
-    protected ArchiveStore(Papoose framework, long bundleId, int generation, Attributes attributes) throws BundleException
+    protected AbstractStore(Papoose framework, long bundleId, int generation, Attributes attributes) throws BundleException
     {
         this.framework = framework;
         this.bundleId = bundleId;
@@ -113,8 +115,6 @@ public abstract class ArchiveStore
         confirmRequiredExecutionEnvironment();
     }
 
-    abstract File getArchive();
-
     /**
      * Set the native code descriptions that the bundle store is to use
      * when loading native code libraries.
@@ -123,47 +123,62 @@ public abstract class ArchiveStore
      * @throws org.osgi.framework.BundleException
      *          if the set of native code descriptions is empty
      */
-    abstract void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException;
+    protected abstract void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException;
 
-    abstract String loadLibrary(String libname);
-
-    abstract Permission[] getPermissionCollection();
-
-    abstract ResourceHandle getResource(String resourceName);
-
-    long getBundleId()
+    public long getBundleId()
     {
         return bundleId;
     }
 
-    int getGeneration()
+    public int getGeneration()
     {
         return generation;
     }
 
-    String getBundleActivatorClass()
+    public String getBundleActivatorClass()
     {
         return bundleActivatorClass;
     }
 
-    String getBundleName()
+    public String getBundleName()
     {
         return bundleName;
     }
 
-    Version getBundleVersion()
+    public Version getBundleVersion()
     {
         return bundleVersion;
     }
 
-    List<ExportDescription> getBundleExportList()
+    public List<String> getBundleClassPath()
+    {
+        return bundleClassPath;
+    }
+
+    public List<ExportDescription> getBundleExportList()
     {
         return bundleExportList;
     }
 
-    List<ImportDescription> getBundleImportList()
+    public List<ImportDescription> getBundleImportList()
     {
         return bundleImportList;
+    }
+
+    public int compareTo(Object o)
+    {
+        if (!(o instanceof AbstractStore)) return 1;
+        return Long.valueOf(bundleId).compareTo(((AbstractStore) o).getBundleId());
+    }
+
+    public int hashCode()
+    {
+        return Long.valueOf(bundleId).hashCode();
+    }
+
+    public boolean equals(Object obj)
+    {
+        return Long.valueOf(bundleId).equals(obj);
     }
 
     /**
@@ -190,13 +205,22 @@ public abstract class ArchiveStore
                 Map<String, Object> parameters = description.getParameters();
                 for (String key : parameters.keySet())
                 {
-                    if ("osname".equals(key) && !framework.getProperty(Constants.FRAMEWORK_OS_NAME).equals(parameters.get(key))) continue nextDescription;
-                    else if ("processor".equals(key) && !framework.getProperty(Constants.FRAMEWORK_PROCESSOR).equals(parameters.get(key))) continue nextDescription;
+                    if ("osname".equals(key) && !framework.getProperty(Constants.FRAMEWORK_OS_NAME).equals(parameters.get(key)))
+                    {
+                        continue nextDescription;
+                    }
+                    else if ("processor".equals(key) && !framework.getProperty(Constants.FRAMEWORK_PROCESSOR).equals(parameters.get(key)))
+                    {
+                        continue nextDescription;
+                    }
                     else if ("osversion".equals(key))
                     {
                         if (!osVersionRange.includes(description.getOsVersion())) continue nextDescription;
                     }
-                    else if ("language".equals(key) && !framework.getProperty(Constants.FRAMEWORK_LANGUAGE).equals(description.getLanguage())) continue nextDescription;
+                    else if ("language".equals(key) && !framework.getProperty(Constants.FRAMEWORK_LANGUAGE).equals(description.getLanguage()))
+                    {
+                        continue nextDescription;
+                    }
                     else if ("selection-filter".equals(key))
                     {
                         try
@@ -352,8 +376,14 @@ public abstract class ArchiveStore
     {
         try
         {
-            if (attributes.containsKey("Bundle-UpdateLocation")) return new URL(attributes.getValue("Bundle-UpdateLocation"));
-            else return null;
+            if (attributes.containsKey("Bundle-UpdateLocation"))
+            {
+                return new URL(attributes.getValue("Bundle-UpdateLocation"));
+            }
+            else
+            {
+                return null;
+            }
         }
         catch (MalformedURLException murle)
         {
@@ -413,8 +443,14 @@ public abstract class ArchiveStore
 
                 if (!parameters.containsKey("version"))
                 {
-                    if (parameters.containsKey("specification-version")) parameters.put("version", parameters.get("specification-version"));
-                    else parameters.put("version", ExportDescription.DEFAULT_VERSION);
+                    if (parameters.containsKey("specification-version"))
+                    {
+                        parameters.put("version", parameters.get("specification-version"));
+                    }
+                    else
+                    {
+                        parameters.put("version", ExportDescription.DEFAULT_VERSION);
+                    }
                 }
                 else
                 {
@@ -459,14 +495,20 @@ public abstract class ArchiveStore
                 fragmentDescription = new FragmentDescription(Util.checkSymbolName(description), parameters);
             }
 
-            if (parameters.containsKey("bundle-version")) parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-verison")));
-            else parameters.put("bundle-version", FragmentDescription.DEFAULT_VERSION_RANGE);
+            if (parameters.containsKey("bundle-version"))
+            {
+                parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-verison")));
+            }
+            else
+            {
+                parameters.put("bundle-version", FragmentDescription.DEFAULT_VERSION_RANGE);
+            }
         }
 
         return fragmentDescription;
     }
 
-    @SuppressWarnings({"deprecation"})
+    @SuppressWarnings({ "deprecation" })
     protected static List<String> obtainBundleExportService(Attributes attributes)
     {
         List<String> result;
@@ -509,8 +551,14 @@ public abstract class ArchiveStore
 
                 if (!parameters.containsKey("version"))
                 {
-                    if (parameters.containsKey("specification-version")) parameters.put("version", parameters.get("specification-version"));
-                    else parameters.put("version", ImportDescription.DEFAULT_VERSION_RANGE);
+                    if (parameters.containsKey("specification-version"))
+                    {
+                        parameters.put("version", parameters.get("specification-version"));
+                    }
+                    else
+                    {
+                        parameters.put("version", ImportDescription.DEFAULT_VERSION_RANGE);
+                    }
                 }
                 else
                 {
@@ -519,13 +567,25 @@ public abstract class ArchiveStore
 
                 if (parameters.containsKey("specification-version") && !parameters.get("specification-version").equals(parameters.get("version"))) throw new BundleException("version and specification-version do not match");
 
-                if (parameters.containsKey("bundle-version")) parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-veriosn")));
-                else parameters.put("bundle-version", ImportDescription.DEFAULT_VERSION_RANGE);
+                if (parameters.containsKey("bundle-version"))
+                {
+                    parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-veriosn")));
+                }
+                else
+                {
+                    parameters.put("bundle-version", ImportDescription.DEFAULT_VERSION_RANGE);
+                }
 
                 for (String path : paths)
                 {
-                    if (importedPaths.contains(path)) throw new BundleException("Duplicate import: " + path);
-                    else importedPaths.add(path);
+                    if (importedPaths.contains(path))
+                    {
+                        throw new BundleException("Duplicate import: " + path);
+                    }
+                    else
+                    {
+                        importedPaths.add(path);
+                    }
                 }
 
                 result.add(description);
@@ -539,7 +599,7 @@ public abstract class ArchiveStore
         return result;
     }
 
-    @SuppressWarnings({"deprecation"})
+    @SuppressWarnings({ "deprecation" })
     protected static List<String> obtainBundleImportService(Attributes attributes)
     {
         List<String> result;
@@ -589,8 +649,14 @@ public abstract class ArchiveStore
 
                 if (requireDescription.getResolution() == null) Util.callSetter(requireDescription, "resolution", Resolution.MANDATORY);
 
-                if (parameters.containsKey("bundle-version")) parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-verison")));
-                else parameters.put("bundle-version", RequireDescription.DEFAULT_VERSION_RANGE);
+                if (parameters.containsKey("bundle-version"))
+                {
+                    parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-verison")));
+                }
+                else
+                {
+                    parameters.put("bundle-version", RequireDescription.DEFAULT_VERSION_RANGE);
+                }
 
                 result.add(requireDescription);
             }

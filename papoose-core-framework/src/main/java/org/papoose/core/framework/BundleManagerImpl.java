@@ -94,7 +94,7 @@ public class BundleManagerImpl implements BundleManager
         {
             BundleStore bundleStore = store.allocateBundleStore(bundleId, location);
 
-            ArchiveStore archiveStore = store.allocateArchiveStore(framework, bundleId, 0, inputStream);
+            AbstractStore archiveStore = store.allocateArchiveStore(framework, bundleId, 0, inputStream);
 
             AbstractBundle bundle = allocateBundle(bundleId, bundleStore, archiveStore);
 
@@ -129,7 +129,7 @@ public class BundleManagerImpl implements BundleManager
         }
     }
 
-    private AbstractBundle allocateBundle(long bundleId, BundleStore bundleStore, ArchiveStore archiveStore)
+    private AbstractBundle allocateBundle(long bundleId, BundleStore bundleStore, AbstractStore archiveStore)
     {
         return new BundleImpl(framework, bundleId, bundleStore, archiveStore);
     }
