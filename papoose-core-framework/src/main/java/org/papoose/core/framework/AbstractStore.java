@@ -16,10 +16,8 @@
  */
 package org.papoose.core.framework;
 
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +30,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.jar.Attributes;
 
-import org.apache.xbean.classloader.ResourceHandle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
@@ -81,6 +78,8 @@ public abstract class AbstractStore implements ArchiveStore
         this.framework = framework;
         this.bundleId = bundleId;
         this.generation = generation;
+
+        attributes = new AttributesWrapper(attributes);
 
         this.bundleActivatorClass = attributes.getValue(Constants.BUNDLE_ACTIVATOR);
         this.bundleCategories = obtainBundleCategories(attributes);
@@ -663,5 +662,18 @@ public abstract class AbstractStore implements ArchiveStore
         }
 
         return result;
+    }
+
+    private static class AttributesWrapper extends Attributes
+    {
+        public AttributesWrapper(Attributes attributes)
+        {
+            super(attributes);
+        }
+
+        public boolean containsKey(Object name)
+        {
+            return super.containsKey(new Attributes.Name((String) name));
+        }
     }
 }

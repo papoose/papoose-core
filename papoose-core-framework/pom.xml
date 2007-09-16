@@ -22,6 +22,33 @@
                     <argLine>-enableassertions</argLine>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.papoose.test</groupId>
+                                    <artifactId>papoose-test-bundle</artifactId>
+                                    <version>${papooseTestVersion}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>target</outputDirectory>
+                                    <destFileName>bundle.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -33,14 +60,14 @@
         </dependency>
 
         <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jetty-embedded</artifactId>
-            <scope>optional</scope>
+            <groupId>org.osgi</groupId>
+            <artifactId>OSGi_R4_v4.0.1_core_spec</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>OSGi_R4_v4.0.1_core_spec</artifactId>
+            <groupId>org.papoose.test</groupId>
+            <artifactId>papoose-test-util</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

@@ -36,7 +36,6 @@ public class ImportDescription
     public ImportDescription(List<String> packageNames, Map<String, Object> parameters)
     {
         assert packageNames != null;
-        assert packageNames.size() > 0;
         assert parameters != null;
 
         this.packageNames = Collections.unmodifiableList(packageNames);

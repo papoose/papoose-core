@@ -16,7 +16,9 @@
  */
 package org.papoose.core.framework;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -64,12 +66,36 @@ public class UtilTest extends TestCase
     {
         MockPOJO pojo = new MockPOJO();
         Map<String, Object> parameters = new HashMap<String, Object>();
+        List<String> paths = new ArrayList<String>();
 
-        Util.parseParameters("foo:=bar;foo=bar", pojo, parameters, true);
+        Util.parseParameters("com.acme.dynamite;com.acme.gasoline;foo:=bar;foo=bar", pojo, parameters, true, paths);
 
         assertEquals(pojo.getFoo(), "bar");
         assertEquals(parameters.size(), 1);
         assertEquals(parameters.get("foo"), "bar");
+        assertEquals(paths.size(), 2);
+        assertEquals(paths.get(0), "com.acme.dynamite");
+        assertEquals(paths.get(1), "com.acme.gasoline");
+
+        parameters = new HashMap<String, Object>();
+        paths = new ArrayList<String>();
+
+        Util.parseParameters("com.acme.dynamite", pojo, parameters, true, paths);
+
+        assertEquals(paths.size(), 1);
+        assertEquals(paths.get(0), "com.acme.dynamite");
+
+        parameters = new HashMap<String, Object>();
+        paths = new ArrayList<String>();
+        pojo.setFoo(null);
+
+        Util.parseParameters("com.acme.dynamite;com.acme.gasoline", pojo, parameters, true, paths);
+
+        assertEquals(pojo.getFoo(), null);
+        assertEquals(parameters.size(), 0);
+        assertEquals(paths.size(), 2);
+        assertEquals(paths.get(0), "com.acme.dynamite");
+        assertEquals(paths.get(1), "com.acme.gasoline");
 
         parameters = new HashMap<String, Object>();
 

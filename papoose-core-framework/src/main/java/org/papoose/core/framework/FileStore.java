@@ -25,12 +25,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.security.Permission;
 import java.security.cert.Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
-import java.net.URL;
 
 import org.apache.xbean.classloader.ResourceHandle;
 import org.osgi.framework.BundleException;
@@ -49,9 +53,11 @@ public class FileStore implements Store
     private final File root;
 
 
-    public FileStore(File root)
+    public FileStore(File root) throws BundleException
     {
         this.root = root;
+
+        if (!root.exists() && !root.mkdirs()) throw new BundleException("Unable to create non-existant root: " + root);
     }
 
     File getRoot()
@@ -74,7 +80,10 @@ public class FileStore implements Store
 
     public BundleStore allocateBundleStore(long bundleId, String location) throws BundleException
     {
-        File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId);
+        File bundleRoot = new File(root, "bundles" + File.separator + bundleId);
+
+        if (bundleRoot.exists()) throw new BundleException("Bundle store location " + bundleRoot + " already exists");
+        if (!bundleRoot.mkdirs()) throw new BundleException("Unable to create bundle store location: " + bundleRoot);
 
         BundleStore result = new FileBundleStore(bundleRoot, bundleId, location);
 
@@ -85,27 +94,30 @@ public class FileStore implements Store
 
     public BundleStore loadBundleStore(long bundleId) throws BundleException
     {
-        File bundlesRoot = new File(root, "bundles" + File.pathSeparator);
+        File bundlesRoot = new File(root, "bundles" + File.separator);
         return new FileBundleStore(new File(bundlesRoot, String.valueOf(bundleId)), bundleId);
     }
 
     public void removeBundleStore(long bundleId)
     {
-        File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId);
+        File bundleRoot = new File(root, "bundles" + File.separator + bundleId);
 
         if (bundleRoot.exists()) Util.delete(bundleRoot);
     }
 
     public AbstractStore allocateArchiveStore(Papoose framework, long bundleId, int generaton, InputStream inputStream) throws BundleException
     {
-        File archiveRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator + generaton);
+        File archiveRoot = new File(root, "bundles" + File.separator + bundleId + File.separator + generaton);
+
+        if (archiveRoot.exists()) throw new BundleException("Archive store location " + archiveRoot + " already exists");
+        if (!archiveRoot.mkdirs()) throw new BundleException("Unable to create archive store location: " + archiveRoot);
 
         return new FileArchiveStore(framework, bundleId, generaton, archiveRoot, inputStream);
     }
 
     public List<AbstractStore> loadArchiveStores(Papoose framework, long bundleId) throws BundleException
     {
-        File archivesRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator);
+        File archivesRoot = new File(root, "bundles" + File.separator + bundleId + File.separator);
         List<AbstractStore> result = new ArrayList<AbstractStore>();
 
         for (String generation : archivesRoot.list())
@@ -118,7 +130,7 @@ public class FileStore implements Store
 
     public void removeArchiveStore(long bundleId, int generation)
     {
-        File bundleRoot = new File(root, "bundles" + File.pathSeparator + bundleId + File.pathSeparator + generation);
+        File bundleRoot = new File(root, "bundles" + File.separator + bundleId + File.separator + generation);
 
         if (bundleRoot.exists()) Util.delete(bundleRoot);
     }

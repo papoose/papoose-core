@@ -20,11 +20,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.osgi.framework.BundleException;
 
@@ -234,6 +236,7 @@ public final class Util
         Set<String> parameterKeys = new HashSet<String>();
         Set<String> argumentKeys = new HashSet<String>();
         State state = new State(string);
+
         while (true)
         {
             state.eatWhitespace();
@@ -241,6 +244,12 @@ public final class Util
             String token = state.eatToken();
 
             state.eatWhitespace();
+
+            if (state.isComplete())
+            {
+                paths.add(token);
+                return;
+            }
 
             switch (state.peek())
             {
@@ -502,7 +511,7 @@ public final class Util
 
         private boolean isValidTokenChar(char c)
         {
-            return Character.isLetterOrDigit(c) || c == '_' || c == '-';
+            return Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '.';
         }
 
         private boolean isValidArgumentChar(char c)

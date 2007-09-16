@@ -30,6 +30,7 @@ class VersionRange
     private final Version end;
     private final boolean startIncluding;
     private final boolean endIncluding;
+    private transient volatile String string;
 
     public VersionRange(Version start, Version end, boolean startIncluding, boolean endIncluding)
     {
@@ -173,6 +174,24 @@ class VersionRange
         result = 29 * result + (startIncluding ? 1 : 0);
         result = 29 * result + (endIncluding ? 1 : 0);
         return result;
+    }
+
+
+    public String toString()
+    {
+        if (string == null)
+        {
+            StringBuilder builder = new StringBuilder();
+
+            builder.append((startIncluding ? '[' : '('));
+            builder.append(start);
+            builder.append(", ");
+            builder.append((end == null ? "infinity" : end));
+            builder.append((endIncluding ? ']' : ')'));
+
+            string = builder.toString();
+        }
+        return string;
     }
 
     private static class State

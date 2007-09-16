@@ -38,6 +38,9 @@ public class ExportDescription
 
     ExportDescription(List<String> paths, Map<String, Object> parameters)
     {
+        assert paths != null;
+        assert parameters != null;
+
         this.packages = Collections.unmodifiableList(paths);
         this.parameters = Collections.unmodifiableMap(parameters);
     }

@@ -20,6 +20,7 @@
 
     <properties>
         <jettyVersion>6.1.5</jettyVersion>
+        <papooseTestVersion>1.0-SNAPSHOT</papooseTestVersion>
     </properties>
 
     <build>
@@ -96,6 +97,18 @@
                 <groupId>org.osgi</groupId>
                 <artifactId>OSGi_R4_v4.0.1_core_spec</artifactId>
                 <version>1.0.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.test</groupId>
+                <artifactId>papoose-test-bundle</artifactId>
+                <version>${papooseTestVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.test</groupId>
+                <artifactId>papoose-test-util</artifactId>
+                <version>${papooseTestVersion}</version>
             </dependency>
 
         </dependencies>
