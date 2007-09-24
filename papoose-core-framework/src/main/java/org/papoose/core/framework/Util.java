@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.osgi.framework.BundleException;
+
+import org.papoose.core.framework.spi.ArchiveStore;
 
 
 /**
@@ -403,6 +407,27 @@ public final class Util
         }
 
         return test.substring(pointer).endsWith(values[values.length - 1]);
+    }
+
+    @SuppressWarnings({ "EmptyCatchBlock" })
+    public static URL generateUrl(ArchiveStore archiveStore, String path)
+    {
+        URL result = null;
+        try
+        {
+            if (archiveStore.getGeneration() == 0)
+            {
+                result = new URL("http", String.valueOf(archiveStore.getFrameworkId()), (int) archiveStore.getBundleId(), path);
+            }
+            else
+            {
+                result = new URL("http", archiveStore.getGeneration() + ":" + archiveStore.getFrameworkId(), (int) archiveStore.getBundleId(), path);
+            }
+        }
+        catch (MalformedURLException e)
+        {
+        }
+        return result;
     }
 
     private static class State

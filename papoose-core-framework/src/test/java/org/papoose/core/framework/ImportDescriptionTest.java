@@ -47,15 +47,6 @@ public class ImportDescriptionTest extends TestCase
 
         try
         {
-            new ImportDescription(packageNames, attributes);
-            fail("Should have caught the empty package names list");
-        }
-        catch (AssertionError donothing)
-        {
-        }
-
-        try
-        {
             new ImportDescription(packageNames, null);
             fail("Should have caught the null attributes map");
         }
@@ -65,6 +56,5 @@ public class ImportDescriptionTest extends TestCase
 
         packageNames.add("com.acme.detonator");
         new ImportDescription(packageNames, attributes);
-
     }
 }

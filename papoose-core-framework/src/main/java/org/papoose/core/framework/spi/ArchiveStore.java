@@ -22,6 +22,7 @@ import java.security.Permission;
 import java.util.List;
 
 import org.apache.xbean.classloader.ResourceHandle;
+import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 
 import org.papoose.core.framework.ExportDescription;
@@ -33,6 +34,8 @@ import org.papoose.core.framework.ImportDescription;
 public interface ArchiveStore extends Comparable
 {
     File getArchive();
+
+    int getFrameworkId();
 
     long getBundleId();
 
@@ -48,13 +51,17 @@ public interface ArchiveStore extends Comparable
 
     List<ExportDescription> getBundleExportList();
 
-    List<ImportDescription> getBundleImportList(); 
+    List<ImportDescription> getBundleImportList();
+
+    void refreshClassPath(List<String> classPath) throws BundleException;
 
     String loadLibrary(String libname);
 
     Permission[] getPermissionCollection();
 
-    ResourceHandle getResource(String resourceName, List<String> classPath);
+    ResourceHandle getResource(String resourceName);
 
-    List<URL> findResources(String resourceName, List<String> classPath);
+    List<URL> findResources(String resourceName);
+
+    void close();
 }

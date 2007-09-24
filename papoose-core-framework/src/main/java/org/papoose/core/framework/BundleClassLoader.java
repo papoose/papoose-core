@@ -159,7 +159,7 @@ public class BundleClassLoader extends NamedClassLoader
     {
         for (ArchiveStore archiveStore : archiveStores)
         {
-            ResourceHandle handle = archiveStore.getResource(resourceName, classPath);
+            ResourceHandle handle = archiveStore.getResource(resourceName);
             if (handle != null) return handle.getUrl();
         }
 
@@ -172,7 +172,7 @@ public class BundleClassLoader extends NamedClassLoader
 
         for (ArchiveStore archiveStore : archiveStores)
         {
-            urls.addAll(archiveStore.findResources(resourceName, classPath));
+            urls.addAll(archiveStore.findResources(resourceName));
         }
 
         return Collections.enumeration(urls);
@@ -290,7 +290,7 @@ public class BundleClassLoader extends NamedClassLoader
                     String resourceName = className.replace('.', '/') + ".class";
 
                     // find the class file resource
-                    ResourceHandle resourceHandle = archiveStore.getResource(resourceName, classPath);
+                    ResourceHandle resourceHandle = archiveStore.getResource(resourceName);
                     if (resourceHandle == null)
                     {
                         throw new ClassNotFoundException(className);
@@ -491,6 +491,8 @@ public class BundleClassLoader extends NamedClassLoader
 
         public File getArchive() { return delegate.getArchive(); }
 
+        public int getFrameworkId() {return delegate.getFrameworkId();}
+
         public long getBundleId() { return delegate.getBundleId(); }
 
         public int getGeneration() { return delegate.getGeneration(); }
@@ -507,13 +509,17 @@ public class BundleClassLoader extends NamedClassLoader
 
         public List<ImportDescription> getBundleImportList() { return delegate.getBundleImportList(); }
 
+        public void refreshClassPath(List<String> classPath) throws BundleException { delegate.refreshClassPath(classPath); }
+
         public String loadLibrary(String libname) { return delegate.loadLibrary(libname); }
 
         public Permission[] getPermissionCollection() { return delegate.getPermissionCollection(); }
 
-        public ResourceHandle getResource(String resourceName, List<String> classPath) { return delegate.getResource(resourceName, classPath); }
+        public ResourceHandle getResource(String resourceName) { return delegate.getResource(resourceName); }
 
-        public List<URL> findResources(String resourceName, List<String> classPath) { return delegate.findResources(resourceName, classPath); }
+        public List<URL> findResources(String resourceName) { return delegate.findResources(resourceName); }
+
+        public void close() { delegate.close(); }
 
         public int compareTo(Object o) { return 1; }
     }

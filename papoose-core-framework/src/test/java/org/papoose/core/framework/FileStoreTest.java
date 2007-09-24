@@ -16,8 +16,12 @@
  */
 package org.papoose.core.framework;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.util.Properties;
+
+import org.apache.xbean.classloader.ResourceHandle;
 
 import org.papoose.core.framework.mock.MockThreadPool;
 import org.papoose.core.framework.spi.ArchiveStore;
@@ -39,8 +43,22 @@ public class FileStoreTest extends PapooseTestCase
 
             ArchiveStore archiveStore = fileStore.allocateArchiveStore(papoose, 1, 0, testBundle.toURL().openStream());
 
+            archiveStore.refreshClassPath(archiveStore.getBundleClassPath());
+
             String name = archiveStore.getBundleName();
             String activator = archiveStore.getBundleActivatorClass();
+
+            ResourceHandle handle = archiveStore.getResource("com/acme/anvil.xml");
+
+            int length = handle.getContentLength();
+            BufferedReader in = new BufferedReader(new InputStreamReader(handle.getInputStream()));
+            String line = in.readLine();
+
+            handle = archiveStore.getResource("com/acme/fuse/dynamite.xml");
+
+            length = handle.getContentLength();
+            in = new BufferedReader(new InputStreamReader(handle.getInputStream()));
+            line = in.readLine();
 
             fileStore.removeBundleStore(1);
         }

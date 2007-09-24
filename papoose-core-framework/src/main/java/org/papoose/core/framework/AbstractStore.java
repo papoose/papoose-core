@@ -124,6 +124,11 @@ public abstract class AbstractStore implements ArchiveStore
      */
     protected abstract void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException;
 
+    public int getFrameworkId()
+    {
+        return framework.getFrameworkId();
+    }
+
     public long getBundleId()
     {
         return bundleId;
@@ -290,14 +295,7 @@ public abstract class AbstractStore implements ArchiveStore
             String[] tokens = attributes.getValue(Constants.BUNDLE_CLASSPATH).split(",");
             result = new ArrayList<String>(tokens.length);
 
-            for (String token : tokens)
-            {
-                token = token.trim();
-
-                if (!Util.isValidPackageName(token)) throw new BundleException("Malformed package in Bundle-Classpath: " + token);
-
-                result.add(token);
-            }
+            for (String token : tokens) result.add(token.trim());
         }
         else
         {

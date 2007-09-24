@@ -41,13 +41,13 @@ public final class Papoose
 {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    private static long frameworkCounter = 0;
-    private final static Map<Long, Reference<Papoose>> frameworks = new Hashtable<Long, Reference<Papoose>>();
+    private static int frameworkCounter = 0;
+    private final static Map<Integer, Reference<Papoose>> frameworks = new Hashtable<Integer, Reference<Papoose>>();
 
     private final BundleManager bundleManager;
     private final ThreadPool threadPool;
     private final Properties properties;
-    private final long frameworkId;
+    private final int frameworkId;
     private long waitPeriod;
     private Parser parser;
     private BundleResolver resolver = new BundleResolver();
@@ -93,7 +93,7 @@ public final class Papoose
         return threadPool;
     }
 
-    long getFrameworkId()
+    int getFrameworkId()
     {
         return frameworkId;
     }
@@ -138,7 +138,7 @@ public final class Papoose
         this.resolver = resolver;
     }
 
-    static Papoose getFramework(Long frameworkId)
+    static Papoose getFramework(Integer frameworkId)
     {
         Papoose result = frameworks.get(frameworkId).get();
 
@@ -174,7 +174,7 @@ public final class Papoose
         return null;
     }
 
-    @SuppressWarnings({"EmptyCatchBlock"})
+    @SuppressWarnings({ "EmptyCatchBlock" })
     private static void initProperties(Properties defaults)
     {
         InputStream inputStream = null;
@@ -234,9 +234,15 @@ public final class Papoose
                     builder.append(version.charAt(i));
                     i++;
                 }
-                else break;
+                else
+                {
+                    break;
+                }
             }
-            else break;
+            else
+            {
+                break;
+            }
         }
         while (true);
 

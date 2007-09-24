@@ -35,12 +35,12 @@ public class BundleURLStreamHandler extends URLStreamHandler
         return allocateConnection(url);
     }
 
-    @SuppressWarnings({"EmptyCatchBlock"})
+    @SuppressWarnings({ "EmptyCatchBlock" })
     public static URLConnection allocateConnection(URL url) throws IOException
     {
         try
         {
-            Long frameworkId = Long.parseLong(url.getUserInfo());
+            Integer frameworkId = Integer.parseInt(url.getUserInfo());
 
             if (frameworkId < 0) throw new MalformedURLException("Invalid format");
 
