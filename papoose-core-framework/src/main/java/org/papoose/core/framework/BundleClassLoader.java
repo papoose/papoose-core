@@ -33,7 +33,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -449,35 +448,6 @@ public class BundleClassLoader extends NamedClassLoader
             return archiveStore;
         }
     }
-
-    private final static ClassLoader DO_NOTHING = new ClassLoader()
-    {
-        public Class<?> loadClass(String name) throws ClassNotFoundException
-        {
-            throw new ClassNotFoundException();
-        }
-
-        public URL getResource(String name)
-        {
-            return null;
-        }
-
-        public Enumeration<URL> getResources(String name)
-        {
-            return new Enumeration<URL>()
-            {
-                public URL nextElement()
-                {
-                    throw new NoSuchElementException();
-                }
-
-                public boolean hasMoreElements()
-                {
-                    return false;
-                }
-            };
-        }
-    };
 
     /**
      * A nice wrapper that makes sure that this particular archive is first in
