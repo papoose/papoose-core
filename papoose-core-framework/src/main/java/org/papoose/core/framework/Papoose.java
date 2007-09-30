@@ -72,6 +72,20 @@ public final class Papoose
         this(null, store, threadPool, properties);
     }
 
+    /**
+     * Install the store, thread pool and setup a hierarchy of properties.
+     * <p/>
+     * The framework instance gets registered and is accessable via its unique
+     * framework id.
+     *
+     * @param frameworkName the name of this framework instance.  It must be
+     *                      unique for the JVM that is has been instantiated
+     *                      and it must be follow the same format as a bundle
+     *                      symbolic name.
+     * @param store         the bundle store to use
+     * @param threadPool    the thread pool to use
+     * @param properties    the set of framework properties to use
+     */
     public Papoose(String frameworkName, Store store, ThreadPool threadPool, Properties properties)
     {
         if (store == null) throw new IllegalArgumentException("store is null");
@@ -99,7 +113,8 @@ public final class Papoose
             this.frameworkName = frameworkName;
         }
 
-        frameworksById.put(frameworkId, new WeakReference<Papoose>(this));
+        frameworksById.put(this.frameworkId, new WeakReference<Papoose>(this));
+        frameworksByName.put(this.frameworkName, new WeakReference<Papoose>(this));
     }
 
     AccessControlContext getAcc()
