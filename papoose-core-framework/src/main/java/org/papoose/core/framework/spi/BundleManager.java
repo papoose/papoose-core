@@ -36,6 +36,8 @@ public interface BundleManager
 
     Bundle getBundle(long bundleId);
 
+    Bundle getBundle(String symbolicName);
+
     Bundle[] getBundles();
 
     Bundle installBundle(String location, InputStream inputStream) throws BundleException;
