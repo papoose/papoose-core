@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.security.AccessControlContext;
+import java.security.AccessController;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Map;
@@ -44,6 +46,7 @@ public final class Papoose
     private static int frameworkCounter = 0;
     private final static Map<Integer, Reference<Papoose>> frameworks = new Hashtable<Integer, Reference<Papoose>>();
 
+    private final AccessControlContext acc = AccessController.getContext();
     private final BundleManager bundleManager;
     private final ThreadPool threadPool;
     private final Properties properties;
@@ -81,6 +84,11 @@ public final class Papoose
         this.frameworkId = frameworkCounter++;
 
         frameworks.put(frameworkId, new WeakReference<Papoose>(this));
+    }
+
+    AccessControlContext getAcc()
+    {
+        return acc;
     }
 
     BundleManager getBundleManager()

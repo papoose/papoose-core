@@ -18,7 +18,11 @@ package org.papoose.core.framework;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.xbean.classloader.ResourceHandle;
@@ -43,6 +47,8 @@ public class FileStoreTest extends PapooseTestCase
 
             ArchiveStore archiveStore = fileStore.allocateArchiveStore(papoose, 1, 0, testBundle.toURL().openStream());
 
+            MockURLStreamHandlerFactory.add(archiveStore);
+
             archiveStore.refreshClassPath(archiveStore.getBundleClassPath());
 
             String name = archiveStore.getBundleName();
@@ -60,11 +66,26 @@ public class FileStoreTest extends PapooseTestCase
             in = new BufferedReader(new InputStreamReader(handle.getInputStream()));
             line = in.readLine();
 
+            List<URL> urls = new ArrayList<URL>();
+            for (ResourceHandle h : archiveStore.findResources("com/acme/resource/camera.xml"))
+            {
+                URL url = h.getUrl();
+                assertNotNull(url.openStream());
+                urls.add(url);
+            }
+
             fileStore.removeBundleStore(1);
         }
         finally
         {
             Util.delete(fileStoreRoot);
         }
+    }
+
+    public void setUp() throws Exception
+    {
+        super.setUp();
+
+        URL.setURLStreamHandlerFactory(new MockURLStreamHandlerFactory());
     }
 }

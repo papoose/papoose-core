@@ -410,18 +410,18 @@ public final class Util
     }
 
     @SuppressWarnings({ "EmptyCatchBlock" })
-    public static URL generateUrl(ArchiveStore archiveStore, String path)
+    public static URL generateUrl(ArchiveStore archiveStore, String path, int location)
     {
         URL result = null;
         try
         {
             if (archiveStore.getGeneration() == 0)
             {
-                result = new URL("http", String.valueOf(archiveStore.getFrameworkId()), (int) archiveStore.getBundleId(), path);
+                result = new URL("papoose://" + archiveStore.getBundleId() + ":" + location + "@" + archiveStore.getFrameworkId() + path);
             }
             else
             {
-                result = new URL("http", archiveStore.getGeneration() + ":" + archiveStore.getFrameworkId(), (int) archiveStore.getBundleId(), path);
+                result = new URL("papoose://" + archiveStore.getBundleId() + ":" + location + "@" + archiveStore.getFrameworkId() + ":" + archiveStore.getGeneration() + path);
             }
         }
         catch (MalformedURLException e)

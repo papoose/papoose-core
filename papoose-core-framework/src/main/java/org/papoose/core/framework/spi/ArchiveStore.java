@@ -17,7 +17,6 @@
 package org.papoose.core.framework.spi;
 
 import java.io.File;
-import java.net.URL;
 import java.security.Permission;
 import java.util.List;
 
@@ -61,7 +60,9 @@ public interface ArchiveStore extends Comparable
 
     ResourceHandle getResource(String resourceName);
 
-    List<URL> findResources(String resourceName);
+    ResourceHandle getResource(String resourceName, int location);
+
+    List<ResourceHandle> findResources(String resourceName);
 
     void close();
 }

@@ -19,7 +19,6 @@ package org.papoose.core.framework;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSigner;
 import java.security.CodeSource;
@@ -59,7 +58,6 @@ public class BundleClassLoader extends NamedClassLoader
             return new HashSet<BundleClassLoader>();
         }
     };
-    private final AccessControlContext acc = AccessController.getContext();
     private final static URL[] EMPTY_URLS = new URL[0];
     private final BundleImpl bundle;
     private final String[] bootDelegates;
@@ -171,7 +169,10 @@ public class BundleClassLoader extends NamedClassLoader
 
         for (ArchiveStore archiveStore : archiveStores)
         {
-            urls.addAll(archiveStore.findResources(resourceName));
+            for (ResourceHandle handle : archiveStore.findResources(resourceName))
+            {
+                urls.add(handle.getUrl());
+            }
         }
 
         return Collections.enumeration(urls);
@@ -325,7 +326,7 @@ public class BundleClassLoader extends NamedClassLoader
                     // load the class into the vm
                     return defineClass(className, bytes, 0, bytes.length, codeSource);
                 }
-            }, acc);
+            }, bundle.getFramework().getAcc());
         }
         catch (PrivilegedActionException e)
         {
@@ -487,7 +488,9 @@ public class BundleClassLoader extends NamedClassLoader
 
         public ResourceHandle getResource(String resourceName) { return delegate.getResource(resourceName); }
 
-        public List<URL> findResources(String resourceName) { return delegate.findResources(resourceName); }
+        public ResourceHandle getResource(String resourceName, int location) { return delegate.getResource(resourceName, location); }
+
+        public List<ResourceHandle> findResources(String resourceName) { return delegate.findResources(resourceName); }
 
         public void close() { delegate.close(); }
 

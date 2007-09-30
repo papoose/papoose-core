@@ -22,17 +22,25 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.xbean.classloader.ResourceHandle;
-import org.osgi.framework.Bundle;
 
+import org.papoose.core.framework.spi.ArchiveStore;
 
 /**
  * @version $Revision$ $Date$
  */
-class ServiceURLStreamHandlerFactory implements URLStreamHandlerFactory
+public class MockURLStreamHandlerFactory implements URLStreamHandlerFactory
 {
-    private static String PREFIX = "sun.net.www.protocol";
+    private final static String PREFIX = "sun.net.www.protocol";
+    private final static Set<ArchiveStore> stores = new HashSet<ArchiveStore>();
+
+    public static void add(ArchiveStore archiveStore)
+    {
+        stores.add(archiveStore);
+    }
 
     public URLStreamHandler createURLStreamHandler(String protocol)
     {
@@ -59,30 +67,38 @@ class ServiceURLStreamHandlerFactory implements URLStreamHandlerFactory
         throw new InternalError("could not load " + protocol + "system protocol handler");
     }
 
-    private static class Handler extends URLStreamHandler
+    private class Handler extends URLStreamHandler
     {
-        protected URLConnection openConnection(final URL u) throws IOException
+        protected URLConnection openConnection(final URL url) throws IOException
         {
-            return new URLConnection(u)
+            return new URLConnection(url)
             {
-                private final URL url = u;
                 private ResourceHandle handle;
 
                 {
                     try
                     {
-                        Papoose papoose = Papoose.getFramework(Integer.valueOf(u.getHost()));
+                        int frameworkId = Integer.valueOf(url.getHost());
+                        String[] tokens = url.getUserInfo().split(":");
+                        int bundleId = Integer.valueOf(tokens[0]);
+                        int location = Integer.valueOf(tokens[1]);
+                        String path = url.getPath().substring(1);
+                        if (path.contains("!/")) path = path.split("!")[1].substring(1);
 
-                        if (papoose == null) throw new IOException("Framework instance not found");
-
-                        Bundle bundle = papoose.getBundleManager().getBundle(u.getPort());
-
-                        if (bundle == null) throw new IOException("Bundle instance not found");
+                        for (ArchiveStore archiveStore : stores)
+                        {
+                            if (archiveStore.getFrameworkId() == frameworkId && archiveStore.getBundleId() == bundleId)
+                            {
+                                handle = archiveStore.getResource(path, location);
+                                break;
+                            }
+                        }
                     }
                     catch (NumberFormatException nfe)
                     {
-                        throw new IOException("Invalid id " + u);
+                        throw new IOException("Invalid id " + url);
                     }
+                    if (handle == null) throw new IOException("Missing matching archive store " + url);
                 }
 
                 public void connect() throws IOException
