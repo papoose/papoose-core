@@ -417,11 +417,11 @@ public final class Util
         {
             if (archiveStore.getGeneration() == 0)
             {
-                result = new URL("papoose://" + archiveStore.getBundleId() + ":" + location + "@" + archiveStore.getFrameworkId() + path);
+                result = new URL("papoose://" + archiveStore.getBundleSymbolicName() + ":" + location + "@" + archiveStore.getFrameworkName() + path);
             }
             else
             {
-                result = new URL("papoose://" + archiveStore.getBundleId() + ":" + location + "@" + archiveStore.getFrameworkId() + ":" + archiveStore.getGeneration() + path);
+                result = new URL("papoose://" + archiveStore.getBundleSymbolicName() + ":" + location + "@" + archiveStore.getFrameworkName() + ":" + archiveStore.getGeneration() + path);
             }
         }
         catch (MalformedURLException e)

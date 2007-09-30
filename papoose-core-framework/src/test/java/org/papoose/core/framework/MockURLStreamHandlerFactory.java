@@ -78,16 +78,16 @@ public class MockURLStreamHandlerFactory implements URLStreamHandlerFactory
                 {
                     try
                     {
-                        int frameworkId = Integer.valueOf(url.getHost());
+                        String frameworkId = url.getHost();
                         String[] tokens = url.getUserInfo().split(":");
-                        int bundleId = Integer.valueOf(tokens[0]);
+                        String bundleName = tokens[0];
                         int location = Integer.valueOf(tokens[1]);
                         String path = url.getPath().substring(1);
                         if (path.contains("!/")) path = path.split("!")[1].substring(1);
 
                         for (ArchiveStore archiveStore : stores)
                         {
-                            if (archiveStore.getFrameworkId() == frameworkId && archiveStore.getBundleId() == bundleId)
+                            if (archiveStore.getFrameworkName().equals(frameworkId) && archiveStore.getBundleSymbolicName().equals(bundleName))
                             {
                                 handle = archiveStore.getResource(path, location);
                                 break;

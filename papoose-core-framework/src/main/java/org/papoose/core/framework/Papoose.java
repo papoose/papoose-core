@@ -44,12 +44,14 @@ public final class Papoose
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private static int frameworkCounter = 0;
-    private final static Map<Integer, Reference<Papoose>> frameworks = new Hashtable<Integer, Reference<Papoose>>();
+    private final static Map<Integer, Reference<Papoose>> frameworksById = new Hashtable<Integer, Reference<Papoose>>();
+    private final static Map<String, Reference<Papoose>> frameworksByName = new Hashtable<String, Reference<Papoose>>();
 
     private final AccessControlContext acc = AccessController.getContext();
     private final BundleManager bundleManager;
     private final ThreadPool threadPool;
     private final Properties properties;
+    private final String frameworkName;
     private final int frameworkId;
     private long waitPeriod;
     private Parser parser;
@@ -67,6 +69,11 @@ public final class Papoose
      */
     public Papoose(Store store, ThreadPool threadPool, Properties properties)
     {
+        this(null, store, threadPool, properties);
+    }
+
+    public Papoose(String frameworkName, Store store, ThreadPool threadPool, Properties properties)
+    {
         if (store == null) throw new IllegalArgumentException("store is null");
         if (threadPool == null) throw new IllegalArgumentException("threadPool is null");
 
@@ -83,7 +90,16 @@ public final class Papoose
 
         this.frameworkId = frameworkCounter++;
 
-        frameworks.put(frameworkId, new WeakReference<Papoose>(this));
+        if (frameworkName == null)
+        {
+            this.frameworkName = "Papoose." + frameworkId;
+        }
+        else
+        {
+            this.frameworkName = frameworkName;
+        }
+
+        frameworksById.put(frameworkId, new WeakReference<Papoose>(this));
     }
 
     AccessControlContext getAcc()
@@ -99,6 +115,11 @@ public final class Papoose
     ThreadPool getThreadPool()
     {
         return threadPool;
+    }
+
+    String getFrameworkName()
+    {
+        return frameworkName;
     }
 
     int getFrameworkId()
@@ -148,9 +169,18 @@ public final class Papoose
 
     static Papoose getFramework(Integer frameworkId)
     {
-        Papoose result = frameworks.get(frameworkId).get();
+        Papoose result = frameworksById.get(frameworkId).get();
 
-        if (result == null) frameworks.remove(frameworkId);
+        if (result == null) frameworksById.remove(frameworkId);
+
+        return result;
+    }
+
+    static Papoose getFramework(String name)
+    {
+        Papoose result = frameworksByName.get(name).get();
+
+        if (result == null) frameworksByName.remove(name);
 
         return result;
     }

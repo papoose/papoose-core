@@ -18,7 +18,6 @@ package org.papoose.core.framework;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
@@ -51,7 +50,7 @@ public class FileStoreTest extends PapooseTestCase
 
             archiveStore.refreshClassPath(archiveStore.getBundleClassPath());
 
-            String name = archiveStore.getBundleName();
+            String name = archiveStore.getBundleSymbolicName();
             String activator = archiveStore.getBundleActivatorClass();
 
             ResourceHandle handle = archiveStore.getResource("com/acme/anvil.xml");

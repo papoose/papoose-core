@@ -34,7 +34,7 @@ public interface ArchiveStore extends Comparable
 {
     File getArchive();
 
-    int getFrameworkId();
+    String getFrameworkName();
 
     long getBundleId();
 
@@ -42,7 +42,7 @@ public interface ArchiveStore extends Comparable
 
     String getBundleActivatorClass();
 
-    String getBundleName();
+    String getBundleSymbolicName();
 
     Version getBundleVersion();
 

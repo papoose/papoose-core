@@ -462,7 +462,7 @@ public class BundleClassLoader extends NamedClassLoader
 
         public File getArchive() { return delegate.getArchive(); }
 
-        public int getFrameworkId() {return delegate.getFrameworkId();}
+        public String getFrameworkName() { return delegate.getFrameworkName(); }
 
         public long getBundleId() { return delegate.getBundleId(); }
 
@@ -470,7 +470,7 @@ public class BundleClassLoader extends NamedClassLoader
 
         public String getBundleActivatorClass() { return delegate.getBundleActivatorClass(); }
 
-        public String getBundleName() { return delegate.getBundleName(); }
+        public String getBundleSymbolicName() { return delegate.getBundleSymbolicName(); }
 
         public Version getBundleVersion() { return delegate.getBundleVersion(); }
 

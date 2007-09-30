@@ -89,7 +89,7 @@ public class BundleResolver
 
         for (BundleImpl bundle : bundles)
         {
-            boolean nameMatch = (bundleName == null || bundleName.equals(bundle.getArchiveStore().getBundleName()));
+            boolean nameMatch = (bundleName == null || bundleName.equals(bundle.getArchiveStore().getBundleSymbolicName()));
             boolean versionMatch = (bundleVersionRange == null || bundleVersionRange.includes(bundle.getArchiveStore().getBundleVersion()));
 
             if (nameMatch && versionMatch)

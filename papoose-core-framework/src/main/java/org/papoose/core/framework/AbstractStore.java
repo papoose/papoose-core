@@ -124,9 +124,9 @@ public abstract class AbstractStore implements ArchiveStore
      */
     protected abstract void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException;
 
-    public int getFrameworkId()
+    public String getFrameworkName()
     {
-        return framework.getFrameworkId();
+        return framework.getFrameworkName();
     }
 
     public long getBundleId()
@@ -144,9 +144,9 @@ public abstract class AbstractStore implements ArchiveStore
         return bundleActivatorClass;
     }
 
-    public String getBundleName()
+    public String getBundleSymbolicName()
     {
-        return bundleName;
+        return bundleSymbolicName;
     }
 
     public Version getBundleVersion()
