@@ -30,8 +30,6 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.PropertyResourceBundle;
-import java.util.ResourceBundle;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -399,8 +397,8 @@ public class FileStore implements Store
             try
             {
                 String path = this.getBundleLocalization();
-                if (path == null) path = "OSGI-INF/l10n";
-                path += "/bundle" + (locale != null ? "_" + locale : "") + ".properties";
+                if (path == null) path = "OSGI-INF/l10n/bundle";
+                path += (locale != null ? "_" + locale : "") + ".properties";
                 JarEntry entry = archive.getJarEntry(path);
                 if (entry != null) return new L18nBundle(archive.getInputStream(entry));
             }
