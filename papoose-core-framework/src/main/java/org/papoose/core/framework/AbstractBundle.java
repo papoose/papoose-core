@@ -32,23 +32,32 @@ import org.papoose.core.framework.spi.BundleStore;
 abstract class AbstractBundle implements Bundle
 {
     protected final long bundleId;
+    private final String location;
     private final BundleStore bundleStore;
     private ArchiveStore currentStore;
     private ArchiveStore nextStore;
     private final List<ArchiveStore> stores = new ArrayList<ArchiveStore>();
+    private long lastModified;
 
-    protected AbstractBundle(long bundleId, BundleStore bundleStore, ArchiveStore currentStore)
+    protected AbstractBundle(long bundleId, String location, BundleStore bundleStore, ArchiveStore currentStore)
     {
         this.bundleId = bundleId;
+        this.location = location;
         this.bundleStore = bundleStore;
         this.currentStore = currentStore;
 
         this.stores.add(currentStore);
+        this.lastModified = System.currentTimeMillis();
     }
 
     public long getBundleId()
     {
         return bundleId;
+    }
+
+    public String getLocation()
+    {
+        return location;
     }
 
     public List<ExportDescription> getBundleExportList()
@@ -84,6 +93,16 @@ abstract class AbstractBundle implements Bundle
     List<ArchiveStore> getStores()
     {
         return stores;
+    }
+
+    public long getLastModified()
+    {
+        return lastModified;
+    }
+
+    void setLastModified(long lastModified)
+    {
+        this.lastModified = lastModified;
     }
 
     void markInstalled() throws BundleException

@@ -44,7 +44,7 @@ public class BundleManagerImpl implements BundleManager
     private final Map<String, AbstractBundle> locations = new HashMap<String, AbstractBundle>();
     private final Map<Long, AbstractBundle> installedbundles = new HashMap<Long, AbstractBundle>();
     private final Map<Long, BundleImpl> bundles = new HashMap<Long, BundleImpl>();
-    private long bundleCounter = 0;
+    private long bundleCounter = 1;
 
 
     public BundleManagerImpl(Papoose framework, Store store)
@@ -99,7 +99,7 @@ public class BundleManagerImpl implements BundleManager
 
             AbstractStore archiveStore = store.allocateArchiveStore(framework, bundleId, 0, inputStream);
 
-            AbstractBundle bundle = allocateBundle(bundleId, bundleStore, archiveStore);
+            AbstractBundle bundle = allocateBundle(bundleId, location, bundleStore, archiveStore);
 
             bundle.markInstalled();
 
@@ -121,8 +121,8 @@ public class BundleManagerImpl implements BundleManager
         }
     }
 
-    private AbstractBundle allocateBundle(long bundleId, BundleStore bundleStore, AbstractStore archiveStore)
+    private AbstractBundle allocateBundle(long bundleId, String location, BundleStore bundleStore, AbstractStore archiveStore)
     {
-        return new BundleImpl(framework, bundleId, bundleStore, archiveStore);
+        return new BundleImpl(framework, bundleId, location, bundleStore, archiveStore);
     }
 }

@@ -28,10 +28,12 @@ public class BundleContextImplTest extends TestCase
         File fileStoreRoot = new File("./target/store");
         try
         {
-            final int bundleId = 1;
+            final long earlyTimestamp = System.currentTimeMillis();
+            final int bundleId = 0;
             FileStore fileStore = new FileStore(fileStoreRoot);
             Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new MockThreadPool(), new Properties());
             File testBundle = new File("./target/bundle.jar");
+            String location = testBundle.toURL().toURI().normalize().toString();
 
             BundleStore bundleStore = fileStore.allocateBundleStore(bundleId, testBundle.toURL().toString());
             ArchiveStore archiveStore = fileStore.allocateArchiveStore(papoose, bundleId, 0, testBundle.toURL().openStream());
@@ -40,39 +42,47 @@ public class BundleContextImplTest extends TestCase
 
             archiveStore.refreshClassPath(archiveStore.getBundleClassPath());
 
-            BundleImpl bundle = new BundleImpl(papoose, bundleId, bundleStore, archiveStore);
-            BundleContextImpl context = new BundleContextImpl(bundle);
+            BundleImpl bootstrap = new BundleImpl(papoose, bundleId, location, bundleStore, archiveStore);
+            BundleContextImpl context = new BundleContextImpl(bootstrap);
 
-            Bundle b = context.installBundle(testBundle.toURL().toURI().normalize().toString());
+            Bundle bundle = context.installBundle(location.toString());
 
-            Dictionary headers = b.getHeaders("en");
+            assertEquals(1, bundle.getBundleId());
+
+            assertEquals(location, bundle.getLocation());
+
+            assertTrue(earlyTimestamp < bundle.getLastModified());
+
+            Dictionary headers = bundle.getHeaders("en");
             assertEquals("org.papoose.test.papoose-test-bundle", (String) headers.get("Bundle-SymbOLicName"));
 
-            headers = b.getHeaders("en");
+            headers = bundle.getHeaders("en");
             assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
 
-            headers = b.getHeaders();
+            headers = bundle.getHeaders();
             assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
 
-            headers = b.getHeaders(null);
+            headers = bundle.getHeaders(null);
             assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
 
-            headers = b.getHeaders("en_US");
+            headers = bundle.getHeaders("en_US");
             assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
 
-            headers = b.getHeaders("fr");
+            headers = bundle.getHeaders("fr");
             assertEquals("bundle_fr", (String) headers.get("L10N-Bundle"));
 
-            headers = b.getHeaders("fr_FR");
+            headers = bundle.getHeaders("fr_FR");
             assertEquals("bundle_fr_FR", (String) headers.get("L10N-Bundle"));
 
-            headers = b.getHeaders("");
+            headers = bundle.getHeaders("");
             assertEquals("%bundle", (String) headers.get("L10N-Bundle"));
 
-            headers = b.getHeaders("en");
+            headers = bundle.getHeaders("en");
             assertEquals("no translation for this entry", (String) headers.get("L10N-NoTranslation"));
 
-            URL url = b.getEntry("com/acme/fuse/dynamite.xml");
+            URL url = bundle.getEntry("com/acme/fuse/dynamite.xml");
+
+            bundle.getLastModified();
 //            BufferedReader in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
 //            String line = in.readLine();
 
