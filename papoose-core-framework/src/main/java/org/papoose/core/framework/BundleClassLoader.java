@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -468,6 +469,8 @@ public class BundleClassLoader extends NamedClassLoader
 
         public int getGeneration() { return delegate.getGeneration(); }
 
+        public Attributes getAttributes() { return delegate.getAttributes(); }
+
         public String getBundleActivatorClass() { return delegate.getBundleActivatorClass(); }
 
         public String getBundleSymbolicName() { return delegate.getBundleSymbolicName(); }
@@ -491,6 +494,8 @@ public class BundleClassLoader extends NamedClassLoader
         public ResourceHandle getResource(String resourceName, int location) { return delegate.getResource(resourceName, location); }
 
         public List<ResourceHandle> findResources(String resourceName) { return delegate.findResources(resourceName); }
+
+        public L18nBundle getResourceBundle(Locale local) { return delegate.getResourceBundle(local); }
 
         public void close() { delegate.close(); }
 

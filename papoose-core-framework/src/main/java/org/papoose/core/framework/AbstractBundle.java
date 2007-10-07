@@ -16,11 +16,13 @@
  */
 package org.papoose.core.framework;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
+import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleStore;
 
 
@@ -31,13 +33,15 @@ abstract class AbstractBundle implements Bundle
 {
     protected final long bundleId;
     private final BundleStore bundleStore;
-    private final AbstractStore archiveStore;
+    private ArchiveStore currentStore;
+    private ArchiveStore nextStore;
+    private final List<ArchiveStore> stores = new ArrayList<ArchiveStore>();
 
-    protected AbstractBundle(long bundleId, BundleStore bundleStore, AbstractStore archiveStore)
+    protected AbstractBundle(long bundleId, BundleStore bundleStore, ArchiveStore currentStore)
     {
         this.bundleId = bundleId;
         this.bundleStore = bundleStore;
-        this.archiveStore = archiveStore;
+        this.currentStore = currentStore;
     }
 
     public long getBundleId()
@@ -47,7 +51,7 @@ abstract class AbstractBundle implements Bundle
 
     public List<ExportDescription> getBundleExportList()
     {
-        return archiveStore.getBundleExportList();
+        return currentStore.getBundleExportList();
     }
 
     BundleStore getBundleStore()
@@ -55,9 +59,29 @@ abstract class AbstractBundle implements Bundle
         return bundleStore;
     }
 
-    AbstractStore getArchiveStore()
+    ArchiveStore getCurrentStore()
     {
-        return archiveStore;
+        return currentStore;
+    }
+
+    void setCurrentStore(ArchiveStore currentStore)
+    {
+        this.currentStore = currentStore;
+    }
+
+    ArchiveStore getNextStore()
+    {
+        return nextStore;
+    }
+
+    void setNextStore(ArchiveStore nextStore)
+    {
+        this.nextStore = nextStore;
+    }
+
+    List<ArchiveStore> getStores()
+    {
+        return stores;
     }
 
     void markInstalled() throws BundleException

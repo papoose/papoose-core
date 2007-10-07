@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.ResourceBundle;
 
 import org.apache.xbean.classloader.ResourceHandle;
 
@@ -41,7 +42,7 @@ public class FileStoreTest extends PapooseTestCase
         try
         {
             FileStore fileStore = new FileStore(fileStoreRoot);
-            Papoose papoose = new Papoose(fileStore, new MockThreadPool(), new Properties());
+            Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new MockThreadPool(), new Properties());
             File testBundle = new File("./target/bundle.jar");
 
             ArchiveStore archiveStore = fileStore.allocateArchiveStore(papoose, 1, 0, testBundle.toURL().openStream());
@@ -52,6 +53,8 @@ public class FileStoreTest extends PapooseTestCase
 
             String name = archiveStore.getBundleSymbolicName();
             String activator = archiveStore.getBundleActivatorClass();
+
+            ResourceBundle bundle = archiveStore.getResourceBundle(null);
 
             ResourceHandle handle = archiveStore.getResource("com/acme/anvil.xml");
 
@@ -85,6 +88,12 @@ public class FileStoreTest extends PapooseTestCase
     {
         super.setUp();
 
-        URL.setURLStreamHandlerFactory(new MockURLStreamHandlerFactory());
+        try
+        {
+            URL.setURLStreamHandlerFactory(new MockURLStreamHandlerFactory());
+        }
+        catch (Throwable t)
+        {
+        }
     }
 }

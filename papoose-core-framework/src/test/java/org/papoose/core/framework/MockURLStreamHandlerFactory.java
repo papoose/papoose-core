@@ -49,8 +49,8 @@ public class MockURLStreamHandlerFactory implements URLStreamHandlerFactory
         String name = PREFIX + "." + protocol + ".Handler";
         try
         {
-            Class c = Class.forName(name);
-            return (URLStreamHandler) c.newInstance();
+            Class clazz = Class.forName(name);
+            return (URLStreamHandler) clazz.newInstance();
         }
         catch (ClassNotFoundException e)
         {

@@ -47,6 +47,7 @@ public abstract class AbstractStore implements ArchiveStore
     private final Papoose framework;
     private final long bundleId;
     private final int generation;
+    private final Attributes attributes;
     private final String bundleActivatorClass;
     private final List<String> bundleCategories;
     private final List<String> bundleClassPath;
@@ -79,31 +80,31 @@ public abstract class AbstractStore implements ArchiveStore
         this.bundleId = bundleId;
         this.generation = generation;
 
-        attributes = new AttributesWrapper(attributes);
+        this.attributes = new AttributesWrapper(attributes);
 
-        this.bundleActivatorClass = attributes.getValue(Constants.BUNDLE_ACTIVATOR);
-        this.bundleCategories = obtainBundleCategories(attributes);
-        this.bundleClassPath = obtainBundleClasspath(attributes);
-        this.bundleContactAddress = attributes.getValue(Constants.BUNDLE_CONTACTADDRESS);
-        this.bundleCopyright = attributes.getValue(Constants.BUNDLE_COPYRIGHT);
-        this.bundleDescription = attributes.getValue(Constants.BUNDLE_DESCRIPTION);
-        this.bundleDocUrl = attributes.getValue(Constants.BUNDLE_DOCURL);
-        this.bundleLocalization = attributes.getValue(Constants.BUNDLE_LOCALIZATION);
-        this.bundleManifestVersion = obtainBundleManifestVersion(attributes.getValue(Constants.BUNDLE_MANIFESTVERSION));
-        this.bundleName = attributes.getValue(Constants.BUNDLE_NAME);
-        this.bundleNativeCodeList = obtainBundleNativeCodeList(attributes);
-        this.bundleExecutionEnvironment = obtainBundleExecutionEnvironment(attributes);
-        this.bundleSymbolicName = attributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
-        this.bundleUpdateLocation = obtainBundleUpdateLocation(attributes);
-        this.bundleVendor = attributes.getValue(Constants.BUNDLE_VENDOR);
-        this.bundleVersion = Version.parseVersion(attributes.getValue(Constants.BUNDLE_VERSION));
-        this.bundleDynamicImportList = obtainBundleDynamicImportList(attributes);
-        this.bundleExportList = obtainBundleExportList(attributes);
-        this.bundleExportService = obtainBundleExportService(attributes);
-        this.bundleFragmentHost = obtainBundleFragementHost(attributes);
-        this.bundleImportList = obtainBundleImportList(attributes);
-        this.bundleImportService = obtainBundleImportService(attributes);
-        this.bundleRequireBundle = obtainBundleRequireBundle(attributes);
+        this.bundleActivatorClass = this.attributes.getValue(Constants.BUNDLE_ACTIVATOR);
+        this.bundleCategories = obtainBundleCategories(this.attributes);
+        this.bundleClassPath = obtainBundleClasspath(this.attributes);
+        this.bundleContactAddress = this.attributes.getValue(Constants.BUNDLE_CONTACTADDRESS);
+        this.bundleCopyright = this.attributes.getValue(Constants.BUNDLE_COPYRIGHT);
+        this.bundleDescription = this.attributes.getValue(Constants.BUNDLE_DESCRIPTION);
+        this.bundleDocUrl = this.attributes.getValue(Constants.BUNDLE_DOCURL);
+        this.bundleLocalization = this.attributes.getValue(Constants.BUNDLE_LOCALIZATION);
+        this.bundleManifestVersion = obtainBundleManifestVersion(this.attributes.getValue(Constants.BUNDLE_MANIFESTVERSION));
+        this.bundleName = this.attributes.getValue(Constants.BUNDLE_NAME);
+        this.bundleNativeCodeList = obtainBundleNativeCodeList(this.attributes);
+        this.bundleExecutionEnvironment = obtainBundleExecutionEnvironment(this.attributes);
+        this.bundleSymbolicName = this.attributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
+        this.bundleUpdateLocation = obtainBundleUpdateLocation(this.attributes);
+        this.bundleVendor = this.attributes.getValue(Constants.BUNDLE_VENDOR);
+        this.bundleVersion = Version.parseVersion(this.attributes.getValue(Constants.BUNDLE_VERSION));
+        this.bundleDynamicImportList = obtainBundleDynamicImportList(this.attributes);
+        this.bundleExportList = obtainBundleExportList(this.attributes);
+        this.bundleExportService = obtainBundleExportService(this.attributes);
+        this.bundleFragmentHost = obtainBundleFragementHost(this.attributes);
+        this.bundleImportList = obtainBundleImportList(this.attributes);
+        this.bundleImportService = obtainBundleImportService(this.attributes);
+        this.bundleRequireBundle = obtainBundleRequireBundle(this.attributes);
 
         this.bundleNativeCodeListOptional = bundleNativeCodeList.size() > 0 && "*".equals(bundleNativeCodeList.get(bundleNativeCodeList.size() - 1));
 
@@ -139,6 +140,11 @@ public abstract class AbstractStore implements ArchiveStore
         return generation;
     }
 
+    public Attributes getAttributes()
+    {
+        return attributes;
+    }
+
     public String getBundleActivatorClass()
     {
         return bundleActivatorClass;
@@ -157,6 +163,11 @@ public abstract class AbstractStore implements ArchiveStore
     public List<String> getBundleClassPath()
     {
         return bundleClassPath;
+    }
+
+    public String getBundleLocalization()
+    {
+        return bundleLocalization;
     }
 
     public List<ExportDescription> getBundleExportList()
@@ -267,13 +278,13 @@ public abstract class AbstractStore implements ArchiveStore
         }
     }
 
-    protected static List<String> obtainBundleCategories(Attributes attributes)
+    protected static List<String> obtainBundleCategories(Attributes headers)
     {
         List<String> result;
 
-        if (attributes.containsKey(Constants.BUNDLE_CATEGORY))
+        if (headers.containsKey(Constants.BUNDLE_CATEGORY))
         {
-            String[] tokens = attributes.getValue(Constants.BUNDLE_CATEGORY).split(",");
+            String[] tokens = headers.getValue(Constants.BUNDLE_CATEGORY).split(",");
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
@@ -286,13 +297,13 @@ public abstract class AbstractStore implements ArchiveStore
         return result;
     }
 
-    protected static List<String> obtainBundleClasspath(Attributes attributes) throws BundleException
+    protected static List<String> obtainBundleClasspath(Attributes headers) throws BundleException
     {
         List<String> result;
 
-        if (attributes.containsKey(Constants.BUNDLE_CLASSPATH))
+        if (headers.containsKey(Constants.BUNDLE_CLASSPATH))
         {
-            String[] tokens = attributes.getValue(Constants.BUNDLE_CLASSPATH).split(",");
+            String[] tokens = headers.getValue(Constants.BUNDLE_CLASSPATH).split(",");
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
@@ -318,12 +329,12 @@ public abstract class AbstractStore implements ArchiveStore
         }
     }
 
-    protected static List<NativeCodeDescription> obtainBundleNativeCodeList(Attributes attributes) throws BundleException
+    protected static List<NativeCodeDescription> obtainBundleNativeCodeList(Attributes headers) throws BundleException
     {
         List<NativeCodeDescription> result;
-        if (attributes.containsKey(Constants.BUNDLE_NATIVECODE))
+        if (headers.containsKey(Constants.BUNDLE_NATIVECODE))
         {
-            String[] nativecodes = Util.split(attributes.getValue(Constants.BUNDLE_NATIVECODE), ",");
+            String[] nativecodes = Util.split(headers.getValue(Constants.BUNDLE_NATIVECODE), ",");
             result = new ArrayList<NativeCodeDescription>(nativecodes.length);
             int ordinal = 0;
 
@@ -350,13 +361,13 @@ public abstract class AbstractStore implements ArchiveStore
         return result;
     }
 
-    protected static List<String> obtainBundleExecutionEnvironment(Attributes attributes)
+    protected static List<String> obtainBundleExecutionEnvironment(Attributes headers)
     {
         List<String> result;
 
-        if (attributes.containsKey("Bundle-ExecutionEnvironment"))
+        if (headers.containsKey("Bundle-ExecutionEnvironment"))
         {
-            String[] tokens = attributes.getValue("Bundle-ExecutionEnvironment").split(",");
+            String[] tokens = headers.getValue("Bundle-ExecutionEnvironment").split(",");
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
@@ -369,13 +380,13 @@ public abstract class AbstractStore implements ArchiveStore
         return result;
     }
 
-    protected static URL obtainBundleUpdateLocation(Attributes attributes) throws BundleException
+    protected static URL obtainBundleUpdateLocation(Attributes headers) throws BundleException
     {
         try
         {
-            if (attributes.containsKey("Bundle-UpdateLocation"))
+            if (headers.containsKey("Bundle-UpdateLocation"))
             {
-                return new URL(attributes.getValue("Bundle-UpdateLocation"));
+                return new URL(headers.getValue("Bundle-UpdateLocation"));
             }
             else
             {
@@ -388,13 +399,13 @@ public abstract class AbstractStore implements ArchiveStore
         }
     }
 
-    protected static List<DynamicDescription> obtainBundleDynamicImportList(Attributes attributes) throws BundleException
+    protected static List<DynamicDescription> obtainBundleDynamicImportList(Attributes headers) throws BundleException
     {
         List<DynamicDescription> result;
 
-        if (attributes.containsKey("DynamicImport-Package"))
+        if (headers.containsKey("DynamicImport-Package"))
         {
-            String[] importDescriptions = attributes.getValue("DynamicImport-Package").split(",");
+            String[] importDescriptions = headers.getValue("DynamicImport-Package").split(",");
             result = new ArrayList<DynamicDescription>(importDescriptions.length);
 
             for (String importDescription : importDescriptions)
@@ -419,13 +430,13 @@ public abstract class AbstractStore implements ArchiveStore
         return result;
     }
 
-    protected static List<ExportDescription> obtainBundleExportList(Attributes attributes) throws BundleException
+    protected static List<ExportDescription> obtainBundleExportList(Attributes headers) throws BundleException
     {
         List<ExportDescription> result;
 
-        if (attributes.containsKey(Constants.EXPORT_PACKAGE))
+        if (headers.containsKey(Constants.EXPORT_PACKAGE))
         {
-            String[] exportDescriptions = Util.split(attributes.getValue(Constants.EXPORT_PACKAGE), ",");
+            String[] exportDescriptions = Util.split(headers.getValue(Constants.EXPORT_PACKAGE), ",");
             result = new ArrayList<ExportDescription>(exportDescriptions.length);
 
             for (String exportDescription : exportDescriptions)
@@ -471,14 +482,14 @@ public abstract class AbstractStore implements ArchiveStore
         return result;
     }
 
-    private static FragmentDescription obtainBundleFragementHost(Attributes attributes) throws BundleException
+    private static FragmentDescription obtainBundleFragementHost(Attributes headers) throws BundleException
     {
         FragmentDescription fragmentDescription = null;
 
-        if (attributes.containsKey(Constants.FRAGMENT_HOST))
+        if (headers.containsKey(Constants.FRAGMENT_HOST))
         {
             Map<String, Object> parameters = new HashMap<String, Object>();
-            String description = attributes.getValue(Constants.FRAGMENT_HOST);
+            String description = headers.getValue(Constants.FRAGMENT_HOST);
             int index = description.indexOf(';');
 
             if (index != -1)
@@ -506,13 +517,13 @@ public abstract class AbstractStore implements ArchiveStore
     }
 
     @SuppressWarnings({ "deprecation" })
-    protected static List<String> obtainBundleExportService(Attributes attributes)
+    protected static List<String> obtainBundleExportService(Attributes headers)
     {
         List<String> result;
 
-        if (attributes.containsKey(Constants.EXPORT_SERVICE))
+        if (headers.containsKey(Constants.EXPORT_SERVICE))
         {
-            String[] tokens = attributes.getValue(Constants.EXPORT_SERVICE).split(",");
+            String[] tokens = headers.getValue(Constants.EXPORT_SERVICE).split(",");
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
@@ -525,14 +536,14 @@ public abstract class AbstractStore implements ArchiveStore
         return result;
     }
 
-    protected static List<ImportDescription> obtainBundleImportList(Attributes attributes) throws BundleException
+    protected static List<ImportDescription> obtainBundleImportList(Attributes headers) throws BundleException
     {
         List<ImportDescription> result;
 
-        if (attributes.containsKey(Constants.IMPORT_PACKAGE))
+        if (headers.containsKey(Constants.IMPORT_PACKAGE))
         {
             Set<String> importedPaths = new HashSet<String>();
-            String[] importDescriptions = attributes.getValue(Constants.IMPORT_PACKAGE).split(",");
+            String[] importDescriptions = headers.getValue(Constants.IMPORT_PACKAGE).split(",");
             result = new ArrayList<ImportDescription>(importDescriptions.length);
 
             for (String importDescription : importDescriptions)
@@ -597,13 +608,13 @@ public abstract class AbstractStore implements ArchiveStore
     }
 
     @SuppressWarnings({ "deprecation" })
-    protected static List<String> obtainBundleImportService(Attributes attributes)
+    protected static List<String> obtainBundleImportService(Attributes headers)
     {
         List<String> result;
 
-        if (attributes.containsKey(Constants.IMPORT_SERVICE))
+        if (headers.containsKey(Constants.IMPORT_SERVICE))
         {
-            String[] tokens = attributes.getValue(Constants.IMPORT_SERVICE).split(",");
+            String[] tokens = headers.getValue(Constants.IMPORT_SERVICE).split(",");
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
@@ -616,15 +627,15 @@ public abstract class AbstractStore implements ArchiveStore
         return result;
     }
 
-    protected static List<RequireDescription> obtainBundleRequireBundle(Attributes attributes) throws BundleException
+    protected static List<RequireDescription> obtainBundleRequireBundle(Attributes headers) throws BundleException
     {
         List<RequireDescription> result = null;
 
-        if (attributes.containsKey(Constants.REQUIRE_BUNDLE))
+        if (headers.containsKey(Constants.REQUIRE_BUNDLE))
         {
             result = new ArrayList<RequireDescription>();
 
-            String[] descriptions = Util.split(attributes.getValue(Constants.REQUIRE_BUNDLE), ",");
+            String[] descriptions = Util.split(headers.getValue(Constants.REQUIRE_BUNDLE), ",");
             for (String description : descriptions)
             {
                 Map<String, Object> parameters = new HashMap<String, Object>();

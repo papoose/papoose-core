@@ -86,7 +86,7 @@ class ServiceURLStreamHandlerFactory implements URLStreamHandlerFactory
 
                         if (bundle == null) throw new IOException("Bundle instance not found");
 
-                        ArchiveStore archiveStore = bundle.getArchiveStore();
+                        ArchiveStore archiveStore = bundle.getCurrentStore();
 
                         handle = archiveStore.getResource(path, location);
                     }

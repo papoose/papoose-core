@@ -19,6 +19,8 @@ package org.papoose.core.framework.spi;
 import java.io.File;
 import java.security.Permission;
 import java.util.List;
+import java.util.Locale;
+import java.util.jar.Attributes;
 
 import org.apache.xbean.classloader.ResourceHandle;
 import org.osgi.framework.BundleException;
@@ -26,6 +28,7 @@ import org.osgi.framework.Version;
 
 import org.papoose.core.framework.ExportDescription;
 import org.papoose.core.framework.ImportDescription;
+import org.papoose.core.framework.L18nBundle;
 
 /**
  * @version $Revision$ $Date$
@@ -39,6 +42,8 @@ public interface ArchiveStore extends Comparable
     long getBundleId();
 
     int getGeneration();
+
+    Attributes getAttributes();
 
     String getBundleActivatorClass();
 
@@ -63,6 +68,8 @@ public interface ArchiveStore extends Comparable
     ResourceHandle getResource(String resourceName, int location);
 
     List<ResourceHandle> findResources(String resourceName);
+
+    L18nBundle getResourceBundle(Locale local);
 
     void close();
 }

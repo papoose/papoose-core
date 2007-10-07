@@ -89,12 +89,12 @@ public class BundleResolver
 
         for (BundleImpl bundle : bundles)
         {
-            boolean nameMatch = (bundleName == null || bundleName.equals(bundle.getArchiveStore().getBundleSymbolicName()));
-            boolean versionMatch = (bundleVersionRange == null || bundleVersionRange.includes(bundle.getArchiveStore().getBundleVersion()));
+            boolean nameMatch = (bundleName == null || bundleName.equals(bundle.getCurrentStore().getBundleSymbolicName()));
+            boolean versionMatch = (bundleVersionRange == null || bundleVersionRange.includes(bundle.getCurrentStore().getBundleVersion()));
 
             if (nameMatch && versionMatch)
             {
-                for (ExportDescription exportDescription : bundle.getArchiveStore().getBundleExportList())
+                for (ExportDescription exportDescription : bundle.getCurrentStore().getBundleExportList())
                 {
                     sorted.add(new ExportDescriptionWrapper(exportDescription, bundle));
                 }

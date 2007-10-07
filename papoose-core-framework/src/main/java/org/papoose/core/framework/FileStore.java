@@ -29,6 +29,9 @@ import java.net.URL;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.PropertyResourceBundle;
+import java.util.ResourceBundle;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -388,6 +391,23 @@ public class FileStore implements Store
             }
 
             return result;
+        }
+
+        @SuppressWarnings({ "EmptyCatchBlock" })
+        public L18nBundle getResourceBundle(Locale locale)
+        {
+            try
+            {
+                String path = this.getBundleLocalization();
+                if (path == null) path = "OSGI-INF/l10n";
+                path += "/bundle" + (locale != null ? "_" + locale : "") + ".properties";
+                JarEntry entry = archive.getJarEntry(path);
+                if (entry != null) return new L18nBundle(archive.getInputStream(entry));
+            }
+            catch (IOException ioe)
+            {
+            }
+            return null;
         }
 
         @SuppressWarnings({ "EmptyCatchBlock" })
