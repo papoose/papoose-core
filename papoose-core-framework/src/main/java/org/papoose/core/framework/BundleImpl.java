@@ -908,22 +908,17 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
                 {
                     Enumeration enumeration = Collections.enumeration(attributes.values());
 
-                    public boolean hasMoreElements()
-                    {
-                        return enumeration.hasMoreElements();
-                    }
+                    public boolean hasMoreElements() { return enumeration.hasMoreElements(); }
 
-                    public Object nextElement()
-                    {
-                        return enumeration.nextElement().toString();
-                    }
+                    public Object nextElement() { return localize(enumeration.nextElement().toString()); }
                 };
             }
 
+            public Object get(Object key) { return localize(attributes.getValue((String) key)); }
+
             @SuppressWarnings({ "EmptyCatchBlock" })
-            public Object get(Object key)
+            protected Object localize(String result)
             {
-                String result = attributes.getValue((String) key);
                 if (result != null && result.length() > 0 && result.charAt(0) == '%')
                 {
                     result = result.substring(1);
