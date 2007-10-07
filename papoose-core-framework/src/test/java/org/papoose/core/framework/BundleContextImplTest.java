@@ -3,11 +3,10 @@
  */
 package org.papoose.core.framework;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Dictionary;
+import java.util.Locale;
 import java.util.Properties;
 
 import junit.framework.TestCase;
@@ -22,6 +21,8 @@ import org.papoose.core.framework.spi.BundleStore;
  */
 public class BundleContextImplTest extends TestCase
 {
+    private Locale savedLocale;
+
     public void test() throws Exception
     {
         File fileStoreRoot = new File("./target/store");
@@ -43,8 +44,34 @@ public class BundleContextImplTest extends TestCase
             BundleContextImpl context = new BundleContextImpl(bundle);
 
             Bundle b = context.installBundle(testBundle.toURL().toURI().normalize().toString());
+
             Dictionary headers = b.getHeaders("en");
-            String symbolicName = (String) headers.get("Bundle-SymbOLicName");
+            assertEquals("org.papoose.test.papoose-test-bundle", (String) headers.get("Bundle-SymbOLicName"));
+
+            headers = b.getHeaders("en");
+            assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
+
+            headers = b.getHeaders();
+            assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
+
+            headers = b.getHeaders(null);
+            assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
+
+            headers = b.getHeaders("en_US");
+            assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
+
+            headers = b.getHeaders("fr");
+            assertEquals("bundle_fr", (String) headers.get("L10N-Bundle"));
+
+            headers = b.getHeaders("fr_FR");
+            assertEquals("bundle_fr_FR", (String) headers.get("L10N-Bundle"));
+
+            headers = b.getHeaders("");
+            assertEquals("%bundle", (String) headers.get("L10N-Bundle"));
+
+            headers = b.getHeaders("en");
+            assertEquals("no translation for this entry", (String) headers.get("L10N-NoTranslation"));
+
             URL url = b.getEntry("com/acme/fuse/dynamite.xml");
 //            BufferedReader in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
 //            String line = in.readLine();
@@ -57,9 +84,13 @@ public class BundleContextImplTest extends TestCase
         }
     }
 
+    @SuppressWarnings({ "EmptyCatchBlock" })
     public void setUp() throws Exception
     {
         super.setUp();
+
+        savedLocale = Locale.getDefault();
+        Locale.setDefault(new Locale("en", "US"));
 
         try
         {
@@ -68,5 +99,13 @@ public class BundleContextImplTest extends TestCase
         catch (Throwable t)
         {
         }
+    }
+
+    public void tearDown() throws Exception
+    {
+        Locale.setDefault(savedLocale);
+        savedLocale = null;
+
+        super.tearDown();
     }
 }

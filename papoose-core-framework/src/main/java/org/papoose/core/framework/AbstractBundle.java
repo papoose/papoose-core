@@ -42,6 +42,8 @@ abstract class AbstractBundle implements Bundle
         this.bundleId = bundleId;
         this.bundleStore = bundleStore;
         this.currentStore = currentStore;
+
+        this.stores.add(currentStore);
     }
 
     public long getBundleId()

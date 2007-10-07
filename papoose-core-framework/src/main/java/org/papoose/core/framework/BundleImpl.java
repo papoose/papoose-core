@@ -520,7 +520,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
         {
             if (locale != null && locale.length() == 0) return allocateDictionary(getCurrentStore().getAttributes());
 
-            L18nBundle parent = getCurrentStore().getResourceBundle(null);
+            L18nBundle parent = loadResourceBundle(getStores(), null, null);
 
             for (Locale intermediate : generateLocaleList(Locale.getDefault()))
             {
@@ -529,7 +529,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
             if (locale != null)
             {
-                Locale target = new Locale(locale);
+                Locale target = generateLocale(locale);
                 if (!target.equals(Locale.getDefault()))
                 {
                     for (Locale intermediate : generateLocaleList(target))
@@ -898,6 +898,14 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
             public Object remove(Object key) { return attributes.remove(new Attributes.Name((String) key)); }
         };
+    }
+
+    private static Locale generateLocale(String locale)
+    {
+        String[] tokens = locale.split("_");
+        if (tokens.length == 3) return new Locale(tokens[0], tokens[1], tokens[3]);
+        if (tokens.length == 2) return new Locale(tokens[0], tokens[1]);
+        return new Locale(tokens[0]);
     }
 
     private static Dictionary allocateDictionary(final Attributes attributes, final ResourceBundle resourceBundle)
