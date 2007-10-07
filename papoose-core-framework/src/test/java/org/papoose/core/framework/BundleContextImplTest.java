@@ -46,8 +46,8 @@ public class BundleContextImplTest extends TestCase
             Dictionary headers = b.getHeaders("en");
             String symbolicName = (String) headers.get("Bundle-SymbOLicName");
             URL url = b.getEntry("com/acme/fuse/dynamite.xml");
-            BufferedReader in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
-            String line = in.readLine();
+//            BufferedReader in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
+//            String line = in.readLine();
 
             fileStore.removeBundleStore(1);
         }
