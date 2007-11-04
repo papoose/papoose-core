@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
 import java.util.jar.Attributes;
 import java.util.logging.Logger;
@@ -34,20 +36,12 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
-import org.osgi.framework.BundleListener;
-import org.osgi.framework.Filter;
-import org.osgi.framework.FrameworkEvent;
-import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceEvent;
-import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
-import org.osgi.framework.SynchronousBundleListener;
 
 import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleStore;
-import org.papoose.core.framework.util.Listeners;
 import org.papoose.core.framework.util.ResetableLatch;
 
 
@@ -58,24 +52,8 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final ResetableLatch latch = new ResetableLatch();
-    private final Listeners<BundleListener, BundleEvent> bundleListeners = new Listeners<BundleListener, BundleEvent>(new Listeners.Functor<BundleListener, BundleEvent>()
-    {
-        public void fire(BundleListener listener, BundleEvent event) { listener.bundleChanged(event); }
-    });
-    private final Listeners<SynchronousBundleListener, BundleEvent> syncListeners = new Listeners<SynchronousBundleListener, BundleEvent>(new Listeners.Functor<SynchronousBundleListener, BundleEvent>()
-    {
-        public void fire(SynchronousBundleListener listener, BundleEvent event) { listener.bundleChanged(event); }
-    });
-    private final Listeners<FrameworkListener, FrameworkEvent> frameworkListeners = new Listeners<FrameworkListener, FrameworkEvent>(new Listeners.Functor<FrameworkListener, FrameworkEvent>()
-    {
-        public void fire(FrameworkListener listener, FrameworkEvent event) { listener.frameworkEvent(event); }
-    });
-    private final Listeners<ServiceListener, ServiceEvent> serviceListeners = new Listeners<ServiceListener, ServiceEvent>(new Listeners.Functor<ServiceListener, ServiceEvent>()
-    {
-        public void fire(ServiceListener listener, ServiceEvent event) { listener.serviceChanged(event); }
-    });
-    private final Object LOCK = new Object();
-    private final Papoose framework;
+    private final Object lock = new Object();
+    private final Set<FragmentImpl> fragments = new TreeSet<FragmentImpl>();
     private BundleClassLoader classLoader;
     private int startLevel;
     private volatile State state;
@@ -83,20 +61,24 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     BundleImpl(Papoose framework, long bundleId, String location, BundleStore bundleStore, ArchiveStore archiveStore)
     {
-        super(bundleId, location, bundleStore, archiveStore);
+        super(framework, bundleId, location, bundleStore, archiveStore);
 
-        this.framework = framework;
         this.state = INSTALLED_STATE;
     }
 
-    Papoose getFramework()
+    Set<FragmentImpl> getFragments()
     {
-        return framework;
+        return fragments;
     }
 
-    public BundleClassLoader getClassLoader()
+    BundleClassLoader getClassLoader()
     {
         return classLoader;
+    }
+
+    void setClassLoader(BundleClassLoader classLoader)
+    {
+        this.classLoader = classLoader;
     }
 
     public int getState()
@@ -106,7 +88,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public void start() throws BundleException
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             state.start();
         }
@@ -114,7 +96,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public void stop() throws BundleException
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             state.stop();
         }
@@ -122,7 +104,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public void update() throws BundleException
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             state.update();
         }
@@ -130,7 +112,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public void update(InputStream inputStream) throws BundleException
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             state.update(inputStream);
         }
@@ -138,7 +120,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public void uninstall() throws BundleException
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             state.uninstall();
         }
@@ -146,7 +128,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public Dictionary getHeaders()
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.getHeaders();
         }
@@ -154,7 +136,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public ServiceReference[] getRegisteredServices()
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.getRegisteredServices();
         }
@@ -162,7 +144,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public ServiceReference[] getServicesInUse()
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.getServicesInUse();
         }
@@ -170,7 +152,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public boolean hasPermission(Object o)
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.hasPermission(o);
         }
@@ -178,7 +160,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public URL getResource(String name)
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.getResource(name);
         }
@@ -186,23 +168,15 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public Dictionary getHeaders(String locale)
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.getHeaders(locale);
         }
     }
 
-    public String getSymbolicName()
-    {
-        synchronized (LOCK)
-        {
-            return state.getSymbolicName();
-        }
-    }
-
     public Class loadClass(String name) throws ClassNotFoundException
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.loadClass(name);
         }
@@ -210,7 +184,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public Enumeration getResources(String name) throws IOException
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.getResources(name);
         }
@@ -218,7 +192,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public Enumeration getEntryPaths(String path)
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.getEntryPaths(path);
         }
@@ -226,7 +200,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public URL getEntry(String name)
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.getEntry(name);
         }
@@ -234,7 +208,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public long getLastModified()
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.getLastModified();
         }
@@ -242,47 +216,10 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public Enumeration findEntries(String path, String filePattern, boolean recurse)
     {
-        synchronized (LOCK)
+        synchronized (lock)
         {
             return state.findEntries(path, filePattern, recurse);
         }
-    }
-
-    void addBundleListener(BundleListener bundleListener)
-    {
-        bundleListeners.addListener(bundleListener);
-        if (bundleListener instanceof SynchronousBundleListener) syncListeners.addListener((SynchronousBundleListener) bundleListener);
-    }
-
-    void removeBundleListener(BundleListener bundleListener)
-    {
-        bundleListeners.removeListener(bundleListener);
-        if (bundleListener instanceof SynchronousBundleListener) syncListeners.removeListener((SynchronousBundleListener) bundleListener);
-    }
-
-    void addFrameworkListener(FrameworkListener frameworkListener)
-    {
-        frameworkListeners.addListener(frameworkListener);
-    }
-
-    void removeFrameworkListener(FrameworkListener frameworkListener)
-    {
-        frameworkListeners.removeListener(frameworkListener);
-    }
-
-    void addServiceListener(ServiceListener serviceListener)
-    {
-        addServiceListener(serviceListener, FilterImpl.TRUE);
-    }
-
-    void addServiceListener(ServiceListener serviceListener, Filter filter)
-    {
-        serviceListeners.addListener(new ServiceListenerWithFilter(serviceListener, filter));
-    }
-
-    void removeServiceListener(ServiceListener serviceListener)
-    {
-        serviceListeners.removeListener(new ServiceListenerWithFilter(serviceListener, FilterImpl.TRUE));
     }
 
     public ServiceRegistration registerService(String[] clazzes, Object service, Dictionary properties)
@@ -317,9 +254,14 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public int compareTo(BundleImpl o)
     {
-        if (this.getState() != o.getState()) return -1 * (int) (this.bundleId - o.bundleId);
-        if (this.bundleId != o.bundleId) return (int) (this.bundleId - o.bundleId);
+        if (this.getState() != o.getState()) return -1 * (int) (this.getBundleId() - o.getBundleId());
+        if (this.getBundleId() != o.getBundleId()) return (int) (this.getBundleId() - o.getBundleId());
         return 0;
+    }
+
+    public String toString()
+    {
+        return "[bundle:" + getSymbolicName() + "]";
     }
 
     class UninstalledState extends State
@@ -556,11 +498,6 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
             return null;  //todo: consider this autogenerated code
         }
 
-        public String getSymbolicName()
-        {
-            return null;  //todo: consider this autogenerated code
-        }
-
         public Class loadClass(String string) throws ClassNotFoundException
         {
             return null;  //todo: consider this autogenerated code
@@ -583,7 +520,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
         public long getLastModified()
         {
-            return BundleImpl.super.getLastModified();
+            return accesstLastModified();
         }
 
         public Enumeration findEntries(String path, String filePattern, boolean recurse)
@@ -783,46 +720,6 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
     private final State STARTING_STATE = new StartingState();
     private final State STOPPING_STATE = new StopingState();
     private final State ACTIVE_STATE = new ActiveState();
-
-    private static class ServiceListenerWithFilter implements ServiceListener
-    {
-        private final ServiceListener delegate;
-        private final Filter filter;
-
-        public ServiceListenerWithFilter(ServiceListener delegate, Filter filter)
-        {
-            assert delegate != null;
-            assert filter != null;
-
-            this.delegate = delegate;
-            this.filter = filter;
-        }
-
-        public Filter getFilter()
-        {
-            return filter;
-        }
-
-        public void serviceChanged(ServiceEvent event)
-        {
-            delegate.serviceChanged(event);
-        }
-
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ServiceListenerWithFilter that = (ServiceListenerWithFilter) o;
-
-            return delegate.equals(that.delegate);
-        }
-
-        public int hashCode()
-        {
-            return delegate.hashCode();
-        }
-    }
 
     private static List<Locale> generateLocaleList(Locale locale)
     {

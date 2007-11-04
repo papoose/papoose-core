@@ -35,20 +35,20 @@ public class BundleResolver
 {
     Set<Wire> resolve(List<ImportDescription> bundleImportList, Set<BundleImpl> bundles)
     {
-        return resolve(buildPackages(bundleImportList), bundles, new HashSet<Candidate>(), new HashSet<Candidate>());
+        return resolve(collectPackages(bundleImportList), bundles, new HashSet<Candidate>(), new HashSet<Candidate>());
     }
 
-    private Set<Wire> resolve(List<Package> packages, Set<BundleImpl> bundles, Set<Candidate> candidates, Set<Candidate> impliedSet)
+    private static Set<Wire> resolve(List<Package> packages, Set<BundleImpl> bundles, Set<Candidate> candidates, Set<Candidate> impliedSet)
     {
         packages = new ArrayList<Package>(packages);
 
         Package pkg = packages.remove(0);
 
-        for (ExportDescriptionWrapper wrapper : wrapEligibleExports(pkg, bundles))
+        for (ExportDescriptionWrapper candidate : collectEligibleExports(pkg, bundles))
         {
-            if (match(pkg.getPackageName(), pkg.getImportDescription(), wrapper.getExportDescription()))
+            if (match(pkg.getPackageName(), pkg.getImportDescription(), candidate.getExportDescription()))
             {
-                Set<Candidate> implied = collectImpliedConstraints(wrapper.getExportDescription().getUses(), wrapper.getBundle());
+                Set<Candidate> implied = collectImpliedConstraints(candidate.getExportDescription().getUses(), candidate.getBundle());
 
                 assert implied != null;
 
@@ -80,7 +80,7 @@ public class BundleResolver
         return Collections.emptySet();
     }
 
-    private SortedSet<ExportDescriptionWrapper> wrapEligibleExports(Package pkg, Set<BundleImpl> bundles)
+    private static SortedSet<ExportDescriptionWrapper> collectEligibleExports(Package pkg, Set<BundleImpl> bundles)
     {
         String bundleName = (String) pkg.getParameters().get("bundle-symbolic-name");
         VersionRange bundleVersionRange = (VersionRange) pkg.getParameters().get("bundle-version");
@@ -104,7 +104,7 @@ public class BundleResolver
         return sorted;
     }
 
-    protected Set<Candidate> collectImpliedConstraints(List<String> uses, BundleImpl bundle)
+    protected static Set<Candidate> collectImpliedConstraints(List<String> uses, BundleImpl bundle)
     {
         Set<Candidate> result = new HashSet<Candidate>();
 
@@ -127,7 +127,7 @@ public class BundleResolver
         return result;
     }
 
-    private boolean isConsistent(Set<Candidate> usedSet, Set<Candidate> used)
+    private static boolean isConsistent(Set<Candidate> usedSet, Set<Candidate> used)
     {
         Set<Candidate> intersection = new HashSet<Candidate>(usedSet);
 
@@ -145,7 +145,7 @@ public class BundleResolver
         return true;
     }
 
-    private Set<Wire> collectWires(Set<Candidate> candidates)
+    private static Set<Wire> collectWires(Set<Candidate> candidates)
     {
         Set<Wire> wires = new HashSet<Wire>();
 
@@ -157,7 +157,7 @@ public class BundleResolver
         return wires;
     }
 
-    private boolean match(String importPackage, ImportDescription importDescription, ExportDescription exportDescription)
+    private static boolean match(String importPackage, ImportDescription importDescription, ExportDescription exportDescription)
     {
         for (String exportPackage : exportDescription.getPackages())
         {
@@ -173,6 +173,7 @@ public class BundleResolver
 
                     for (String key : importDescription.getParameters().keySet())
                     {
+                        if ("version".equals(key) || "bundle-version".equals(key)) continue;
                         if (!importDescription.getParameters().get(key).equals(exportDescription.getParameters().get(key))) return false;
                     }
 
@@ -185,7 +186,7 @@ public class BundleResolver
         return false;
     }
 
-    private List<Package> buildPackages(List<ImportDescription> importDescriptions)
+    private static List<Package> collectPackages(List<ImportDescription> importDescriptions)
     {
         List<Package> work = new ArrayList<Package>();
 
@@ -224,6 +225,11 @@ public class BundleResolver
         public ImportDescription getImportDescription()
         {
             return importDescription;
+        }
+
+        public String toString()
+        {
+            return packageName;
         }
     }
 

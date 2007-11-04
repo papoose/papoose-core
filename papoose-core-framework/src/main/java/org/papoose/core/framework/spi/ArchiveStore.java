@@ -20,15 +20,18 @@ import java.io.File;
 import java.security.Permission;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.jar.Attributes;
 
 import org.apache.xbean.classloader.ResourceHandle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 
+import org.papoose.core.framework.DynamicDescription;
 import org.papoose.core.framework.ExportDescription;
 import org.papoose.core.framework.ImportDescription;
 import org.papoose.core.framework.L18nBundle;
+import org.papoose.core.framework.RequireDescription;
 
 /**
  * @version $Revision$ $Date$
@@ -56,6 +59,10 @@ public interface ArchiveStore extends Comparable
     List<ExportDescription> getBundleExportList();
 
     List<ImportDescription> getBundleImportList();
+
+    List<RequireDescription> getBundleRequireBundle();
+
+    Set<DynamicDescription> getDynamicImportSet();
 
     void refreshClassPath(List<String> classPath) throws BundleException;
 

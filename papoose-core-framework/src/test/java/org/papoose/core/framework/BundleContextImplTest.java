@@ -80,6 +80,8 @@ public class BundleContextImplTest extends TestCase
             headers = bundle.getHeaders("en");
             assertEquals("no translation for this entry", (String) headers.get("L10N-NoTranslation"));
 
+            papoose.getBundleManager().resolve(bundle);
+
             URL url = bundle.getEntry("com/acme/fuse/dynamite.xml");
 
             bundle.getLastModified();

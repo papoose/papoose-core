@@ -18,15 +18,19 @@ package org.papoose.core.framework;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 
+import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleManager;
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.spi.Store;
@@ -66,9 +70,41 @@ public class BundleManagerImpl implements BundleManager
     public void resolve(Bundle bundle)
     {
         BundleImpl bundleImpl = (BundleImpl) bundle;
-        Set<Wire> wires = framework.getResolver().resolve(bundleImpl.getCurrentStore().getBundleImportList(), new HashSet<BundleImpl>(bundles.values()));
+        ArchiveStore currentStore = bundleImpl.getCurrentStore();
+        Set<Wire> wires = framework.getResolver().resolve(currentStore.getBundleImportList(), new HashSet<BundleImpl>(bundles.values()));
+        List<Wire> requiredBundles = new ArrayList<Wire>();
 
-        bundleImpl.getClassLoader().setWires(wires);
+        String bootDelegateString = (String) framework.getProperty(Constants.FRAMEWORK_BOOTDELEGATION);
+        String[] bootDelegates = (bootDelegateString == null ? new String[]{ } : bootDelegateString.split(","));
+
+        Set<String> exportedPackages = new HashSet<String>();
+
+        for (ImportDescription desc : currentStore.getBundleImportList())
+        {
+            exportedPackages.addAll(desc.getPackageNames());
+        }
+
+        for (ExportDescription desc : currentStore.getBundleExportList())
+        {
+            exportedPackages.addAll(desc.getPackages());
+        }
+
+        for (Wire wire : requiredBundles)
+        {
+            exportedPackages.add(wire.getPackageName());
+        }
+
+        BundleClassLoader classLoader = new BundleClassLoader(bundle.getLocation(),
+                                                              framework.getClassLoader(),
+                                                              framework,
+                                                              bundleImpl,
+                                                              requiredBundles,
+                                                              bootDelegates,
+                                                              exportedPackages.toArray(new String[exportedPackages.size()]),
+                                                              currentStore.getDynamicImportSet(),
+                                                              bundleImpl.getStores());
+
+        bundleImpl.setClassLoader(classLoader);
     }
 
     public Bundle getBundle(long bundleId)

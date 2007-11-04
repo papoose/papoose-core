@@ -48,6 +48,7 @@ public final class Papoose
     private final static Map<String, Reference<Papoose>> frameworksByName = new Hashtable<String, Reference<Papoose>>();
 
     private final AccessControlContext acc = AccessController.getContext();
+    private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private final BundleManager bundleManager;
     private final ThreadPool threadPool;
     private final Properties properties;
@@ -120,6 +121,11 @@ public final class Papoose
     AccessControlContext getAcc()
     {
         return acc;
+    }
+
+    ClassLoader getClassLoader()
+    {
+        return classLoader;
     }
 
     BundleManager getBundleManager()
@@ -222,7 +228,7 @@ public final class Papoose
     {
     }
 
-    Wire resolve(ImportDescription importDescription)
+    Wire resolve(DynamicDescription dynamicDescription)
     {
         return null;
     }

@@ -60,37 +60,46 @@ public class BundleClassLoader extends NamedClassLoader
         }
     };
     private final static URL[] EMPTY_URLS = new URL[0];
+    private final Papoose framework;
     private final BundleImpl bundle;
     private final String[] bootDelegates;
-    private final Wire[] requiredBundles;
+    private final List<Wire> requiredBundles;
     private final String[] exportedPackages;
-    private final Set<ImportDescription> dynamicImports;
-    private final Papoose papoose;
+    private final Set<DynamicDescription> dynamicImports;
     private final SortedSet<ArchiveStore> archiveStores = new TreeSet<ArchiveStore>();
     private final List<String> classPath = new ArrayList<String>();
     private Set<Wire> wires;
 
     BundleClassLoader(String name, ClassLoader parent,
+                      Papoose framework,
                       BundleImpl bundle,
+                      List<Wire> requiredBundles,
                       String[] bootDelegates,
-                      Wire[] requiredBundles,
                       String[] exportedPackages,
-                      Set<ImportDescription> dynamicImports, Papoose papoose,
-                      final List<ArchiveStore> archiveStores) throws BundleException
+                      Set<DynamicDescription> dynamicImports,
+                      final List<ArchiveStore> archiveStores)
     {
         super(name, EMPTY_URLS, parent);
 
         assert name != null;
+        assert framework != null;
         assert bundle != null;
-        assert bootDelegates != null;
         assert requiredBundles != null;
 
+        this.framework = framework;
         this.bundle = bundle;
-        this.bootDelegates = bootDelegates;
         this.requiredBundles = requiredBundles;
+        this.bootDelegates = bootDelegates;
         this.exportedPackages = exportedPackages;
         this.dynamicImports = dynamicImports;
-        this.papoose = papoose;
+
+
+        ArchiveStore store = bundle.getCurrentStore();
+        List<RequireDescription> list = store.getBundleRequireBundle();
+        for (RequireDescription description : list)
+        {
+//            Wire wire = new Wire(description.)
+        }
 
         addArchiveStore(new BundleArchiveStore(archiveStores.get(0)));
 
@@ -248,9 +257,9 @@ public class BundleClassLoader extends NamedClassLoader
                 if (exportedPackage.equals(packageName)) throw new ClassNotFoundException();
             }
 
-            for (ImportDescription importDescription : dynamicImports)
+            for (DynamicDescription dynamicDescription : dynamicImports)
             {
-                Wire wire = papoose.resolve(importDescription);
+                Wire wire = framework.resolve(dynamicDescription);
                 if (wire != null)
                 {
                     wires.add(wire);
@@ -482,6 +491,10 @@ public class BundleClassLoader extends NamedClassLoader
         public List<ExportDescription> getBundleExportList() { return delegate.getBundleExportList(); }
 
         public List<ImportDescription> getBundleImportList() { return delegate.getBundleImportList(); }
+
+        public List<RequireDescription> getBundleRequireBundle() { return delegate.getBundleRequireBundle(); }
+
+        public Set<DynamicDescription> getDynamicImportSet() {return delegate.getDynamicImportSet();}
 
         public void refreshClassPath(List<String> classPath) throws BundleException { delegate.refreshClassPath(classPath); }
 

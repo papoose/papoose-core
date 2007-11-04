@@ -32,6 +32,7 @@ public class ImportDescription
     private final List<String> packageNames;
     private final Map<String, Object> parameters;
     private Resolution resolution;
+    private transient volatile String string;
 
     public ImportDescription(List<String> packageNames, Map<String, Object> parameters)
     {
@@ -61,5 +62,34 @@ public class ImportDescription
     void setResolution(Resolution resolution)
     {
         this.resolution = resolution;
+    }
+
+    public String toString()
+    {
+        if (string == null)
+        {
+            StringBuilder builder = new StringBuilder();
+
+            for (String pkg : packageNames)
+            {
+                if (builder.length() > 0) builder.append(";");
+                builder.append(pkg);
+            }
+            builder.append(";resolution=");
+            builder.append(resolution);
+            if (!parameters.isEmpty())
+            {
+                for (String key : parameters.keySet())
+                {
+                    builder.append(";");
+                    builder.append(key);
+                    builder.append("=");
+                    builder.append(parameters.get(key));
+                }
+            }
+
+            string = builder.toString();
+        }
+        return string;
     }
 }

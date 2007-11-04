@@ -66,7 +66,7 @@ public abstract class AbstractStore implements ArchiveStore
     private final URL bundleUpdateLocation;
     private final String bundleVendor;
     private final Version bundleVersion;
-    private final List<DynamicDescription> bundleDynamicImportList;
+    private final Set<DynamicDescription> bundleDynamicImportSet;
     private final List<ExportDescription> bundleExportList;
     private final List<String> bundleExportService;
     private final FragmentDescription bundleFragmentHost;
@@ -98,7 +98,7 @@ public abstract class AbstractStore implements ArchiveStore
         this.bundleUpdateLocation = obtainBundleUpdateLocation(this.attributes);
         this.bundleVendor = this.attributes.getValue(Constants.BUNDLE_VENDOR);
         this.bundleVersion = Version.parseVersion(this.attributes.getValue(Constants.BUNDLE_VERSION));
-        this.bundleDynamicImportList = obtainBundleDynamicImportList(this.attributes);
+        this.bundleDynamicImportSet = obtainBundleDynamicImportSet(this.attributes);
         this.bundleExportList = obtainBundleExportList(this.attributes);
         this.bundleExportService = obtainBundleExportService(this.attributes);
         this.bundleFragmentHost = obtainBundleFragementHost(this.attributes);
@@ -178,6 +178,16 @@ public abstract class AbstractStore implements ArchiveStore
     public List<ImportDescription> getBundleImportList()
     {
         return bundleImportList;
+    }
+
+    public List<RequireDescription> getBundleRequireBundle()
+    {
+        return bundleRequireBundle;
+    }
+
+    public Set<DynamicDescription> getDynamicImportSet()
+    {
+        return bundleDynamicImportSet;
     }
 
     public int compareTo(Object o)
@@ -280,7 +290,7 @@ public abstract class AbstractStore implements ArchiveStore
 
     protected static List<String> obtainBundleCategories(Attributes headers)
     {
-        List<String> result;
+        List<String> result = Collections.emptyList();
 
         if (headers.containsKey(Constants.BUNDLE_CATEGORY))
         {
@@ -288,10 +298,6 @@ public abstract class AbstractStore implements ArchiveStore
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
-        }
-        else
-        {
-            result = Collections.emptyList();
         }
 
         return result;
@@ -331,7 +337,7 @@ public abstract class AbstractStore implements ArchiveStore
 
     protected static List<NativeCodeDescription> obtainBundleNativeCodeList(Attributes headers) throws BundleException
     {
-        List<NativeCodeDescription> result;
+        List<NativeCodeDescription> result = Collections.emptyList();
         if (headers.containsKey(Constants.BUNDLE_NATIVECODE))
         {
             String[] nativecodes = Util.split(headers.getValue(Constants.BUNDLE_NATIVECODE), ",");
@@ -353,17 +359,13 @@ public abstract class AbstractStore implements ArchiveStore
                 result.add(nativeCodeDescription);
             }
         }
-        else
-        {
-            result = Collections.emptyList();
-        }
 
         return result;
     }
 
     protected static List<String> obtainBundleExecutionEnvironment(Attributes headers)
     {
-        List<String> result;
+        List<String> result = Collections.emptyList();
 
         if (headers.containsKey("Bundle-ExecutionEnvironment"))
         {
@@ -371,10 +373,6 @@ public abstract class AbstractStore implements ArchiveStore
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
-        }
-        else
-        {
-            result = Collections.emptyList();
         }
 
         return result;
@@ -399,14 +397,14 @@ public abstract class AbstractStore implements ArchiveStore
         }
     }
 
-    protected static List<DynamicDescription> obtainBundleDynamicImportList(Attributes headers) throws BundleException
+    protected static Set<DynamicDescription> obtainBundleDynamicImportSet(Attributes headers) throws BundleException
     {
-        List<DynamicDescription> result;
+        Set<DynamicDescription> result = Collections.emptySet();
 
         if (headers.containsKey("DynamicImport-Package"))
         {
             String[] importDescriptions = headers.getValue("DynamicImport-Package").split(",");
-            result = new ArrayList<DynamicDescription>(importDescriptions.length);
+            result = new HashSet<DynamicDescription>(importDescriptions.length);
 
             for (String importDescription : importDescriptions)
             {
@@ -422,17 +420,13 @@ public abstract class AbstractStore implements ArchiveStore
                 result.add(description);
             }
         }
-        else
-        {
-            result = Collections.emptyList();
-        }
 
         return result;
     }
 
     protected static List<ExportDescription> obtainBundleExportList(Attributes headers) throws BundleException
     {
-        List<ExportDescription> result;
+        List<ExportDescription> result = Collections.emptyList();
 
         if (headers.containsKey(Constants.EXPORT_PACKAGE))
         {
@@ -473,10 +467,6 @@ public abstract class AbstractStore implements ArchiveStore
 
                 result.add(description);
             }
-        }
-        else
-        {
-            result = Collections.emptyList();
         }
 
         return result;
@@ -519,7 +509,7 @@ public abstract class AbstractStore implements ArchiveStore
     @SuppressWarnings({ "deprecation" })
     protected static List<String> obtainBundleExportService(Attributes headers)
     {
-        List<String> result;
+        List<String> result  = Collections.emptyList();
 
         if (headers.containsKey(Constants.EXPORT_SERVICE))
         {
@@ -528,17 +518,13 @@ public abstract class AbstractStore implements ArchiveStore
 
             for (String token : tokens) result.add(token.trim());
         }
-        else
-        {
-            result = Collections.emptyList();
-        }
 
         return result;
     }
 
     protected static List<ImportDescription> obtainBundleImportList(Attributes headers) throws BundleException
     {
-        List<ImportDescription> result;
+        List<ImportDescription> result = Collections.emptyList();
 
         if (headers.containsKey(Constants.IMPORT_PACKAGE))
         {
@@ -599,10 +585,6 @@ public abstract class AbstractStore implements ArchiveStore
                 result.add(description);
             }
         }
-        else
-        {
-            result = Collections.emptyList();
-        }
 
         return result;
     }
@@ -610,7 +592,7 @@ public abstract class AbstractStore implements ArchiveStore
     @SuppressWarnings({ "deprecation" })
     protected static List<String> obtainBundleImportService(Attributes headers)
     {
-        List<String> result;
+        List<String> result = Collections.emptyList();
 
         if (headers.containsKey(Constants.IMPORT_SERVICE))
         {
@@ -619,22 +601,16 @@ public abstract class AbstractStore implements ArchiveStore
 
             for (String token : tokens) result.add(token.trim());
         }
-        else
-        {
-            result = Collections.emptyList();
-        }
 
         return result;
     }
 
     protected static List<RequireDescription> obtainBundleRequireBundle(Attributes headers) throws BundleException
     {
-        List<RequireDescription> result = null;
+        List<RequireDescription> result  = Collections.emptyList();
 
         if (headers.containsKey(Constants.REQUIRE_BUNDLE))
         {
-            result = new ArrayList<RequireDescription>();
-
             String[] descriptions = Util.split(headers.getValue(Constants.REQUIRE_BUNDLE), ",");
             for (String description : descriptions)
             {
