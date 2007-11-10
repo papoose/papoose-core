@@ -19,6 +19,7 @@ package org.papoose.core.framework;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.osgi.framework.Version;
 
@@ -31,17 +32,18 @@ public class ExportDescription
     public static final Version DEFAULT_VERSION = new Version(0, 0, 0);
     private final List<String> packages;
     private final Map<String, Object> parameters;
-    private List<String> uses = Collections.emptyList();
+    private Set<String> uses = Collections.emptySet();
     private List<String> mandatory = Collections.emptyList();
     private List<String[]> included = Collections.emptyList();
     private List<String[]> excluded = Collections.emptyList();
+    private transient volatile String string;
 
-    ExportDescription(List<String> paths, Map<String, Object> parameters)
+    ExportDescription(List<String> packages, Map<String, Object> parameters)
     {
-        assert paths != null;
+        assert packages != null;
         assert parameters != null;
 
-        this.packages = Collections.unmodifiableList(paths);
+        this.packages = Collections.unmodifiableList(packages);
         this.parameters = Collections.unmodifiableMap(parameters);
     }
 
@@ -55,12 +57,12 @@ public class ExportDescription
         return parameters;
     }
 
-    public List<String> getUses()
+    public Set<String> getUses()
     {
         return uses;
     }
 
-    void setUses(List<String> uses)
+    void setUses(Set<String> uses)
     {
         this.uses = uses;
     }
@@ -93,5 +95,40 @@ public class ExportDescription
     void setExcluded(List<String[]> excluded)
     {
         this.excluded = excluded;
+    }
+
+    public String toString()
+    {
+        if (string == null)
+        {
+            StringBuilder builder = new StringBuilder();
+
+            for (String pkg : packages)
+            {
+                if (builder.length() > 0) builder.append(";");
+                builder.append(pkg);
+            }
+            if (!uses.isEmpty())
+            {
+                int count = 0;
+                builder.append(";uses=");
+                if (uses.size() > 1) builder.append("\"");
+                for (String name : uses) { if (count++ > 0) builder.append(",");builder.append(name); }
+                if (uses.size() > 1) builder.append("\"");
+            }
+            if (!parameters.isEmpty())
+            {
+                for (String key : parameters.keySet())
+                {
+                    builder.append(";");
+                    builder.append(key);
+                    builder.append("=");
+                    builder.append(parameters.get(key));
+                }
+            }
+
+            string = builder.toString();
+        }
+        return string;
     }
 }

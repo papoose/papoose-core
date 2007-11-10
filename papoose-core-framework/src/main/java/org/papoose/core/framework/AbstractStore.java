@@ -430,45 +430,51 @@ public abstract class AbstractStore implements ArchiveStore
 
         if (headers.containsKey(Constants.EXPORT_PACKAGE))
         {
-            String[] exportDescriptions = Util.split(headers.getValue(Constants.EXPORT_PACKAGE), ",");
-            result = new ArrayList<ExportDescription>(exportDescriptions.length);
+            result = parseBundleExportList(headers.getValue(Constants.EXPORT_PACKAGE));
+        }
 
-            for (String exportDescription : exportDescriptions)
+        return result;
+    }
+
+    public static List<ExportDescription> parseBundleExportList(String value) throws BundleException
+    {
+        String[] exportDescriptions = Util.split(value, ",");
+        List<ExportDescription> result = new ArrayList<ExportDescription>(exportDescriptions.length);
+
+        for (String exportDescription : exportDescriptions)
+        {
+            List<String> paths = new ArrayList<String>(1);
+            Map<String, Object> parameters = new HashMap<String, Object>();
+            ExportDescription description = new ExportDescription(paths, parameters);
+
+            Util.parseParameters(exportDescription, description, parameters, true, paths);
+
+            if (parameters.containsKey("specification-version")) parameters.put("specification-version", Version.parseVersion((String) parameters.get("specification-version")));
+
+            if (!parameters.containsKey("version"))
             {
-                List<String> paths = new ArrayList<String>(1);
-                Map<String, Object> parameters = new HashMap<String, Object>();
-                ExportDescription description = new ExportDescription(paths, parameters);
-
-                Util.parseParameters(exportDescription, description, parameters, true, paths);
-
-                if (parameters.containsKey("specification-version")) parameters.put("specification-version", Version.parseVersion((String) parameters.get("specification-version")));
-
-                if (!parameters.containsKey("version"))
+                if (parameters.containsKey("specification-version"))
                 {
-                    if (parameters.containsKey("specification-version"))
-                    {
-                        parameters.put("version", parameters.get("specification-version"));
-                    }
-                    else
-                    {
-                        parameters.put("version", ExportDescription.DEFAULT_VERSION);
-                    }
+                    parameters.put("version", parameters.get("specification-version"));
                 }
                 else
                 {
-                    parameters.put("version", Version.parseVersion((String) parameters.get("version")));
+                    parameters.put("version", ExportDescription.DEFAULT_VERSION);
                 }
-
-                if (parameters.containsKey("specification-version") && !parameters.get("specification-version").equals(parameters.get("version"))) throw new BundleException("version and specification-version do not match");
-
-                if (parameters.containsKey("bundle-symbolic-name")) throw new BundleException("Attempted to set bundle-symbolic-name in Export-Package");
-
-                if (parameters.containsKey("bundle-version")) throw new BundleException("Attempted to set bundle-version in Export-Package");
-
-                result.add(description);
             }
-        }
+            else
+            {
+                parameters.put("version", Version.parseVersion((String) parameters.get("version")));
+            }
 
+            if (parameters.containsKey("specification-version") && !parameters.get("specification-version").equals(parameters.get("version"))) throw new BundleException("version and specification-version do not match");
+
+            if (parameters.containsKey("bundle-symbolic-name")) throw new BundleException("Attempted to set bundle-symbolic-name in Export-Package");
+
+            if (parameters.containsKey("bundle-version")) throw new BundleException("Attempted to set bundle-version in Export-Package");
+
+            result.add(description);
+        }
         return result;
     }
 
@@ -509,7 +515,7 @@ public abstract class AbstractStore implements ArchiveStore
     @SuppressWarnings({ "deprecation" })
     protected static List<String> obtainBundleExportService(Attributes headers)
     {
-        List<String> result  = Collections.emptyList();
+        List<String> result = Collections.emptyList();
 
         if (headers.containsKey(Constants.EXPORT_SERVICE))
         {
@@ -607,7 +613,7 @@ public abstract class AbstractStore implements ArchiveStore
 
     protected static List<RequireDescription> obtainBundleRequireBundle(Attributes headers) throws BundleException
     {
-        List<RequireDescription> result  = Collections.emptyList();
+        List<RequireDescription> result = Collections.emptyList();
 
         if (headers.containsKey(Constants.REQUIRE_BUNDLE))
         {
@@ -649,6 +655,9 @@ public abstract class AbstractStore implements ArchiveStore
         return result;
     }
 
+    /**
+     * Needed to override <code>containsKey()</code>
+     */
     private static class AttributesWrapper extends Attributes
     {
         public AttributesWrapper(Attributes attributes)
@@ -656,6 +665,7 @@ public abstract class AbstractStore implements ArchiveStore
             super(attributes);
         }
 
+        @Override
         public boolean containsKey(Object name)
         {
             return super.containsKey(new Attributes.Name((String) name));

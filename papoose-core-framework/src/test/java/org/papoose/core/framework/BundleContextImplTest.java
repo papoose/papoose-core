@@ -1,5 +1,17 @@
 /**
- *  Copyright 2007 Picateers Inc., 1720 S. Amphlett Boulevard  Suite 320, San Mateo, CA 94402 U.S.A. All rights reserved.
+ * Copyright 2007 (C) The original author or authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.papoose.core.framework;
 
@@ -13,8 +25,6 @@ import junit.framework.TestCase;
 import org.osgi.framework.Bundle;
 
 import org.papoose.core.framework.mock.MockThreadPool;
-import org.papoose.core.framework.spi.ArchiveStore;
-import org.papoose.core.framework.spi.BundleStore;
 
 /**
  * @version $Revision$ $Date$
@@ -29,21 +39,16 @@ public class BundleContextImplTest extends TestCase
         try
         {
             final long earlyTimestamp = System.currentTimeMillis();
-            final int bundleId = 0;
+            final int bundleId = 1;
             FileStore fileStore = new FileStore(fileStoreRoot);
             Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new MockThreadPool(), new Properties());
+
+            papoose.start();
+
             File testBundle = new File("./target/bundle.jar");
             String location = testBundle.toURL().toURI().normalize().toString();
 
-            BundleStore bundleStore = fileStore.allocateBundleStore(bundleId, testBundle.toURL().toString());
-            ArchiveStore archiveStore = fileStore.allocateArchiveStore(papoose, bundleId, 0, testBundle.toURL().openStream());
-
-            MockURLStreamHandlerFactory.add(archiveStore);
-
-            archiveStore.refreshClassPath(archiveStore.getBundleClassPath());
-
-            BundleImpl bootstrap = new BundleImpl(papoose, bundleId, location, bundleStore, archiveStore);
-            BundleContextImpl context = new BundleContextImpl(bootstrap);
+            BundleContextImpl context = new BundleContextImpl((BundleImpl) papoose.getBundleManager().getBundle(0));
 
             Bundle bundle = context.installBundle(location.toString());
 
@@ -87,6 +92,8 @@ public class BundleContextImplTest extends TestCase
             bundle.getLastModified();
 //            BufferedReader in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
 //            String line = in.readLine();
+
+            papoose.stop();
 
             fileStore.removeBundleStore(1);
         }

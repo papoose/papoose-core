@@ -41,4 +41,6 @@ public interface BundleManager
     Bundle[] getBundles();
 
     Bundle installBundle(String location, InputStream inputStream) throws BundleException;
+
+    Bundle installSystemBundle(String location) throws BundleException;
 }

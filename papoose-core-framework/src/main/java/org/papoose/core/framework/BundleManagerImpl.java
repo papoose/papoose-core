@@ -104,6 +104,8 @@ public class BundleManagerImpl implements BundleManager
                                                               currentStore.getDynamicImportSet(),
                                                               bundleImpl.getStores());
 
+        classLoader.setWires(wires);
+
         bundleImpl.setClassLoader(classLoader);
     }
 
@@ -142,6 +144,39 @@ public class BundleManagerImpl implements BundleManager
             locations.put(location, bundle);
             installedbundles.put(bundleId, bundle);
             if (bundle instanceof BundleImpl) bundles.put(bundleId, (BundleImpl) bundle);
+
+            return bundle;
+        }
+        catch (BundleException be)
+        {
+            store.removeBundleStore(bundleId);
+            throw be;
+        }
+        catch (Exception e)
+        {
+            store.removeBundleStore(bundleId);
+            throw new BundleException("Error occured while loading location " + location, e);
+        }
+    }
+
+    public Bundle installSystemBundle(String location) throws BundleException
+    {
+        logger.entering(getClass().getName(), "installSystemBundle", new Object[]{ location });
+
+        if (locations.containsKey(location)) return locations.get(location);
+
+        final long bundleId = 0;
+        try
+        {
+            BundleStore bundleStore = store.allocateBundleStore(bundleId, location);
+
+            AbstractBundle bundle = new SystemBundle(framework, bundleId, location, bundleStore);
+
+            bundle.markInstalled();
+
+            locations.put(location, bundle);
+            installedbundles.put(bundleId, bundle);
+            bundles.put(bundleId, (BundleImpl) bundle);
 
             return bundle;
         }

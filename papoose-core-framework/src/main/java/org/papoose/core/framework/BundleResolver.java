@@ -58,7 +58,7 @@ public class BundleResolver
                     intersection.retainAll(candidates);
 
                     candidates = new HashSet<Candidate>(candidates);
-                    candidates.addAll(intersection);
+                    candidates.add(new Candidate(pkg.getPackageName(), candidate.getExportDescription(), candidate.getBundle()));
 
                     impliedSet = new HashSet<Candidate>(impliedSet);
                     impliedSet.addAll(implied);
@@ -75,7 +75,6 @@ public class BundleResolver
                 }
             }
         }
-
 
         return Collections.emptySet();
     }
@@ -104,7 +103,7 @@ public class BundleResolver
         return sorted;
     }
 
-    protected static Set<Candidate> collectImpliedConstraints(List<String> uses, BundleImpl bundle)
+    protected static Set<Candidate> collectImpliedConstraints(Set<String> uses, BundleImpl bundle)
     {
         Set<Candidate> result = new HashSet<Candidate>();
 
