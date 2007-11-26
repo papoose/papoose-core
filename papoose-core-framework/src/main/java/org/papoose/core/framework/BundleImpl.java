@@ -446,7 +446,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
         {
             if (locale != null && locale.length() == 0) return allocateDictionary(getCurrentStore().getAttributes());
 
-            L18nBundle parent = loadResourceBundle(getStores(), null, null);
+            L18nResourceBundle parent = loadResourceBundle(getStores(), null, null);
 
             for (Locale intermediate : generateLocaleList(Locale.getDefault()))
             {
@@ -746,9 +746,9 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
         return result;
     }
 
-    private static L18nBundle loadResourceBundle(List<ArchiveStore> stores, L18nBundle parent, Locale locale)
+    private static L18nResourceBundle loadResourceBundle(List<ArchiveStore> stores, L18nResourceBundle parent, Locale locale)
     {
-        L18nBundle resourceBundle;
+        L18nResourceBundle resourceBundle;
         for (ArchiveStore store : stores)
         {
             resourceBundle = store.getResourceBundle(locale);

@@ -392,7 +392,7 @@ public class FileStore implements Store
         }
 
         @SuppressWarnings({ "EmptyCatchBlock" })
-        public L18nBundle getResourceBundle(Locale locale)
+        public L18nResourceBundle getResourceBundle(Locale locale)
         {
             try
             {
@@ -400,7 +400,7 @@ public class FileStore implements Store
                 if (path == null) path = "OSGI-INF/l10n/bundle";
                 path += (locale != null ? "_" + locale : "") + ".properties";
                 JarEntry entry = archive.getJarEntry(path);
-                if (entry != null) return new L18nBundle(archive.getInputStream(entry));
+                if (entry != null) return new L18nResourceBundle(archive.getInputStream(entry));
             }
             catch (IOException ioe)
             {

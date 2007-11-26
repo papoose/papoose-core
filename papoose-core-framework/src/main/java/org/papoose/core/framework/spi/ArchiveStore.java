@@ -30,7 +30,7 @@ import org.osgi.framework.Version;
 import org.papoose.core.framework.DynamicDescription;
 import org.papoose.core.framework.ExportDescription;
 import org.papoose.core.framework.ImportDescription;
-import org.papoose.core.framework.L18nBundle;
+import org.papoose.core.framework.L18nResourceBundle;
 import org.papoose.core.framework.RequireDescription;
 
 /**
@@ -76,7 +76,7 @@ public interface ArchiveStore extends Comparable
 
     List<ResourceHandle> findResources(String resourceName);
 
-    L18nBundle getResourceBundle(Locale local);
+    L18nResourceBundle getResourceBundle(Locale local);
 
     void close();
 }

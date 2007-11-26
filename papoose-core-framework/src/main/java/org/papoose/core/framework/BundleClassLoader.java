@@ -508,7 +508,7 @@ public class BundleClassLoader extends NamedClassLoader
 
         public List<ResourceHandle> findResources(String resourceName) { return delegate.findResources(resourceName); }
 
-        public L18nBundle getResourceBundle(Locale local) { return delegate.getResourceBundle(local); }
+        public L18nResourceBundle getResourceBundle(Locale local) { return delegate.getResourceBundle(local); }
 
         public void close() { delegate.close(); }
 

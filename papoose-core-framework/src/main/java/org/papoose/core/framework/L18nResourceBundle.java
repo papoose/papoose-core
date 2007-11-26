@@ -19,18 +19,20 @@ package org.papoose.core.framework;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.PropertyResourceBundle;
+import java.util.ResourceBundle;
 
 /**
  * @version $Revision$ $Date$
  */
-public class L18nBundle extends PropertyResourceBundle
+public class L18nResourceBundle extends PropertyResourceBundle
 {
-    public L18nBundle(InputStream stream) throws IOException
+    public L18nResourceBundle(InputStream stream) throws IOException
     {
         super(stream);
     }
 
-    public void setParent(L18nBundle parent)
+    @Override
+    public void setParent(ResourceBundle parent)
     {
         super.setParent(parent);
     }
