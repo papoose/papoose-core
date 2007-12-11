@@ -46,7 +46,7 @@ public class BundleContextImplTest extends TestCase
             papoose.start();
 
             File testBundle = new File("./target/bundle.jar");
-            String location = testBundle.toURL().toURI().normalize().toString();
+            String location = testBundle.toURI().normalize().toString();
 
             BundleContextImpl context = new BundleContextImpl((BundleImpl) papoose.getBundleManager().getBundle(0));
 
