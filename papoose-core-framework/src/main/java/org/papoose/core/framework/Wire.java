@@ -80,4 +80,10 @@ public class Wire
         }
         return true;
     }
+
+
+    public String toString()
+    {
+        return packageName + " " + exportDescription + " " + bundle.getBundleId();
+    }
 }

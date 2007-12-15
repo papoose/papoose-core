@@ -33,6 +33,13 @@ import org.osgi.framework.Version;
  */
 public class BundleResolver
 {
+    /**
+     * Collect set of wires which are a consistent pairing of imports to exports.
+     *
+     * @param bundleImportList list of imports to be matched
+     * @param bundles          List of bundles that can provide the exports
+     * @return list of consistent set of wires
+     */
     Set<Wire> resolve(List<ImportDescription> bundleImportList, Set<BundleImpl> bundles)
     {
         return resolve(collectPackages(bundleImportList), bundles, new HashSet<Candidate>(), new HashSet<Candidate>());
@@ -185,6 +192,12 @@ public class BundleResolver
         return false;
     }
 
+    /**
+     * Import descriptions can contain many packages.  We need the individual packages.
+     *
+     * @param importDescriptions a list of import descriptions
+     * @return the list of packages contained in the list of import descriptions
+     */
     private static List<Package> collectPackages(List<ImportDescription> importDescriptions)
     {
         List<Package> work = new ArrayList<Package>();

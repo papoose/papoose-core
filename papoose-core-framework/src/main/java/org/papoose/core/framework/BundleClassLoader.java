@@ -123,6 +123,12 @@ public class BundleClassLoader extends NamedClassLoader
         this.wires = Collections.unmodifiableSet(wires);
     }
 
+    /**
+     * Add an archive store to a sorted set of archive store and rebuild the
+     * bundle classpath after adding the new store's own classpath.
+     *
+     * @param archiveStore the store to be added
+     */
     void addArchiveStore(ArchiveStore archiveStore)
     {
         archiveStores.add(archiveStore);
@@ -501,6 +507,8 @@ public class BundleClassLoader extends NamedClassLoader
         public String loadLibrary(String libname) { return delegate.loadLibrary(libname); }
 
         public Permission[] getPermissionCollection() { return delegate.getPermissionCollection(); }
+
+        public ResourceHandle getEntry(String name) { return delegate.getResource(name); }
 
         public ResourceHandle getResource(String resourceName) { return delegate.getResource(resourceName); }
 

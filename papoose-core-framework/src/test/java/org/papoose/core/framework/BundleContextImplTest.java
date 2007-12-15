@@ -16,6 +16,8 @@
 package org.papoose.core.framework;
 
 import java.io.File;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Dictionary;
 import java.util.Locale;
@@ -87,11 +89,14 @@ public class BundleContextImplTest extends TestCase
 
             papoose.getBundleManager().resolve(bundle);
 
-            URL url = bundle.getEntry("com/acme/fuse/dynamite.xml");
+            URL url = bundle.getEntry("com/acme/resource/camera.xml");
 
-            bundle.getLastModified();
-//            BufferedReader in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
-//            String line = in.readLine();
+            assertNotNull(url);
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
+            String line = in.readLine();
+
+            assertEquals("<status>good</status>", line);
 
             papoose.stop();
 

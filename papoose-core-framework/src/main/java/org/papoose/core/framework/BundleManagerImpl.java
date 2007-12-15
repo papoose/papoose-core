@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.osgi.framework.Bundle;
@@ -41,7 +42,8 @@ import org.papoose.core.framework.spi.Store;
  */
 public class BundleManagerImpl implements BundleManager
 {
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    private final String className = getClass().getName();
+    private final Logger logger = Logger.getLogger(className);
 
     private final Papoose framework;
     private final Store store;
@@ -104,7 +106,7 @@ public class BundleManagerImpl implements BundleManager
                                                               currentStore.getDynamicImportSet(),
                                                               bundleImpl.getStores());
 
-        classLoader.setWires(wires);
+        classLoader.setWires(wires);  // todo: why this separate call?
 
         bundleImpl.setClassLoader(classLoader);
     }
@@ -150,18 +152,20 @@ public class BundleManagerImpl implements BundleManager
         catch (BundleException be)
         {
             store.removeBundleStore(bundleId);
+            logger.log(Level.WARNING, "Unable to install bundle " + location, be);
             throw be;
         }
         catch (Exception e)
         {
             store.removeBundleStore(bundleId);
+            logger.log(Level.WARNING, "Unable to install bundle " + location, e);
             throw new BundleException("Error occured while loading location " + location, e);
         }
     }
 
     public Bundle installSystemBundle(String location) throws BundleException
     {
-        logger.entering(getClass().getName(), "installSystemBundle", new Object[]{ location });
+        logger.entering(className, "installSystemBundle", new Object[]{ location });
 
         if (locations.containsKey(location)) return locations.get(location);
 
@@ -178,16 +182,20 @@ public class BundleManagerImpl implements BundleManager
             installedbundles.put(bundleId, bundle);
             bundles.put(bundleId, (BundleImpl) bundle);
 
+            logger.exiting(className, "installSystemBundle", bundle);
+
             return bundle;
         }
         catch (BundleException be)
         {
             store.removeBundleStore(bundleId);
+            logger.log(Level.SEVERE, "Unable to install system bundle " + location, be);
             throw be;
         }
         catch (Exception e)
         {
             store.removeBundleStore(bundleId);
+            logger.log(Level.SEVERE, "Unable to install system bundle " + location, e);
             throw new BundleException("Error occured while loading location " + location, e);
         }
     }

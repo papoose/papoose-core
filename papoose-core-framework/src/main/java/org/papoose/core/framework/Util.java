@@ -415,13 +415,14 @@ public final class Util
         URL result = null;
         try
         {
+            String userInfo = (location < 0 ? Long.toString(archiveStore.getBundleId()) : archiveStore.getBundleId() + ":" + location);
             if (archiveStore.getGeneration() == 0)
             {
-                result = new URL("papoose://" + archiveStore.getBundleId() + ":" + location + "@" + archiveStore.getFrameworkName() + path);
+                result = new URL("papoose://" + userInfo + "@" + archiveStore.getFrameworkName() + path);
             }
             else
             {
-                result = new URL("papoose://" + archiveStore.getBundleId() + ":" + location + "@" + archiveStore.getFrameworkName() + ":" + archiveStore.getGeneration() + path);
+                result = new URL("papoose://" + userInfo + "@" + archiveStore.getFrameworkName() + ":" + archiveStore.getGeneration() + path);
             }
         }
         catch (MalformedURLException e)
