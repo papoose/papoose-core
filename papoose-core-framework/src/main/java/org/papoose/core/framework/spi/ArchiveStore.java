@@ -18,6 +18,7 @@ package org.papoose.core.framework.spi;
 
 import java.io.File;
 import java.security.Permission;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -72,6 +73,8 @@ public interface ArchiveStore extends Comparable
     Permission[] getPermissionCollection();
 
     ResourceHandle getEntry(String name);
+
+    Enumeration getEntryPaths(String path);
 
     ResourceHandle getResource(String resourceName);
 

@@ -15,11 +15,12 @@
  */
 package org.papoose.core.framework;
 
-import java.io.File;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -97,6 +98,26 @@ public class BundleContextImplTest extends TestCase
             String line = in.readLine();
 
             assertEquals("<status>good</status>", line);
+
+            int cout = 0;
+            Enumeration enumeration = bundle.getEntryPaths("com/acme");
+            while (enumeration.hasMoreElements())
+            {
+                enumeration.nextElement();
+                cout++;
+            }
+
+            assertEquals(6, cout);
+
+            cout = 0;
+            enumeration = bundle.getEntryPaths("");
+            while (enumeration.hasMoreElements())
+            {
+                enumeration.nextElement();
+                cout++;
+            }
+
+            assertEquals(4, cout);
 
             papoose.stop();
 

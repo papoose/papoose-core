@@ -28,8 +28,12 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -364,6 +368,33 @@ public class FileStore implements Store
         public ResourceHandle getEntry(String name)
         {
             return fileLocation.getResourceHandle(name);
+        }
+
+        public Enumeration getEntryPaths(String path)
+        {
+            if (path.startsWith("/")) path = path.substring(1);
+            if (!path.endsWith("/") && path.length() > 1) path += "/";
+
+            Set<String> result = new HashSet<String>();
+            Enumeration entries = archive.entries();
+            while (entries.hasMoreElements())
+            {
+                ZipEntry entry = (ZipEntry) entries.nextElement();
+                String name = entry.getName();
+                if (name.startsWith(path))
+                {
+                    String s = name.substring(path.length());
+                    int count = 0;
+                    for (int i = 0; i < s.length(); i++) if (s.charAt(i) == '/') count++;
+                    if (entry.isDirectory())
+                    {
+                        if (count == 1) result.add(name);
+                    }
+                    else if (count == 0) result.add(name);
+                }
+            }
+
+            return result.isEmpty() ? null : Collections.enumeration(result);
         }
 
         public ResourceHandle getResource(String resourceName)

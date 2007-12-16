@@ -510,6 +510,11 @@ public class BundleClassLoader extends NamedClassLoader
 
         public ResourceHandle getEntry(String name) { return delegate.getResource(name); }
 
+        public Enumeration getEntryPaths(String path)
+        {
+            return delegate.getEntryPaths(path);
+        }
+
         public ResourceHandle getResource(String resourceName) { return delegate.getResource(resourceName); }
 
         public ResourceHandle getResource(String resourceName, int location) { return delegate.getResource(resourceName, location); }
