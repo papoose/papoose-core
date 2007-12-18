@@ -109,6 +109,8 @@ public class BundleManagerImpl implements BundleManager
         classLoader.setWires(wires);  // todo: why this separate call?
 
         bundleImpl.setClassLoader(classLoader);
+
+        bundleImpl.setResolvedState();
     }
 
     public Bundle getBundle(long bundleId)

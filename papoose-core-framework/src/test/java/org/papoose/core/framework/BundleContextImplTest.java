@@ -42,7 +42,6 @@ public class BundleContextImplTest extends TestCase
         try
         {
             final long earlyTimestamp = System.currentTimeMillis();
-            final int bundleId = 1;
             FileStore fileStore = new FileStore(fileStoreRoot);
             Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new MockThreadPool(), new Properties());
 
@@ -53,7 +52,7 @@ public class BundleContextImplTest extends TestCase
 
             BundleContextImpl context = new BundleContextImpl((BundleImpl) papoose.getBundleManager().getBundle(0));
 
-            Bundle bundle = context.installBundle(location.toString());
+            Bundle bundle = context.installBundle(location);
 
             assertEquals(1, bundle.getBundleId());
 

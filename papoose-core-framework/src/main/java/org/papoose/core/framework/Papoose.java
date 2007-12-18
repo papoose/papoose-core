@@ -23,13 +23,13 @@ import java.lang.ref.WeakReference;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.Dictionary;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import org.osgi.framework.Constants;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 
 import org.papoose.core.framework.filter.Parser;
 import org.papoose.core.framework.spi.BundleManager;
@@ -46,8 +46,8 @@ public final class Papoose
     private final Logger logger = Logger.getLogger(className);
 
     private static int frameworkCounter = 0;
-    private final static Map<Integer, Reference<Papoose>> frameworksById = new Hashtable<Integer, Reference<Papoose>>();
-    private final static Map<String, Reference<Papoose>> frameworksByName = new Hashtable<String, Reference<Papoose>>();
+    private final static Map<Integer, Reference<Papoose>> frameworksById = new HashMap<Integer, Reference<Papoose>>();
+    private final static Map<String, Reference<Papoose>> frameworksByName = new HashMap<String, Reference<Papoose>>();
 
     private final AccessControlContext acc = AccessController.getContext();
     private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -107,14 +107,8 @@ public final class Papoose
 
         this.frameworkId = frameworkCounter++;
 
-        if (frameworkName == null)
-        {
-            this.frameworkName = "Papoose." + frameworkId;
-        }
-        else
-        {
-            this.frameworkName = frameworkName;
-        }
+        if (frameworkName == null) this.frameworkName = "Papoose." + frameworkId;
+        else this.frameworkName = frameworkName;
 
         frameworksById.put(this.frameworkId, new WeakReference<Papoose>(this));
         frameworksByName.put(this.frameworkName, new WeakReference<Papoose>(this));
