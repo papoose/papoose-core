@@ -382,6 +382,13 @@ public final class Util
         }
     }
 
+    public static boolean match(Object value, String test)
+    {
+        if (value instanceof String) return test.equals(value);
+        else if (value instanceof String[]) return match((String[])value, test);
+        return false;
+    }
+
     public static boolean match(String[] values, String test)
     {
         if (values.length == 1) return test.equals(values[0]);

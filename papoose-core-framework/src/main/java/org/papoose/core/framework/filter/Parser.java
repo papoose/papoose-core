@@ -336,6 +336,6 @@ public final class Parser
         public String toString()
         {
             return expression.substring(Math.min(pointer, expression.length() - 1));
-        }
+        }        
     }
 }

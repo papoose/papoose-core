@@ -76,6 +76,8 @@ public interface ArchiveStore extends Comparable
 
     Enumeration getEntryPaths(String path);
 
+    Enumeration findEntries(String path, String filePattern, boolean recurse);
+
     ResourceHandle getResource(String resourceName);
 
     ResourceHandle getResource(String resourceName, int location);

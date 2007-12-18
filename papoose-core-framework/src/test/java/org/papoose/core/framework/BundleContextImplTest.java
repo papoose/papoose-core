@@ -119,6 +119,26 @@ public class BundleContextImplTest extends TestCase
 
             assertEquals(4, cout);
 
+            cout = 0;
+            enumeration = bundle.findEntries("com/acme", "*.xml", false);
+            while (enumeration.hasMoreElements())
+            {
+                enumeration.nextElement();
+                cout++;
+            }
+
+            assertEquals(1, cout);
+
+            cout = 0;
+            enumeration = bundle.findEntries("", "*.class", true);
+            while (enumeration.hasMoreElements())
+            {
+                enumeration.nextElement();
+                cout++;
+            }
+
+            assertEquals(5, cout);
+
             papoose.stop();
 
             fileStore.removeBundleStore(1);

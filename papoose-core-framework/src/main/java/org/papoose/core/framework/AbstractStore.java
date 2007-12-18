@@ -655,6 +655,60 @@ public abstract class AbstractStore implements ArchiveStore
         return result;
     }
 
+    protected static Object parseValue(String expression) throws InvalidSyntaxException
+    {
+        List<String> values = new ArrayList<String>();
+        int pointer = 0;
+
+        expression+= ")";
+
+        StringBuilder builder = new StringBuilder();
+        try
+        {
+            char c;
+
+            while (isValidValueChar(c = expression.charAt(pointer)))
+            {
+                switch (c)
+                {
+                    case'\\':
+                    {
+                        pointer++;
+                        builder.append(expression.charAt(pointer++));
+                        break;
+                    }
+                    case'*':
+                    {
+                        pointer++;
+                        values.add(builder.toString());
+                        builder = new StringBuilder();
+                        break;
+                    }
+                    default:
+                    {
+                        pointer++;
+                        builder.append(c);
+                    }
+                }
+            }
+        }
+        catch (StringIndexOutOfBoundsException e)
+        {
+            throw new InvalidSyntaxException("Invalid escaping of value", expression);
+        }
+
+        values.add(builder.toString());
+
+        if (values.size() == 1) return values.get(0);
+        else if (values.size() == 2 & values.get(0).length() == 0 && values.get(1).length() == 0) return null;
+        else return values.toArray(new String[values.size()]);
+    }
+
+    protected static boolean isValidValueChar(char c)
+    {
+        return c != ')';
+    }
+
     /**
      * Needed to override <code>containsKey()</code>
      */

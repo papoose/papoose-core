@@ -47,6 +47,7 @@ import org.apache.xbean.classloader.AbstractUrlResourceLocation;
 import org.apache.xbean.classloader.ResourceHandle;
 import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.InvalidSyntaxException;
 
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.spi.Store;
@@ -391,6 +392,50 @@ public class FileStore implements Store
                         if (count == 1) result.add(name);
                     }
                     else if (count == 0) result.add(name);
+                }
+            }
+
+            return result.isEmpty() ? null : Collections.enumeration(result);
+        }
+
+        public Enumeration findEntries(String path, String filePattern, boolean recurse)
+        {
+            if (path.startsWith("/")) path = path.substring(1);
+            if (!path.endsWith("/") && path.length() > 1) path += "/";
+
+            Object targets;
+            try
+            {
+                targets = parseValue(filePattern);
+                if (targets == null) return null;
+            }
+            catch (InvalidSyntaxException ise)
+            {
+                return null;
+            }
+
+            Set<String> result = new HashSet<String>();
+            Enumeration entries = archive.entries();
+            while (entries.hasMoreElements())
+            {
+                ZipEntry entry = (ZipEntry) entries.nextElement();
+                String name = entry.getName();
+                if (name.startsWith(path))
+                {
+                    String s = name.substring(path.length());
+                    int count = 0;
+                    for (int i = 0; i < s.length(); i++) if (s.charAt(i) == '/') count++;
+                    if (!entry.isDirectory())
+                    {
+                        if (count == 0 && Util.match(targets, s))
+                        {
+                            result.add(name);
+                        }
+                        else if (recurse && Util.match(targets, s.substring(s.lastIndexOf('/') + 1)))
+                        {
+                            result.add(name);
+                        }
+                    }
                 }
             }
 
