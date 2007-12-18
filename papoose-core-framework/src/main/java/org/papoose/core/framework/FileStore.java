@@ -414,7 +414,7 @@ public class FileStore implements Store
                 return null;
             }
 
-            Set<String> result = new HashSet<String>();
+            Set<URL> result = new HashSet<URL>();
             Enumeration entries = archive.entries();
             while (entries.hasMoreElements())
             {
@@ -429,11 +429,11 @@ public class FileStore implements Store
                     {
                         if (count == 0 && Util.match(targets, s))
                         {
-                            result.add(name);
+                            result.add(fileLocation.getResourceHandle(name).getUrl());
                         }
                         else if (recurse && Util.match(targets, s.substring(s.lastIndexOf('/') + 1)))
                         {
-                            result.add(name);
+                            result.add(fileLocation.getResourceHandle(name).getUrl());
                         }
                     }
                 }
