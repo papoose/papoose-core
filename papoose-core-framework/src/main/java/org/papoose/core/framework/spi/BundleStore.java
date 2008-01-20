@@ -35,4 +35,8 @@ public interface BundleStore
     boolean isStarted() throws BundleException;
 
     void setStarted(boolean started) throws BundleException;
+
+    long getLastModified() throws BundleException;
+
+    void updateLastModified() throws BundleException;
 }

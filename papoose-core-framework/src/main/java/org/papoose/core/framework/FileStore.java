@@ -152,6 +152,7 @@ public class FileStore implements Store
         private final long bundleId;
         private final String location;
         private transient volatile byte started = -1;
+        private transient volatile long lastModified;
 
         public FileBundleStore(File bundleRoot, long bundleId, String location) throws BundleException
         {
@@ -257,6 +258,26 @@ public class FileStore implements Store
             catch (IOException ioe)
             {
                 this.started = -1;
+                throw new BundleException("Unable to set and save bundle state", ioe);
+            }
+        }
+
+        public long getLastModified() throws BundleException
+        {
+            return lastModified;
+        }
+
+        public void updateLastModified() throws BundleException
+        {
+            try
+            {
+                File modification = new File(bundleRoot, "modification");
+                DataOutputStream output = new DataOutputStream(new FileOutputStream(modification));
+                output.writeLong(lastModified);
+                output.close();
+            }
+            catch (IOException ioe)
+            {
                 throw new BundleException("Unable to set and save bundle state", ioe);
             }
         }
