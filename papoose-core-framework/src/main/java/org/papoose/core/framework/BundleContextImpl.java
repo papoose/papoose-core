@@ -40,427 +40,140 @@ import org.osgi.framework.ServiceRegistration;
 class BundleContextImpl implements BundleContext
 {
     private volatile BundleImpl bundle;
-    private final Papoose framework;
-    private final Object LOCK = new Object();
-    private volatile BundleContext state;
 
     public BundleContextImpl(BundleImpl bundle)
     {
         assert bundle != null;
 
         this.bundle = bundle;
-        this.framework = bundle.getFramework();
-        this.state = VALID_STATE;
+    }
+
+    void invalidateContext()
+    {
+        bundle = null;
+    }
+
+    private Papoose getFramework()
+    {
+        return getBundle().getFramework();
     }
 
     public String getProperty(String key)
     {
-        synchronized (LOCK)
-        {
-            return state.getProperty(key);
-        }
+        return (String) getFramework().getProperty(key);
     }
 
-    public Bundle getBundle()
+    public BundleImpl getBundle()
     {
-        synchronized (LOCK)
-        {
-            return state.getBundle();
-        }
+        BundleImpl bundle = this.bundle;
+        if (bundle == null) throw new IllegalStateException("This bundle is no longer valid");
+        return bundle;
     }
 
     public Bundle installBundle(String location) throws BundleException
     {
-        synchronized (LOCK)
+        try
         {
-            return state.installBundle(location);
+            return installBundle(location, new URL(location).openStream());
+        }
+        catch (IOException ioe)
+        {
+            throw new BundleException("Unable to open a stream for location: " + location, ioe);
         }
     }
 
     public Bundle installBundle(String location, InputStream inputStream) throws BundleException
     {
-        synchronized (LOCK)
-        {
-            return state.installBundle(location, inputStream);
-        }
+        return getFramework().getBundleManager().installBundle(location, inputStream);
     }
 
     public Bundle getBundle(long bundleId)
     {
-        synchronized (LOCK)
-        {
-            return state.getBundle(bundleId);
-        }
+        return getFramework().getBundleManager().getBundle(bundleId);
     }
 
     public Bundle[] getBundles()
     {
-        synchronized (LOCK)
-        {
-            return state.getBundles();
-        }
+        return getFramework().getBundleManager().getBundles();
     }
 
     public void addServiceListener(ServiceListener serviceListener, String filter) throws InvalidSyntaxException
     {
-        synchronized (LOCK)
-        {
-            state.addServiceListener(serviceListener, filter);
-        }
+        getBundle().addServiceListener(serviceListener, new FilterImpl(getFramework().getParser().parse(filter)));
     }
 
     public void addServiceListener(ServiceListener serviceListener)
     {
-        synchronized (LOCK)
-        {
-            state.addServiceListener(serviceListener);
-        }
+        getBundle().addServiceListener(serviceListener);
     }
 
     public void removeServiceListener(ServiceListener serviceListener)
     {
-        synchronized (LOCK)
-        {
-            state.removeServiceListener(serviceListener);
-        }
+        getBundle().removeServiceListener(serviceListener);
     }
 
     public void addBundleListener(BundleListener bundleListener)
     {
-        synchronized (LOCK)
-        {
-            state.addBundleListener(bundleListener);
-        }
+        getBundle().addBundleListener(bundleListener);
     }
 
     public void removeBundleListener(BundleListener bundleListener)
     {
-        synchronized (LOCK)
-        {
-            state.removeBundleListener(bundleListener);
-        }
+        getBundle().removeBundleListener(bundleListener);
     }
 
     public void addFrameworkListener(FrameworkListener frameworkListener)
     {
-        synchronized (LOCK)
-        {
-            state.addFrameworkListener(frameworkListener);
-        }
+        getBundle().addFrameworkListener(frameworkListener);
     }
 
     public void removeFrameworkListener(FrameworkListener frameworkListener)
     {
-        synchronized (LOCK)
-        {
-            state.removeFrameworkListener(frameworkListener);
-        }
+        getBundle().removeFrameworkListener(frameworkListener);
     }
 
     public ServiceRegistration registerService(String[] clazzes, Object service, Dictionary properties)
     {
-        synchronized (LOCK)
-        {
-            return state.registerService(clazzes, service, properties);
-        }
+        return getBundle().registerService(clazzes, service, properties);
     }
 
     public ServiceRegistration registerService(String clazz, Object service, Dictionary properties)
     {
-        synchronized (LOCK)
-        {
-            return state.registerService(clazz, service, properties);
-        }
+        return registerService(new String[]{ clazz }, service, properties);
     }
 
     public ServiceReference[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException
     {
-        synchronized (LOCK)
-        {
-            return state.getServiceReferences(clazz, filter);
-        }
+        return getBundle().getServiceReferences(clazz, filter);
     }
 
     public ServiceReference[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException
     {
-        synchronized (LOCK)
-        {
-            return state.getAllServiceReferences(clazz, filter);
-        }
+        return getBundle().getAllServiceReferences(clazz, filter);
     }
 
     public ServiceReference getServiceReference(String clazz)
     {
-        synchronized (LOCK)
-        {
-            return state.getServiceReference(clazz);
-        }
+        return getBundle().getServiceReference(clazz);
     }
 
     public Object getService(ServiceReference serviceReference)
     {
-        synchronized (LOCK)
-        {
-            return state.getService(serviceReference);
-        }
+        return getBundle().getService(serviceReference);
     }
 
     public boolean ungetService(ServiceReference serviceReference)
     {
-        synchronized (LOCK)
-        {
-            return state.ungetService(serviceReference);
-        }
+        return getBundle().ungetService(serviceReference);
     }
 
     public File getDataFile(String filename)
     {
-        synchronized (LOCK)
-        {
-            return state.getDataFile(filename);
-        }
+        return new File(getBundle().getBundleStore().getDataRoot(), filename);
     }
 
     public Filter createFilter(String filter) throws InvalidSyntaxException
     {
-        synchronized (LOCK)
-        {
-            return state.createFilter(filter);
-        }
+        return new FilterImpl(getFramework().getParser().parse(filter));
     }
-
-    void invalidateContext()
-    {
-        synchronized (LOCK)
-        {
-            bundle = null;
-            state = INVALID_STATE;
-        }
-    }
-
-    private class ValidBundleContextState implements BundleContext
-    {
-        public String getProperty(String key)
-        {
-            return (String) framework.getProperty(key);
-        }
-
-        public Bundle getBundle()
-        {
-            return bundle;
-        }
-
-        public Bundle installBundle(String location) throws BundleException
-        {
-            try
-            {
-                return installBundle(location, new URL(location).openStream());
-            }
-            catch (IOException ioe)
-            {
-                throw new BundleException("Unable to open a stream for location: " + location, ioe);
-            }
-        }
-
-        public Bundle installBundle(String location, InputStream inputStream) throws BundleException
-        {
-            return framework.getBundleManager().installBundle(location, inputStream);
-        }
-
-        public Bundle getBundle(long bundleId)
-        {
-            return framework.getBundleManager().getBundle(bundleId);
-        }
-
-        public Bundle[] getBundles()
-        {
-            return framework.getBundleManager().getBundles();
-        }
-
-        public void addServiceListener(ServiceListener serviceListener, String filter) throws InvalidSyntaxException
-        {
-            bundle.addServiceListener(serviceListener, new FilterImpl(framework.getParser().parse(filter)));
-        }
-
-        public void addServiceListener(ServiceListener serviceListener)
-        {
-            bundle.addServiceListener(serviceListener);
-        }
-
-        public void removeServiceListener(ServiceListener serviceListener)
-        {
-            bundle.removeServiceListener(serviceListener);
-        }
-
-        public void addBundleListener(BundleListener bundleListener)
-        {
-            bundle.addBundleListener(bundleListener);
-        }
-
-        public void removeBundleListener(BundleListener bundleListener)
-        {
-            bundle.removeBundleListener(bundleListener);
-        }
-
-        public void addFrameworkListener(FrameworkListener frameworkListener)
-        {
-            bundle.addFrameworkListener(frameworkListener);
-        }
-
-        public void removeFrameworkListener(FrameworkListener frameworkListener)
-        {
-            bundle.removeFrameworkListener(frameworkListener);
-        }
-
-        public ServiceRegistration registerService(String[] clazzes, Object service, Dictionary properties)
-        {
-            return bundle.registerService(clazzes, service, properties);
-        }
-
-        public ServiceRegistration registerService(String clazz, Object service, Dictionary properties)
-        {
-            return registerService(new String[]{clazz}, service, properties);
-        }
-
-        public ServiceReference[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException
-        {
-            return bundle.getServiceReferences(clazz, filter);
-        }
-
-        public ServiceReference[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException
-        {
-            return bundle.getAllServiceReferences(clazz, filter);
-        }
-
-        public ServiceReference getServiceReference(String clazz)
-        {
-            return bundle.getServiceReference(clazz);
-        }
-
-        public Object getService(ServiceReference serviceReference)
-        {
-            return bundle.getService(serviceReference);
-        }
-
-        public boolean ungetService(ServiceReference serviceReference)
-        {
-            return bundle.ungetService(serviceReference);
-        }
-
-        public File getDataFile(String filename)
-        {
-            return new File(bundle.getBundleStore().getDataRoot(), filename);
-        }
-
-        public Filter createFilter(String filter) throws InvalidSyntaxException
-        {
-            return new FilterImpl(framework.getParser().parse(filter));
-        }
-    }
-
-    private class InvalidBundleContextState extends ValidBundleContextState
-    {
-        public String getProperty(String key)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public Bundle getBundle()
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public Bundle installBundle(String location) throws BundleException
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public Bundle installBundle(String location, InputStream inputStream) throws BundleException
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public void addServiceListener(ServiceListener serviceListener, String filter) throws InvalidSyntaxException
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public void addServiceListener(ServiceListener serviceListener)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public void removeServiceListener(ServiceListener serviceListener)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public void addBundleListener(BundleListener bundleListener)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public void removeBundleListener(BundleListener bundleListener)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public void addFrameworkListener(FrameworkListener frameworkListener)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public void removeFrameworkListener(FrameworkListener frameworkListener)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public ServiceRegistration registerService(String[] clazzes, Object service, Dictionary properties)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public ServiceRegistration registerService(String clazz, Object service, Dictionary properties)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public ServiceReference[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public ServiceReference[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public ServiceReference getServiceReference(String clazz)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public Object getService(ServiceReference serviceReference)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public boolean ungetService(ServiceReference serviceReference)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public File getDataFile(String filename)
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-
-        public Filter createFilter(String filter) throws InvalidSyntaxException
-        {
-            throw new IllegalStateException("This bundle is no longer valid");
-        }
-    }
-
-    private final BundleContext VALID_STATE = new ValidBundleContextState();
-    private final BundleContext INVALID_STATE = new InvalidBundleContextState();
 }
