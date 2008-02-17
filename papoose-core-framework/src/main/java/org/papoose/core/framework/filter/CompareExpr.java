@@ -49,7 +49,10 @@ abstract class CompareExpr implements Expr
             if (object == null) return false;
 
             Object test;
-            if (isScalar(object)) test = convert(object, value);
+            if (isScalar(object))
+            {
+                test = convert(object, value);
+            }
             else if (object.getClass().isArray())
             {
                 int length = Array.getLength(object);
@@ -64,10 +67,15 @@ abstract class CompareExpr implements Expr
             else if (object instanceof Collection)
             {
                 for (Object element : (Collection) object)
+                {
                     if (isScalar(element) && testPair(element, convert(element, value))) return true;
+                }
                 return false;
             }
-            else return false;
+            else
+            {
+                return false;
+            }
 
 
             return testPair(object, test);
@@ -84,18 +92,45 @@ abstract class CompareExpr implements Expr
 
     protected final Object convert(Object object, String value)
     {
-        if (object instanceof String) return value;
-        else if (object instanceof Integer) return Integer.parseInt(value);
-        else if (object instanceof Long) return Long.parseLong(value);
-        else if (object instanceof Float) return Float.parseFloat(value);
-        else if (object instanceof Double) return Double.parseDouble(value);
-        else if (object instanceof Byte) return Byte.parseByte(value);
-        else if (object instanceof Short) return Short.parseShort(value);
-        else if (object instanceof Character && value.length() == 1) return value.charAt(0);
-        else if (object instanceof Boolean) return Boolean.parseBoolean(value);
+        if (object instanceof String)
+        {
+            return value;
+        }
+        else if (object instanceof Integer)
+        {
+            return Integer.parseInt(value);
+        }
+        else if (object instanceof Long)
+        {
+            return Long.parseLong(value);
+        }
+        else if (object instanceof Float)
+        {
+            return Float.parseFloat(value);
+        }
+        else if (object instanceof Double)
+        {
+            return Double.parseDouble(value);
+        }
+        else if (object instanceof Byte)
+        {
+            return Byte.parseByte(value);
+        }
+        else if (object instanceof Short)
+        {
+            return Short.parseShort(value);
+        }
+        else if (object instanceof Character && value.length() == 1)
+        {
+            return value.charAt(0);
+        }
+        else if (object instanceof Boolean)
+        {
+            return Boolean.parseBoolean(value);
+        }
         else if (object != null)
+        {
             try
-
             {
                 Constructor constructor = object.getClass().getConstructor(String.class);
                 return constructor.newInstance(value);
@@ -120,21 +155,53 @@ abstract class CompareExpr implements Expr
             {
                 return getFalseObject();
             }
-        else return getFalseObject();
+        }
+        else
+        {
+            return getFalseObject();
+        }
     }
 
     protected static boolean isScalar(Object object)
     {
-        if (object instanceof String) return true;
-        else if (object instanceof Integer) return true;
-        else if (object instanceof Long) return true;
-        else if (object instanceof Float) return true;
-        else if (object instanceof Double) return true;
-        else if (object instanceof Byte) return true;
-        else if (object instanceof Short) return true;
-        else if (object instanceof Character) return true;
-        else if (object instanceof Boolean) return true;
+        if (object instanceof String)
+        {
+            return true;
+        }
+        else if (object instanceof Integer)
+        {
+            return true;
+        }
+        else if (object instanceof Long)
+        {
+            return true;
+        }
+        else if (object instanceof Float)
+        {
+            return true;
+        }
+        else if (object instanceof Double)
+        {
+            return true;
+        }
+        else if (object instanceof Byte)
+        {
+            return true;
+        }
+        else if (object instanceof Short)
+        {
+            return true;
+        }
+        else if (object instanceof Character)
+        {
+            return true;
+        }
+        else if (object instanceof Boolean)
+        {
+            return true;
+        }
         else
+        {
             try
             {
                 return (object != null && object.getClass().getConstructor(String.class) != null);
@@ -147,6 +214,7 @@ abstract class CompareExpr implements Expr
             {
                 return false;
             }
+        }
     }
 
 }

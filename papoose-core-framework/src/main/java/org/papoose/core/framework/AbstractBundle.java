@@ -18,13 +18,14 @@ package org.papoose.core.framework;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
+import org.osgi.framework.AllServiceListener;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.BundleListener;
 import org.osgi.framework.Filter;
-import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
@@ -32,7 +33,6 @@ import org.osgi.framework.SynchronousBundleListener;
 
 import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleStore;
-import org.papoose.core.framework.util.Listeners;
 
 
 /**
@@ -40,22 +40,11 @@ import org.papoose.core.framework.util.Listeners;
  */
 abstract class AbstractBundle implements Bundle
 {
-    protected final Listeners<BundleListener, BundleEvent> bundleListeners = new Listeners<BundleListener, BundleEvent>(new Listeners.Functor<BundleListener, BundleEvent>()
-    {
-        public void fire(BundleListener listener, BundleEvent event) { listener.bundleChanged(event); }
-    });
-    protected final Listeners<SynchronousBundleListener, BundleEvent> syncListeners = new Listeners<SynchronousBundleListener, BundleEvent>(new Listeners.Functor<SynchronousBundleListener, BundleEvent>()
-    {
-        public void fire(SynchronousBundleListener listener, BundleEvent event) { listener.bundleChanged(event); }
-    });
-    protected final Listeners<FrameworkListener, FrameworkEvent> frameworkListeners = new Listeners<FrameworkListener, FrameworkEvent>(new Listeners.Functor<FrameworkListener, FrameworkEvent>()
-    {
-        public void fire(FrameworkListener listener, FrameworkEvent event) { listener.frameworkEvent(event); }
-    });
-    protected final Listeners<ServiceListener, ServiceEvent> serviceListeners = new Listeners<ServiceListener, ServiceEvent>(new Listeners.Functor<ServiceListener, ServiceEvent>()
-    {
-        public void fire(ServiceListener listener, ServiceEvent event) { listener.serviceChanged(event); }
-    });
+    protected final Set<BundleListener> bundleListeners = new CopyOnWriteArraySet<BundleListener>();
+    protected final Set<SynchronousBundleListener> syncBundleListeners = new CopyOnWriteArraySet<SynchronousBundleListener>();
+    protected final Set<FrameworkListener> frameworkListeners = new CopyOnWriteArraySet<FrameworkListener>();
+    protected final Set<ServiceListener> serviceListeners = new CopyOnWriteArraySet<ServiceListener>();
+    protected final Set<ServiceListener> allServiceListeners = new CopyOnWriteArraySet<ServiceListener>();
     private final Papoose framework;
     private final long bundleId;
     private final String location;
@@ -149,24 +138,37 @@ abstract class AbstractBundle implements Bundle
 
     void addBundleListener(BundleListener bundleListener)
     {
-        bundleListeners.addListener(bundleListener);
-        if (bundleListener instanceof SynchronousBundleListener) syncListeners.addListener((SynchronousBundleListener) bundleListener);
+        if (bundleListener instanceof SynchronousBundleListener)
+        {
+            syncBundleListeners.add((SynchronousBundleListener) bundleListener);
+        }
+        else
+        {
+            bundleListeners.add(bundleListener);
+        }
+
     }
 
     void removeBundleListener(BundleListener bundleListener)
     {
-        bundleListeners.removeListener(bundleListener);
-        if (bundleListener instanceof SynchronousBundleListener) syncListeners.removeListener((SynchronousBundleListener) bundleListener);
+        if (bundleListener instanceof SynchronousBundleListener)
+        {
+            syncBundleListeners.remove(bundleListener);
+        }
+        else
+        {
+            bundleListeners.remove(bundleListener);
+        }
     }
 
     void addFrameworkListener(FrameworkListener frameworkListener)
     {
-        frameworkListeners.addListener(frameworkListener);
+        frameworkListeners.add(frameworkListener);
     }
 
     void removeFrameworkListener(FrameworkListener frameworkListener)
     {
-        frameworkListeners.removeListener(frameworkListener);
+        frameworkListeners.remove(frameworkListener);
     }
 
     void addServiceListener(ServiceListener serviceListener)
@@ -176,12 +178,27 @@ abstract class AbstractBundle implements Bundle
 
     void addServiceListener(ServiceListener serviceListener, Filter filter)
     {
-        serviceListeners.addListener(new ServiceListenerWithFilter(serviceListener, filter));
+        if (serviceListener instanceof AllServiceListener)
+        {
+            allServiceListeners.add(new ServiceListenerWithFilter(serviceListener, filter));
+        }
+        else
+        {
+            serviceListeners.add(new ServiceListenerWithFilter(serviceListener, filter));
+        }
     }
 
     void removeServiceListener(ServiceListener serviceListener)
     {
-        serviceListeners.removeListener(new ServiceListenerWithFilter(serviceListener, FilterImpl.TRUE));
+        if (serviceListener instanceof AllServiceListener)
+        {
+            allServiceListeners.remove(new ServiceListenerWithFilter(serviceListener));
+        }
+        else
+        {
+            serviceListeners.remove(new ServiceListenerWithFilter(serviceListener));
+        }
+        serviceListeners.remove(new ServiceListenerWithFilter(serviceListener, FilterImpl.TRUE));
     }
 
     abstract class State implements Bundle
@@ -192,10 +209,15 @@ abstract class AbstractBundle implements Bundle
         }
     }
 
-    private static class ServiceListenerWithFilter implements ServiceListener
+    public static class ServiceListenerWithFilter implements AllServiceListener
     {
         private final ServiceListener delegate;
         private final Filter filter;
+
+        public ServiceListenerWithFilter(ServiceListener delegate)
+        {
+            this(delegate, FilterImpl.TRUE);
+        }
 
         public ServiceListenerWithFilter(ServiceListener delegate, Filter filter)
         {
@@ -213,7 +235,7 @@ abstract class AbstractBundle implements Bundle
 
         public void serviceChanged(ServiceEvent event)
         {
-            delegate.serviceChanged(event);
+            if (filter.match(event.getServiceReference())) delegate.serviceChanged(event);
         }
 
         public boolean equals(Object o)

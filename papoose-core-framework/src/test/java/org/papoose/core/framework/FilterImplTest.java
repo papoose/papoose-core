@@ -35,7 +35,7 @@ public class FilterImplTest extends TestCase
     public void test() throws Exception
     {
         Dictionary<String, Object> dictionary = new Hashtable<String, Object>();
-        dictionary.put("c and f", new String[]{"a", "b", "c"});
+        dictionary.put("c and f", new String[]{ "a", "b", "c" });
         Filter filter = new FilterImpl(parser.parse("   ( c and f    =c) "));
 
         assertTrue(filter.matchCase(dictionary));

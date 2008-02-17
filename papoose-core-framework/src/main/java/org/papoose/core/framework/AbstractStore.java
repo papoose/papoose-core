@@ -660,7 +660,7 @@ public abstract class AbstractStore implements ArchiveStore
         List<String> values = new ArrayList<String>();
         int pointer = 0;
 
-        expression+= ")";
+        expression += ")";
 
         StringBuilder builder = new StringBuilder();
         try
@@ -671,13 +671,13 @@ public abstract class AbstractStore implements ArchiveStore
             {
                 switch (c)
                 {
-                    case'\\':
+                    case '\\':
                     {
                         pointer++;
                         builder.append(expression.charAt(pointer++));
                         break;
                     }
-                    case'*':
+                    case '*':
                     {
                         pointer++;
                         values.add(builder.toString());
@@ -699,9 +699,18 @@ public abstract class AbstractStore implements ArchiveStore
 
         values.add(builder.toString());
 
-        if (values.size() == 1) return values.get(0);
-        else if (values.size() == 2 & values.get(0).length() == 0 && values.get(1).length() == 0) return null;
-        else return values.toArray(new String[values.size()]);
+        if (values.size() == 1)
+        {
+            return values.get(0);
+        }
+        else if (values.size() == 2 & values.get(0).length() == 0 && values.get(1).length() == 0)
+        {
+            return null;
+        }
+        else
+        {
+            return values.toArray(new String[values.size()]);
+        }
     }
 
     protected static boolean isValidValueChar(char c)

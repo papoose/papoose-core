@@ -147,7 +147,7 @@ public final class Util
 
             switch (c)
             {
-                case'*':
+                case '*':
                 {
                     pointer++;
                     values.add(builder.toString());
@@ -257,7 +257,7 @@ public final class Util
 
             switch (state.peek())
             {
-                case'=':
+                case '=':
                 {
                     state.eat(1);
                     state.eatWhitespace();
@@ -284,7 +284,7 @@ public final class Util
 
                     break;
                 }
-                case':':
+                case ':':
                 {
                     state.eat(1);
                     state.eat("=");
@@ -364,7 +364,7 @@ public final class Util
 
                     break;
                 }
-                case';':
+                case ';':
                 {
                     paths.add(token);
 
@@ -384,8 +384,11 @@ public final class Util
 
     public static boolean match(Object value, String test)
     {
-        if (value instanceof String) return test.equals(value);
-        else if (value instanceof String[]) return match((String[])value, test);
+        if (value instanceof String)
+        {
+            return test.equals(value);
+        }
+        else if (value instanceof String[]) return match((String[]) value, test);
         return false;
     }
 

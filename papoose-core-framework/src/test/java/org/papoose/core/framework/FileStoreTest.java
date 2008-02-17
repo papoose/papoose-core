@@ -24,10 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import org.apache.xbean.classloader.ResourceHandle;
 
-import org.papoose.core.framework.mock.MockThreadPool;
 import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.test.PapooseTestCase;
 
@@ -42,7 +42,7 @@ public class FileStoreTest extends PapooseTestCase
         try
         {
             FileStore fileStore = new FileStore(fileStoreRoot);
-            Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new MockThreadPool(), new Properties());
+            Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new ScheduledThreadPoolExecutor(10), new Properties());
             File testBundle = new File("./target/bundle.jar");
 
             ArchiveStore archiveStore = fileStore.allocateArchiveStore(papoose, 1, 0, testBundle.toURL().openStream());

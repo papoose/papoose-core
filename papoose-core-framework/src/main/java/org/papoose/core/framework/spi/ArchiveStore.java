@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.jar.Attributes;
-import java.net.URL;
 
 import org.apache.xbean.classloader.ResourceHandle;
 import org.osgi.framework.BundleException;

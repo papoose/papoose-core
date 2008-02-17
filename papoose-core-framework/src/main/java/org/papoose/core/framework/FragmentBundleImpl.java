@@ -22,9 +22,9 @@ import java.net.URL;
 import java.util.Dictionary;
 import java.util.Enumeration;
 
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceReference;
-import org.osgi.framework.BundleContext;
 
 import org.papoose.core.framework.spi.BundleStore;
 
@@ -32,12 +32,12 @@ import org.papoose.core.framework.spi.BundleStore;
 /**
  * @version $Revision$ $Date$
  */
-class FragmentImpl extends AbstractBundle
+class FragmentBundleImpl extends AbstractBundle
 {
     private final FragmentDescription bundleFragmentHost;
     private BundleImpl host;
 
-    public FragmentImpl(Papoose framework, long bundleId, String location, BundleStore bundleStore, AbstractStore archiveStore, FragmentDescription bundleFragmentHost)
+    public FragmentBundleImpl(Papoose framework, long bundleId, String location, BundleStore bundleStore, AbstractStore archiveStore, FragmentDescription bundleFragmentHost)
     {
         super(framework, bundleId, location, bundleStore, archiveStore);
         this.bundleFragmentHost = bundleFragmentHost;

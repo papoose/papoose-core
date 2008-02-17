@@ -20,10 +20,10 @@ import java.io.File;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.Enumeration;
 import java.util.jar.Attributes;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,11 +39,11 @@ import org.papoose.core.framework.spi.BundleStore;
 /**
  * @version $Revision$ $Date$
  */
-public class SystemBundle extends BundleImpl
+public class SystemBundleImpl extends BundleImpl
 {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    SystemBundle(Papoose framework, long bundleId, String location, BundleStore bundleStore)
+    SystemBundleImpl(Papoose framework, long bundleId, String location, BundleStore bundleStore)
     {
         super(framework, bundleId, location, bundleStore, new SystemArchiveStore(framework));
     }

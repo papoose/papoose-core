@@ -53,7 +53,10 @@ class BundleURLConnection extends URLConnection
 
     public synchronized InputStream getInputStream() throws IOException
     {
-        if (connected) return inputStream;
+        if (connected)
+        {
+            return inputStream;
+        }
         else
         {
             connect();

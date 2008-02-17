@@ -26,6 +26,7 @@ import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
@@ -34,7 +35,6 @@ import org.osgi.framework.Constants;
 import org.papoose.core.framework.filter.Parser;
 import org.papoose.core.framework.spi.BundleManager;
 import org.papoose.core.framework.spi.Store;
-import org.papoose.core.framework.spi.ThreadPool;
 
 
 /**
@@ -52,7 +52,7 @@ public final class Papoose
     private final AccessControlContext acc = AccessController.getContext();
     private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private final BundleManager bundleManager;
-    private final ThreadPool threadPool;
+    private final ExecutorService executorService;
     private final Properties properties;
     private final String frameworkName;
     private final int frameworkId;
@@ -66,13 +66,13 @@ public final class Papoose
      * The framework instance gets registered and is accessable via its unique
      * framework id.
      *
-     * @param store      the bundle store to use
-     * @param threadPool the thread pool to use
-     * @param properties the set of framework properties to use
+     * @param store           the bundle store to use
+     * @param executorService the thread pool to use
+     * @param properties      the set of framework properties to use
      */
-    public Papoose(Store store, ThreadPool threadPool, Properties properties)
+    public Papoose(Store store, ExecutorService executorService, Properties properties)
     {
-        this(null, store, threadPool, properties);
+        this(null, store, executorService, properties);
     }
 
     /**
@@ -81,21 +81,21 @@ public final class Papoose
      * The framework instance gets registered and is accessable via its unique
      * framework id.
      *
-     * @param frameworkName the name of this framework instance.  It must be
-     *                      unique for the JVM that is has been instantiated
-     *                      and it must be follow the same format as a bundle
-     *                      symbolic name.
-     * @param store         the bundle store to use
-     * @param threadPool    the thread pool to use
-     * @param properties    the set of framework properties to use
+     * @param frameworkName   the name of this framework instance.  It must be
+     *                        unique for the JVM that is has been instantiated
+     *                        and it must be follow the same format as a bundle
+     *                        symbolic name.
+     * @param store           the bundle store to use
+     * @param executorService the thread pool to use
+     * @param properties      the set of framework properties to use
      */
-    public Papoose(String frameworkName, Store store, ThreadPool threadPool, Properties properties)
+    public Papoose(String frameworkName, Store store, ExecutorService executorService, Properties properties)
     {
         if (store == null) throw new IllegalArgumentException("store is null");
-        if (threadPool == null) throw new IllegalArgumentException("threadPool is null");
+        if (executorService == null) throw new IllegalArgumentException("threadPool is null");
 
         this.bundleManager = new BundleManagerImpl(this, store);
-        this.threadPool = threadPool;
+        this.executorService = executorService;
 
         Properties defaults = new Properties(System.getProperties());
         initProperties(defaults);
@@ -107,8 +107,14 @@ public final class Papoose
 
         this.frameworkId = frameworkCounter++;
 
-        if (frameworkName == null) this.frameworkName = "Papoose." + frameworkId;
-        else this.frameworkName = frameworkName;
+        if (frameworkName == null)
+        {
+            this.frameworkName = "Papoose." + frameworkId;
+        }
+        else
+        {
+            this.frameworkName = frameworkName;
+        }
 
         frameworksById.put(this.frameworkId, new WeakReference<Papoose>(this));
         frameworksByName.put(this.frameworkName, new WeakReference<Papoose>(this));
@@ -129,9 +135,9 @@ public final class Papoose
         return bundleManager;
     }
 
-    ThreadPool getThreadPool()
+    ExecutorService getExecutorService()
     {
-        return threadPool;
+        return executorService;
     }
 
     String getFrameworkName()

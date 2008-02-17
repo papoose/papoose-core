@@ -22,9 +22,9 @@ import java.net.URL;
 import java.util.Dictionary;
 import java.util.Enumeration;
 
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceReference;
-import org.osgi.framework.BundleContext;
 
 import org.papoose.core.framework.spi.BundleStore;
 
@@ -32,9 +32,9 @@ import org.papoose.core.framework.spi.BundleStore;
 /**
  * @version $Revision$ $Date$
  */
-class ExtensionImpl extends AbstractBundle
+class ExtensionBundleImpl extends AbstractBundle
 {
-    public ExtensionImpl(Papoose framework, long bundleId, String location, BundleStore bundleStore, AbstractStore archiveStore)
+    public ExtensionBundleImpl(Papoose framework, long bundleId, String location, BundleStore bundleStore, AbstractStore archiveStore)
     {
         super(framework, bundleId, location, bundleStore, archiveStore);
     }

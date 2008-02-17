@@ -108,7 +108,10 @@ public class DefaultApproxAlgorithm implements ApproxAlgorithm
             int size = ((String) obj1).length();
             return (distance <= ((size * APPROX_CRITERIA) / 100));
         }
-        else return false;
+        else
+        {
+            return false;
+        }
     }
 
     /**
@@ -164,8 +167,14 @@ public class DefaultApproxAlgorithm implements ApproxAlgorithm
 
                 // Step 5
 
-                if (s_i == t_j) cost = 0;
-                else cost = 1;
+                if (s_i == t_j)
+                {
+                    cost = 0;
+                }
+                else
+                {
+                    cost = 1;
+                }
 
                 // Step 6
 

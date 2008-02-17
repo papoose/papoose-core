@@ -47,7 +47,7 @@ public class ParserTest extends TestCase
         }
 
         Dictionary<String, Object> dictionary = new Hashtable<String, Object>();
-        dictionary.put("c and f", new String[]{"a", "b", "c"});
+        dictionary.put("c and f", new String[]{ "a", "b", "c" });
         Expr filter = parser.parse("   ( c and f    =c) ");
 
         assertTrue(filter.match(dictionary));

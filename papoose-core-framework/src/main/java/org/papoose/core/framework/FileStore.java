@@ -686,12 +686,12 @@ public class FileStore implements Store
         {
             switch (c)
             {
-                case'/':
+                case '/':
                 {
                     builder.append('_');
                     break;
                 }
-                case'_':
+                case '_':
                 {
                     builder.append("__");
                     break;

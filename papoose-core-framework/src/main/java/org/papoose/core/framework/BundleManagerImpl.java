@@ -18,23 +18,35 @@ package org.papoose.core.framework;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.BundleListener;
 import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkEvent;
+import org.osgi.framework.FrameworkListener;
+import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
+import org.osgi.framework.ServicePermission;
+import org.osgi.framework.ServiceReference;
 
 import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleManager;
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.spi.Store;
+import org.papoose.core.framework.util.SerialExecutor;
 
 
 /**
@@ -44,19 +56,20 @@ public class BundleManagerImpl implements BundleManager
 {
     private final String className = getClass().getName();
     private final Logger logger = Logger.getLogger(className);
-
-    private final Papoose framework;
-    private final Store store;
     private final Map<String, AbstractBundle> locations = new HashMap<String, AbstractBundle>();
     private final Map<Long, AbstractBundle> installedbundles = new HashMap<Long, AbstractBundle>();
     private final Map<Long, BundleImpl> bundles = new HashMap<Long, BundleImpl>();
+    private final Papoose framework;
+    private final Store store;
+    private final Executor serialExecutor;
     private long bundleCounter = 1;
 
 
-    public BundleManagerImpl(Papoose framework, Store store)
+    public BundleManagerImpl(final Papoose framework, Store store)
     {
         this.framework = framework;
         this.store = store;
+        this.serialExecutor = new SerialExecutor(framework.getExecutorService());
     }
 
     public InputStream getInputStream(int bundleId, int generation) throws IOException
@@ -183,7 +196,7 @@ public class BundleManagerImpl implements BundleManager
         {
             BundleStore bundleStore = store.allocateBundleStore(bundleId, location);
 
-            AbstractBundle bundle = new SystemBundle(framework, bundleId, location, bundleStore);
+            AbstractBundle bundle = new SystemBundleImpl(framework, bundleId, location, bundleStore);
 
             bundle.markInstalled();
 
@@ -206,6 +219,175 @@ public class BundleManagerImpl implements BundleManager
             store.removeBundleStore(bundleId);
             logger.log(Level.SEVERE, "Unable to install system bundle " + location, e);
             throw new BundleException("Error occured while loading location " + location, e);
+        }
+    }
+
+    public void fireBundleEvent(final BundleEvent event)
+    {
+        for (Bundle bundle : installedbundles.values())
+        {
+            if (bundle instanceof BundleImpl)
+            {
+                for (final BundleListener listener : ((BundleImpl) bundle).syncBundleListeners)
+                {
+                    try
+                    {
+                        if (System.getSecurityManager() != null)
+                        {
+                            listener.bundleChanged(event);
+                        }
+                        else
+                        {
+                            AccessController.doPrivileged(new PrivilegedAction<Void>()
+                            {
+                                public Void run()
+                                {
+                                    listener.bundleChanged(event);
+                                    return null;
+                                }
+                            });
+                        }
+                    }
+                    catch (Throwable throwable)
+                    {
+                        fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+                    }
+                }
+            }
+        }
+
+        if ((event.getType() & (BundleEvent.LAZY_ACTIVATION | BundleEvent.STARTING | BundleEvent.STOPPING)) == 0)
+        {
+            for (final Bundle bundle : installedbundles.values())
+            {
+                if (bundle instanceof BundleImpl)
+                {
+                    for (final BundleListener listener : ((BundleImpl) bundle).bundleListeners)
+                    {
+                        serialExecutor.execute(new Runnable()
+                        {
+                            public void run()
+                            {
+                                try
+                                {
+                                    if (System.getSecurityManager() != null)
+                                    {
+                                        listener.bundleChanged(event);
+                                    }
+                                    else
+                                    {
+                                        AccessController.doPrivileged(new PrivilegedAction<Void>()
+                                        {
+                                            public Void run()
+                                            {
+                                                listener.bundleChanged(event);
+                                                return null;
+                                            }
+                                        });
+                                    }
+                                }
+                                catch (Throwable throwable)
+                                {
+                                    fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    public void fireFrameworkEvent(final FrameworkEvent event)
+    {
+        for (final Bundle bundle : installedbundles.values())
+        {
+            if (bundle instanceof BundleImpl)
+            {
+                for (final FrameworkListener listener : ((BundleImpl) bundle).frameworkListeners)
+                {
+                    serialExecutor.execute(new Runnable()
+                    {
+                        public void run()
+                        {
+                            try
+                            {
+                                if (System.getSecurityManager() != null)
+                                {
+                                    listener.frameworkEvent(event);
+                                }
+                                else
+                                {
+                                    AccessController.doPrivileged(new PrivilegedAction<Void>()
+                                    {
+                                        public Void run()
+                                        {
+                                            listener.frameworkEvent(event);
+                                            return null;
+                                        }
+                                    });
+                                }
+                            }
+                            catch (Throwable throwable)
+                            {
+                                fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    public void fireServiceEvent(final ServiceEvent event)
+    {
+        ServiceReference reference = event.getServiceReference();
+        String[] classes = (String[]) reference.getProperty(Constants.OBJECTCLASS);
+
+        for (Bundle bundle : installedbundles.values())
+        {
+            if (bundle instanceof BundleImpl)
+            {
+                for (String clazz : classes)
+                {
+                    if (!bundle.hasPermission(new ServicePermission(clazz, ServicePermission.GET))) continue;
+
+                    fireServiceEvent(event, ((BundleImpl) bundle).allServiceListeners, bundle);
+
+                    if (!reference.isAssignableTo(bundle, clazz)) continue;
+
+                    fireServiceEvent(event, ((BundleImpl) bundle).serviceListeners, bundle);
+                }
+            }
+        }
+    }
+
+    protected void fireServiceEvent(final ServiceEvent event, Set<ServiceListener> listeners, Bundle bundle)
+    {
+        for (final ServiceListener listener : listeners)
+        {
+            try
+            {
+                if (System.getSecurityManager() != null)
+                {
+                    listener.serviceChanged(event);
+                }
+                else
+                {
+                    AccessController.doPrivileged(new PrivilegedAction<Void>()
+                    {
+                        public Void run()
+                        {
+                            listener.serviceChanged(event);
+                            return null;
+                        }
+                    });
+                }
+            }
+            catch (Throwable throwable)
+            {
+                fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+            }
         }
     }
 

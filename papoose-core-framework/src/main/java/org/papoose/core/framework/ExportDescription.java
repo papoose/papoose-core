@@ -113,7 +113,11 @@ public class ExportDescription
                 int count = 0;
                 builder.append(";uses=");
                 if (uses.size() > 1) builder.append("\"");
-                for (String name : uses) { if (count++ > 0) builder.append(",");builder.append(name); }
+                for (String name : uses)
+                {
+                    if (count++ > 0) builder.append(",");
+                    builder.append(name);
+                }
                 if (uses.size() > 1) builder.append("\"");
             }
             if (!parameters.isEmpty())

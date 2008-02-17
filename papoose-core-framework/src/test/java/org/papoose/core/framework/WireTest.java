@@ -39,15 +39,15 @@ public class WireTest extends TestCase
 
         assertTrue(test.validFor("com.acme.Dynamite"));
 
-        description.setIncluded(Collections.singletonList(new String[]{"Dynamite"}));
+        description.setIncluded(Collections.singletonList(new String[]{ "Dynamite" }));
 
         assertTrue(test.validFor("com.acme.Dynamite"));
 
-        description.setIncluded(Collections.singletonList(new String[]{"Dynam", ""}));
+        description.setIncluded(Collections.singletonList(new String[]{ "Dynam", "" }));
 
         assertTrue(test.validFor("com.acme.Dynamite"));
 
-        description.setIncluded(Collections.singletonList(new String[]{"", "nam", ""}));
+        description.setIncluded(Collections.singletonList(new String[]{ "", "nam", "" }));
 
         assertTrue(test.validFor("com.acme.Dynamite"));
     }

@@ -64,19 +64,19 @@ public final class Parser
 
         switch (state.peek())
         {
-            case'&':
+            case '&':
             {
                 state.eat(1);
                 result = parseAnd(state);
                 break;
             }
-            case'|':
+            case '|':
             {
                 state.eat(1);
                 result = parseOr(state);
                 break;
             }
-            case'!':
+            case '!':
             {
                 state.eat(1);
                 result = parseNot(state);
@@ -152,24 +152,24 @@ public final class Parser
 
         switch (state.peek())
         {
-            case'=':
+            case '=':
             {
                 state.eat(1);
                 return parseEqualOrSubstrOrPresent(state, attribute);
             }
-            case'~':
+            case '~':
             {
                 state.eat(1);
                 state.eat("=");
                 return parseApprox(state, attribute);
             }
-            case'>':
+            case '>':
             {
                 state.eat(1);
                 state.eat("=");
                 return parseGreater(state, attribute);
             }
-            case'<':
+            case '<':
             {
                 state.eat(1);
                 state.eat("=");
@@ -190,11 +190,17 @@ public final class Parser
         Object value = state.eatValue();
 
         if (value instanceof String[])
+        {
             return new Substr(attribute, (String[]) value);
+        }
         else if (value instanceof String)
+        {
             return new Equal(attribute, (String) value);
+        }
         else
+        {
             return new Present(attribute);
+        }
     }
 
     Approx parseApprox(State state, String attribute) throws InvalidSyntaxException
@@ -202,9 +208,13 @@ public final class Parser
         Object value = state.eatValue();
 
         if (value instanceof String)
+        {
             return new Approx(attribute, (String) value, approxAlgorithm);
+        }
         else
+        {
             throw new InvalidSyntaxException("Did not expect substr value", state.getExpression());
+        }
 
     }
 
@@ -213,9 +223,13 @@ public final class Parser
         Object value = state.eatValue();
 
         if (value instanceof String)
+        {
             return new Greater(attribute, (String) value);
+        }
         else
+        {
             throw new InvalidSyntaxException("Did not expect substr value", state.getExpression());
+        }
     }
 
     Lesser parseLess(State state, String attribute) throws InvalidSyntaxException
@@ -223,11 +237,14 @@ public final class Parser
         Object value = state.eatValue();
 
         if (value instanceof String)
+        {
             return new Lesser(attribute, (String) value);
+        }
         else
+        {
             throw new InvalidSyntaxException("Did not expect substr value", state.getExpression());
+        }
     }
-
 
 
     private static class State
@@ -295,13 +312,13 @@ public final class Parser
                 {
                     switch (c)
                     {
-                        case'\\':
+                        case '\\':
                         {
                             pointer++;
                             builder.append(expression.charAt(pointer++));
                             break;
                         }
-                        case'*':
+                        case '*':
                         {
                             pointer++;
                             values.add(builder.toString());
@@ -323,9 +340,18 @@ public final class Parser
 
             values.add(builder.toString());
 
-            if (values.size() == 1) return values.get(0);
-            else if (values.size() == 2 & values.get(0).length() == 0 && values.get(1).length() == 0) return null;
-            else return values.toArray(new String[values.size()]);
+            if (values.size() == 1)
+            {
+                return values.get(0);
+            }
+            else if (values.size() == 2 & values.get(0).length() == 0 && values.get(1).length() == 0)
+            {
+                return null;
+            }
+            else
+            {
+                return values.toArray(new String[values.size()]);
+            }
         }
 
         public boolean isValidValueChar(char c)
@@ -336,6 +362,6 @@ public final class Parser
         public String toString()
         {
             return expression.substring(Math.min(pointer, expression.length() - 1));
-        }        
+        }
     }
 }

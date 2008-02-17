@@ -55,7 +55,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final ResetableLatch latch = new ResetableLatch();
     private final Object lock = new Object();
-    private final Set<FragmentImpl> fragments = new TreeSet<FragmentImpl>();
+    private final Set<FragmentBundleImpl> fragments = new TreeSet<FragmentBundleImpl>();
     private BundleContextImpl bundleContext = null;
     private BundleClassLoader classLoader;
     private int startLevel;
@@ -69,7 +69,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
         this.state = INSTALLED_STATE;
     }
 
-    Set<FragmentImpl> getFragments()
+    Set<FragmentBundleImpl> getFragments()
     {
         return fragments;
     }

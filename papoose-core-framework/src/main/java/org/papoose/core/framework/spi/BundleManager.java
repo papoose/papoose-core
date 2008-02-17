@@ -20,7 +20,10 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.FrameworkEvent;
+import org.osgi.framework.ServiceEvent;
 
 
 /**
@@ -43,4 +46,10 @@ public interface BundleManager
     Bundle installBundle(String location, InputStream inputStream) throws BundleException;
 
     Bundle installSystemBundle(String location) throws BundleException;
+
+    void fireBundleEvent(BundleEvent event);
+
+    void fireFrameworkEvent(FrameworkEvent event);
+
+    void fireServiceEvent(ServiceEvent event);
 }

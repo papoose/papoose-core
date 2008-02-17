@@ -23,11 +23,10 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import junit.framework.TestCase;
 import org.osgi.framework.Bundle;
-
-import org.papoose.core.framework.mock.MockThreadPool;
 
 /**
  * @version $Revision$ $Date$
@@ -43,7 +42,7 @@ public class BundleContextImplTest extends TestCase
         {
             final long earlyTimestamp = System.currentTimeMillis();
             FileStore fileStore = new FileStore(fileStoreRoot);
-            Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new MockThreadPool(), new Properties());
+            Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new ScheduledThreadPoolExecutor(10), new Properties());
 
             papoose.start();
 

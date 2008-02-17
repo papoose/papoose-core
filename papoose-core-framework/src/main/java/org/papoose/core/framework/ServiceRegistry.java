@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2008 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.framework.mock;
-
-import org.papoose.core.framework.spi.ThreadPool;
+package org.papoose.core.framework;
 
 /**
  * @version $Revision$ $Date$
  */
-public class MockThreadPool implements ThreadPool
+public class ServiceRegistry
 {
-    public boolean runInThread(Runnable runnable)
-    {
-        return false;
-    }
 }

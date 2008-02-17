@@ -24,8 +24,6 @@ import java.net.URLStreamHandler;
 
 import org.apache.xbean.classloader.ResourceHandle;
 
-import org.papoose.core.framework.Papoose;
-
 /**
  * @version $Revision$ $Date$
  */
@@ -37,6 +35,7 @@ public class Handler extends URLStreamHandler
         {
             private final URL url = u;
             private ResourceHandle handle;
+
             {
             }
 

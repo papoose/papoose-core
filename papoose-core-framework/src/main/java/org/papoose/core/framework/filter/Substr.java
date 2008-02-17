@@ -44,7 +44,10 @@ class Substr implements Expr
     public boolean match(Dictionary<String, Object> dictionary)
     {
         Object test = dictionary.get(attribute);
-        if (test instanceof String) return match((String) test);
+        if (test instanceof String)
+        {
+            return match((String) test);
+        }
         else if (test instanceof String[])
         {
             for (String element : (String[]) test) if (element != null && match(element)) return true;
@@ -59,7 +62,10 @@ class Substr implements Expr
             }
             return false;
         }
-        else return false;
+        else
+        {
+            return false;
+        }
     }
 
     protected boolean match(String test)
@@ -100,22 +106,22 @@ class Substr implements Expr
             char c = string.charAt(i);
             switch (c)
             {
-                case'\\':
+                case '\\':
                 {
                     builder.append("\\\\");
                     break;
                 }
-                case'(':
+                case '(':
                 {
                     builder.append("\\(");
                     break;
                 }
-                case'*':
+                case '*':
                 {
                     builder.append("\\*");
                     break;
                 }
-                case')':
+                case ')':
                 {
                     builder.append("\\)");
                     break;

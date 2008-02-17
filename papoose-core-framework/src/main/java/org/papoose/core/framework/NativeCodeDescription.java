@@ -51,7 +51,7 @@ public class NativeCodeDescription implements Comparable
         return parameters;
     }
 
-    @SuppressWarnings({"EmptyCatchBlock"})
+    @SuppressWarnings({ "EmptyCatchBlock" })
     public Version getOsVersion()
     {
         if (osVersion == null)
