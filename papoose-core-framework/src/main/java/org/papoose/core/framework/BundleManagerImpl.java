@@ -232,7 +232,7 @@ public class BundleManagerImpl implements BundleManager
                 {
                     try
                     {
-                        if (System.getSecurityManager() != null)
+                        if (System.getSecurityManager() == null)
                         {
                             listener.bundleChanged(event);
                         }
@@ -270,7 +270,7 @@ public class BundleManagerImpl implements BundleManager
                             {
                                 try
                                 {
-                                    if (System.getSecurityManager() != null)
+                                    if (System.getSecurityManager() == null)
                                     {
                                         listener.bundleChanged(event);
                                     }
@@ -312,7 +312,7 @@ public class BundleManagerImpl implements BundleManager
                         {
                             try
                             {
-                                if (System.getSecurityManager() != null)
+                                if (System.getSecurityManager() == null)
                                 {
                                     listener.frameworkEvent(event);
                                 }
@@ -368,7 +368,7 @@ public class BundleManagerImpl implements BundleManager
         {
             try
             {
-                if (System.getSecurityManager() != null)
+                if (System.getSecurityManager() == null)
                 {
                     listener.serviceChanged(event);
                 }
