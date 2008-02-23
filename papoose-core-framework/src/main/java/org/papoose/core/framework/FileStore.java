@@ -317,11 +317,6 @@ public class FileStore implements Store
             }
         }
 
-        public File getArchive()
-        {
-            return new File(bundleRoot, ARCHIVE_JAR_NAME);
-        }
-
         public void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException
         {
             this.nativeCodeDescriptions = nativeCodeDescriptions;

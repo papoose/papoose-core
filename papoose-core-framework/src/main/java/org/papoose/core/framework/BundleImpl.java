@@ -29,6 +29,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.concurrent.Executor;
 import java.util.jar.Attributes;
 import java.util.logging.Logger;
 
@@ -44,7 +45,7 @@ import org.osgi.framework.ServiceRegistration;
 
 import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleStore;
-import org.papoose.core.framework.util.ResetableLatch;
+import org.papoose.core.framework.util.SerialExecutor;
 
 
 /**
@@ -53,8 +54,7 @@ import org.papoose.core.framework.util.ResetableLatch;
 public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 {
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private final ResetableLatch latch = new ResetableLatch();
-    private final Object lock = new Object();
+    private final Executor serialExecutor;
     private final Set<FragmentBundleImpl> fragments = new TreeSet<FragmentBundleImpl>();
     private BundleContextImpl bundleContext = null;
     private BundleClassLoader classLoader;
@@ -66,7 +66,13 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
     {
         super(framework, bundleId, location, bundleStore, archiveStore);
 
+        this.serialExecutor = new SerialExecutor(framework.getExecutorService());
         this.state = INSTALLED_STATE;
+    }
+
+    Executor getSerialExecutor()
+    {
+        return serialExecutor;
     }
 
     Set<FragmentBundleImpl> getFragments()
@@ -91,10 +97,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public void start(int options) throws BundleException
     {
-        synchronized (lock)
-        {
-            state.start(options);
-        }
+        state.start(options);
     }
 
     public void start() throws BundleException
@@ -104,10 +107,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public void stop(int options) throws BundleException
     {
-        synchronized (lock)
-        {
-            state.stop(options);
-        }
+        state.stop(options);
     }
 
     public void stop() throws BundleException
@@ -117,131 +117,83 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
     public void update() throws BundleException
     {
-        synchronized (lock)
-        {
-            state.update();
-        }
+        state.update();
     }
 
     public void update(InputStream inputStream) throws BundleException
     {
-        synchronized (lock)
-        {
-            state.update(inputStream);
-        }
+        state.update(inputStream);
     }
 
     public void uninstall() throws BundleException
     {
-        synchronized (lock)
-        {
-            state.uninstall();
-        }
+        state.uninstall();
     }
 
     public Dictionary getHeaders()
     {
-        synchronized (lock)
-        {
-            return state.getHeaders();
-        }
+        return state.getHeaders();
     }
 
     public ServiceReference[] getRegisteredServices()
     {
-        synchronized (lock)
-        {
-            return state.getRegisteredServices();
-        }
+        return state.getRegisteredServices();
     }
 
     public ServiceReference[] getServicesInUse()
     {
-        synchronized (lock)
-        {
-            return state.getServicesInUse();
-        }
+        return state.getServicesInUse();
     }
 
     public boolean hasPermission(Object o)
     {
-        synchronized (lock)
-        {
-            return state.hasPermission(o);
-        }
+        return state.hasPermission(o);
     }
 
     public URL getResource(String name)
     {
-        synchronized (lock)
-        {
-            return state.getResource(name);
-        }
+        return state.getResource(name);
     }
 
     public Dictionary getHeaders(String locale)
     {
-        synchronized (lock)
-        {
-            return state.getHeaders(locale);
-        }
+        return state.getHeaders(locale);
     }
 
     public Class loadClass(String name) throws ClassNotFoundException
     {
-        synchronized (lock)
-        {
-            return state.loadClass(name);
-        }
+        return state.loadClass(name);
     }
 
     public Enumeration getResources(String name) throws IOException
     {
-        synchronized (lock)
-        {
-            return state.getResources(name);
-        }
+        return state.getResources(name);
     }
 
     public Enumeration getEntryPaths(String path)
     {
-        synchronized (lock)
-        {
-            return state.getEntryPaths(path);
-        }
+        return state.getEntryPaths(path);
     }
 
     public URL getEntry(String name)
     {
-        synchronized (lock)
-        {
-            return state.getEntry(name);
-        }
+        return state.getEntry(name);
     }
 
     public long getLastModified()
     {
-        synchronized (lock)
-        {
-            return state.getLastModified();
-        }
+        return state.getLastModified();
     }
 
     public Enumeration findEntries(String path, String filePattern, boolean recurse)
     {
-        synchronized (lock)
-        {
-            if (getState() == Bundle.INSTALLED) getFramework().getBundleManager().resolve(this);
-            return state.findEntries(path, filePattern, recurse);
-        }
+        if (getState() == Bundle.INSTALLED) getFramework().getBundleManager().resolve(this);
+        return state.findEntries(path, filePattern, recurse);
     }
 
     public BundleContext getBundleContext()
     {
-        synchronized (lock)
-        {
-            return state.getBundleContext();
-        }
+        return state.getBundleContext();
     }
 
     public ServiceRegistration registerService(String[] clazzes, Object service, Dictionary properties)
@@ -463,15 +415,13 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
             getFramework().getBundleManager().recordBundleHasStarted(this);
 
-            syncListeners.fireEvent(new BundleEvent(org.osgi.framework.Bundle.RESOLVED, BundleImpl.this));
+            getFramework().getBundleManager().fireBundleEvent(new BundleEvent(Bundle.RESOLVED, BundleImpl.this));
 
             getFramework().getBundleManager().resolve(this);
 
             state = STARTING_STATE;
 
-            latch.set();
-
-            syncListeners.fireEvent(new BundleEvent(org.osgi.framework.Bundle.STARTING, BundleImpl.this));
+            getFramework().getBundleManager().fireBundleEvent(new BundleEvent(Bundle.STARTING, BundleImpl.this));
 
             try
             {
@@ -487,7 +437,6 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
                 getFramework().releaseServices(BundleImpl.this);
 
                 bundleListeners.clear();
-                syncListeners.clear();
 
                 throw new BundleException("", e);
             }
@@ -641,9 +590,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
             state = STARTING_STATE;
 
-            latch.set();
-
-            syncListeners.fireEvent(new BundleEvent(org.osgi.framework.Bundle.STARTING, BundleImpl.this));
+            getFramework().getBundleManager().fireBundleEvent(new BundleEvent(Bundle.STARTING, BundleImpl.this));
 
             try
             {
@@ -659,7 +606,6 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
                 getFramework().releaseServices(BundleImpl.this);
 
                 bundleListeners.clear();
-                syncListeners.clear();
 
                 throw new BundleException("", e);
             }
@@ -727,19 +673,11 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
         public void start() throws BundleException
         {
-            try
-            {
-                latch.await(getFramework().getWaitPeriod());
-            }
-            catch (InterruptedException ie)
-            {
-                throw new BundleException("", ie);
-            }
+            //todo: consider this autogenerated code
         }
 
         public BundleContext getBundleContext()
         {
-            assert Thread.holdsLock(lock) : "This method can only be called while holding the lock";
             if (bundleContext == null) bundleContext = new BundleContextImpl(BundleImpl.this);
             return bundleContext;
         }
@@ -754,20 +692,11 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
         public void start() throws BundleException
         {
-            try
-            {
-                latch.await(getFramework().getWaitPeriod());
-                RESOLVED_STATE.start();
-            }
-            catch (InterruptedException ie)
-            {
-                throw new BundleException("", ie);
-            }
+            //todo: consider this autogenerated code
         }
 
         public BundleContext getBundleContext()
         {
-            assert Thread.holdsLock(lock) : "This method can only be called while holding the lock";
             if (bundleContext == null) bundleContext = new BundleContextImpl(BundleImpl.this);
             return bundleContext;
         }
@@ -782,7 +711,6 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
 
         public BundleContext getBundleContext()
         {
-            assert Thread.holdsLock(lock) : "This method can only be called while holding the lock";
             if (bundleContext == null) bundleContext = new BundleContextImpl(BundleImpl.this);
             return bundleContext;
         }

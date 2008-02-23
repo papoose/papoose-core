@@ -37,6 +37,7 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.Version;
 
 import org.papoose.core.framework.spi.ArchiveStore;
+import org.papoose.core.framework.util.AttributesWrapper;
 
 
 /**
@@ -716,22 +717,5 @@ public abstract class AbstractStore implements ArchiveStore
     protected static boolean isValidValueChar(char c)
     {
         return c != ')';
-    }
-
-    /**
-     * Needed to override <code>containsKey()</code>
-     */
-    private static class AttributesWrapper extends Attributes
-    {
-        public AttributesWrapper(Attributes attributes)
-        {
-            super(attributes);
-        }
-
-        @Override
-        public boolean containsKey(Object name)
-        {
-            return super.containsKey(new Attributes.Name((String) name));
-        }
     }
 }

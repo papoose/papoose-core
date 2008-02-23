@@ -16,7 +16,7 @@
  */
 package org.papoose.core.framework;
 
-import java.io.File;
+import java.io.InputStream;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,34 +29,134 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.xbean.classloader.ResourceHandle;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
 import org.osgi.framework.Version;
 
 import org.papoose.core.framework.spi.ArchiveStore;
+import org.papoose.core.framework.spi.BundleManager;
 import org.papoose.core.framework.spi.BundleStore;
+import org.papoose.core.framework.spi.StartManager;
+import org.papoose.core.framework.util.AttributesWrapper;
 
 /**
  * @version $Revision$ $Date$
  */
 public class SystemBundleImpl extends BundleImpl
 {
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    private final static String className = SystemBundleImpl.class.getName();
+    private final static Logger logger = Logger.getLogger(className);
 
-    SystemBundleImpl(Papoose framework, long bundleId, String location, BundleStore bundleStore)
+    SystemBundleImpl(Papoose framework, long bundleId, BundleStore bundleStore, Version version)
     {
-        super(framework, bundleId, location, bundleStore, new SystemArchiveStore(framework));
+        super(framework, bundleId, Constants.SYSTEM_BUNDLE_LOCATION, bundleStore, new SystemArchiveStore(framework, version));
+
+        try
+        {
+            addServiceListener(new ServiceListener()
+            {
+                public void serviceChanged(ServiceEvent event)
+                {
+                    BundleManager bundleManager = getFramework().getBundleManager();
+
+                    if (event.getType() == ServiceEvent.REGISTERED)
+                    {
+                        StartManager service = (StartManager) getBundleContext().getService(event.getServiceReference());
+                        bundleManager.setStartManager(service);
+                    }
+                    else
+                    {
+                        bundleManager.setStartManager(new DefaultStartManager(bundleManager));
+                    }
+                }
+            },
+                               new FilterImpl(getFramework().getParser().parse("(objectclass=org.papoose.framework.spi.StartManager)")));
+        }
+        catch (InvalidSyntaxException ise)
+        {
+            logger.log(Level.SEVERE, "Unable to add service manager listener", ise);
+        }
+    }
+
+    /**
+     * Does nothing because the system bundle is already started.
+     *
+     * @throws BundleException if there was an error
+     */
+    public void start() throws BundleException
+    {
+    }
+
+    /**
+     * Does nothing because the system bundle is already started.
+     *
+     * @param options options usually used to control startup behavior
+     * @throws BundleException if there was an error
+     */
+    public void start(int options) throws BundleException
+    {
+    }
+
+    public void stop(final int options) throws BundleException
+    {
+        getFramework().getExecutorService().submit(new Runnable()
+        {
+            public void run()
+            {
+                performStop(options);
+            }
+        });
+    }
+
+    public void uninstall() throws BundleException
+    {
+        throw new BundleException("System bundle cannot be uninstalled");
+    }
+
+    public void update(InputStream inputStream) throws BundleException
+    {
+        update();
+    }
+
+    public void update() throws BundleException
+    {
+        getFramework().getExecutorService().submit(new Runnable()
+        {
+            public void run()
+            {
+                performStop(Bundle.STOP_TRANSIENT);
+                performStart(Bundle.START_TRANSIENT);
+            }
+        });
+    }
+
+    void performStart(int options)
+    {
+    }
+
+    void performStop(int options)
+    {
     }
 
     private static class SystemArchiveStore implements ArchiveStore
     {
         private final Logger logger = Logger.getLogger(getClass().getName());
-        private final Papoose framework;
         private final List<ExportDescription> exportDescriptions = new ArrayList<ExportDescription>();
+        private final Papoose framework;
+        private final Version version;
+        private final Attributes attributes;
 
-        public SystemArchiveStore(Papoose framework)
+        public SystemArchiveStore(Papoose framework, Version version)
         {
+            assert framework != null;
+            assert version != null;
+
             this.framework = framework;
+            this.version = version;
 
             String packages = (String) framework.getProperty(Constants.FRAMEWORK_SYSTEMPACKAGES);
 
@@ -74,16 +174,13 @@ public class SystemBundleImpl extends BundleImpl
 
             exportDescriptions.add(new ExportDescription(Collections.singletonList("org.osgi.framework"), Collections.<String, Object>singletonMap("version", getBundleVersion())));
 
-        }
-
-        public File getArchive()
-        {
-            return null;  //todo: consider this autogenerated code
+            Attributes a = new Attributes();
+            attributes = new AttributesWrapper(a);
         }
 
         public String getFrameworkName()
         {
-            return null;  //todo: consider this autogenerated code
+            return framework.getFrameworkName();
         }
 
         public long getBundleId()
@@ -98,27 +195,29 @@ public class SystemBundleImpl extends BundleImpl
 
         public Attributes getAttributes()
         {
-            return null;  //todo: consider this autogenerated code
+            return attributes;
         }
 
         public String getBundleActivatorClass()
         {
-            return null;  //todo: consider this autogenerated code
+            return null;
         }
 
         public String getBundleSymbolicName()
         {
-            return "org.papoose.system-bundle";
+            return "org.papoose.system-bundle." + Papoose.FRAMEWORK_VERSION;
         }
 
         public Version getBundleVersion()
         {
-            return new Version(1, 0, 0);
+            return version;
         }
 
         public List<String> getBundleClassPath()
         {
-            return null;  //todo: consider this autogenerated code
+            List<String> result = new ArrayList<String>(1);
+            result.add(".");
+            return result;
         }
 
         public List<ExportDescription> getBundleExportList()
@@ -143,12 +242,11 @@ public class SystemBundleImpl extends BundleImpl
 
         public void refreshClassPath(List<String> classPath) throws BundleException
         {
-            //todo: consider this autogenerated code
         }
 
         public String loadLibrary(String libname)
         {
-            return null;  //todo: consider this autogenerated code
+            return null;
         }
 
         public Permission[] getPermissionCollection()

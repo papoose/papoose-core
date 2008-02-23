@@ -476,8 +476,6 @@ public class BundleClassLoader extends NamedClassLoader
 
         public BundleArchiveStore(ArchiveStore delegate) { this.delegate = delegate; }
 
-        public File getArchive() { return delegate.getArchive(); }
-
         public String getFrameworkName() { return delegate.getFrameworkName(); }
 
         public long getBundleId() { return delegate.getBundleId(); }

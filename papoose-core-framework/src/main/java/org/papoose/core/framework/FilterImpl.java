@@ -31,7 +31,7 @@ import org.papoose.core.framework.filter.Expr;
 /**
  * @version $Revision$ $Date$
  */
-class FilterImpl implements Filter
+public class FilterImpl implements Filter
 {
     public static final Filter TRUE = new Filter()
     {

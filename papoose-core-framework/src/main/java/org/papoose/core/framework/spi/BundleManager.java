@@ -24,6 +24,7 @@ import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.Version;
 
 
 /**
@@ -31,11 +32,11 @@ import org.osgi.framework.ServiceEvent;
  */
 public interface BundleManager
 {
+    void setStartManager(StartManager startManager);
+
     InputStream getInputStream(int bundleId, int generation) throws IOException;
 
     void recordBundleHasStarted(Bundle bundle);
-
-    void resolve(Bundle bundle);
 
     Bundle getBundle(long bundleId);
 
@@ -43,9 +44,19 @@ public interface BundleManager
 
     Bundle[] getBundles();
 
+    Bundle installSystemBundle(Version version) throws BundleException;
+
     Bundle installBundle(String location, InputStream inputStream) throws BundleException;
 
-    Bundle installSystemBundle(String location) throws BundleException;
+    void resolve(Bundle bundle);
+
+    void requestStart(Bundle bundle);
+
+    void performStart(Bundle bundle);
+
+    void stop(Bundle bundle);
+
+    void uninstall(Bundle bundle);
 
     void fireBundleEvent(BundleEvent event);
 

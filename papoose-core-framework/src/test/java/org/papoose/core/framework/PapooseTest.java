@@ -33,7 +33,7 @@ import org.papoose.core.framework.spi.Store;
  */
 public class PapooseTest extends TestCase
 {
-    public void test()
+    public void test() throws Exception
     {
         Papoose poo = new Papoose(new MockStore(), new ScheduledThreadPoolExecutor(10), new Properties());
         poo.start();

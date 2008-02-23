@@ -39,8 +39,6 @@ import org.papoose.core.framework.RequireDescription;
  */
 public interface ArchiveStore extends Comparable
 {
-    File getArchive();
-
     String getFrameworkName();
 
     long getBundleId();
