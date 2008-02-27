@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 
 
@@ -45,15 +46,15 @@ public class BundleResolver
         return resolve(collectPackages(bundleImportList), bundles, new HashSet<Candidate>(), new HashSet<Candidate>());
     }
 
-    private static Set<Wire> resolve(List<Package> packages, Set<BundleImpl> bundles, Set<Candidate> candidates, Set<Candidate> impliedSet)
+    private static Set<Wire> resolve(List<ImportDescriptionWrapper> imports, Set<BundleImpl> bundles, Set<Candidate> candidates, Set<Candidate> impliedSet)
     {
-        packages = new ArrayList<Package>(packages);
+        imports = new ArrayList<ImportDescriptionWrapper>(imports);
 
-        Package pkg = packages.remove(0);
+        ImportDescriptionWrapper importWrapper = imports.remove(0);
 
-        for (ExportDescriptionWrapper candidate : collectEligibleExports(pkg, bundles))
+        for (ExportDescriptionWrapper candidate : collectEligibleExports(importWrapper, bundles))
         {
-            if (match(pkg.getPackageName(), pkg.getImportDescription(), candidate.getExportDescription()))
+            if (match(importWrapper.getPackageName(), importWrapper.getImportDescription(), candidate.getExportDescription()))
             {
                 Set<Candidate> implied = collectImpliedConstraints(candidate.getExportDescription().getUses(), candidate.getBundle());
 
@@ -65,18 +66,18 @@ public class BundleResolver
                     intersection.retainAll(candidates);
 
                     candidates = new HashSet<Candidate>(candidates);
-                    candidates.add(new Candidate(pkg.getPackageName(), candidate.getExportDescription(), candidate.getBundle()));
+                    candidates.add(new Candidate(importWrapper.getPackageName(), candidate.getExportDescription(), candidate.getBundle()));
 
                     impliedSet = new HashSet<Candidate>(impliedSet);
                     impliedSet.addAll(implied);
 
-                    if (packages.isEmpty())
+                    if (imports.isEmpty())
                     {
                         return collectWires(candidates);
                     }
                     else
                     {
-                        Set<Wire> result = resolve(packages, bundles, candidates, impliedSet);
+                        Set<Wire> result = resolve(imports, bundles, candidates, impliedSet);
                         if (!result.isEmpty()) return result;
                     }
                 }
@@ -86,16 +87,17 @@ public class BundleResolver
         return Collections.emptySet();
     }
 
-    private static SortedSet<ExportDescriptionWrapper> collectEligibleExports(Package pkg, Set<BundleImpl> bundles)
+    private static SortedSet<ExportDescriptionWrapper> collectEligibleExports(ImportDescriptionWrapper importWrapper, Set<BundleImpl> bundles)
     {
-        String bundleName = (String) pkg.getParameters().get("bundle-symbolic-name");
-        VersionRange bundleVersionRange = (VersionRange) pkg.getParameters().get("bundle-version");
+        String bundleName = (String) importWrapper.getParameters().get(Constants.BUNDLE_SYMBOLICNAME_ATTRIBUTE);
+        VersionRange bundleVersionRange = (VersionRange) importWrapper.getParameters().get(Constants.BUNDLE_VERSION_ATTRIBUTE);
+        boolean baseMatch = (bundleName == null || bundleName.equals(Constants.SYSTEM_BUNDLE_SYMBOLICNAME));
 
         SortedSet<ExportDescriptionWrapper> sorted = new TreeSet<ExportDescriptionWrapper>();
 
         for (BundleImpl bundle : bundles)
         {
-            boolean nameMatch = (bundleName == null || bundleName.equals(bundle.getCurrentStore().getBundleSymbolicName()));
+            boolean nameMatch = baseMatch || bundleName.equals(bundle.getCurrentStore().getBundleSymbolicName());
             boolean versionMatch = (bundleVersionRange == null || bundleVersionRange.includes(bundle.getCurrentStore().getBundleVersion()));
 
             if (nameMatch && versionMatch)
@@ -198,27 +200,27 @@ public class BundleResolver
      * @param importDescriptions a list of import descriptions
      * @return the list of packages contained in the list of import descriptions
      */
-    private static List<Package> collectPackages(List<ImportDescription> importDescriptions)
+    private static List<ImportDescriptionWrapper> collectPackages(List<ImportDescription> importDescriptions)
     {
-        List<Package> work = new ArrayList<Package>();
+        List<ImportDescriptionWrapper> work = new ArrayList<ImportDescriptionWrapper>();
 
         for (ImportDescription importDescription : importDescriptions)
         {
             for (String packageName : importDescription.getPackageNames())
             {
-                work.add(new Package(packageName, importDescription));
+                work.add(new ImportDescriptionWrapper(packageName, importDescription));
             }
         }
 
         return work;
     }
 
-    private static class Package
+    private static class ImportDescriptionWrapper
     {
         private final String packageName;
         private final ImportDescription importDescription;
 
-        public Package(String packageName, ImportDescription importDescription)
+        public ImportDescriptionWrapper(String packageName, ImportDescription importDescription)
         {
             this.packageName = packageName;
             this.importDescription = importDescription;
