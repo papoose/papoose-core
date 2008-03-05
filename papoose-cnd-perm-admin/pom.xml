@@ -9,7 +9,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>papoose-cnd-perm-admin</artifactId>
-    <packaging>jar</packaging>
+    <packaging>bundle</packaging>
     <name>Papoose :: OSGi R4 Conditional Permission Admin Service</name>
     <description>OSGi R4 Conditional Permission Admin Service</description>
 
@@ -24,30 +24,24 @@
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.papoose.test</groupId>
-                                    <artifactId>papoose-test-bundle</artifactId>
-                                    <version>${papooseTestVersion}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>target</outputDirectory>
-                                    <destFileName>bundle.jar</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>1.2.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Bundle-Name>${name}</Bundle-Name>
+                        <Bundle-SymbolicName>${groupId}.${artifactId}</Bundle-SymbolicName>
+                        <Bundle-Vendor>Papoose</Bundle-Vendor>
+                        <Bundle-Copyright>Copyright 2008 (C) The original author or authors</Bundle-Copyright>
+                        <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.permissionadmin;version=1.2, org.osgi.service.condpermadmin;version=1.0</Import-Package>
+                        <Export-Service>org.osgi.service.condpermadmin.ConditionalPermissionAdmin</Export-Service>
+                        <Bundle-Activator>org.papoose.core.framework.ConditionalPermissionAdminActivator</Bundle-Activator>
+                        <Private-Package>org.papoose.core.framework.*</Private-Package>
+                        <Implementation-Title>${name}</Implementation-Title>
+                        <Implementation-Version>${project.version}</Implementation-Version>
+                    </instructions>
+                </configuration>
             </plugin>
         </plugins>
         <resources>
@@ -61,8 +55,15 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.papoose.core</groupId>
             <artifactId>papoose-core-framework</artifactId>
+            <scope>provided</scope>
         </dependency>
 
     </dependencies>

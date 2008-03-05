@@ -53,7 +53,7 @@ class BundleContextImpl implements BundleContext
         bundle = null;
     }
 
-    private Papoose getFramework()
+    Papoose getFramework()
     {
         return getBundle().getFramework();
     }
