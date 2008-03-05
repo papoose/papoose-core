@@ -97,45 +97,45 @@ public class BundleContextImplTest extends TestCase
 
             assertEquals("<status>good</status>", line);
 
-            int cout = 0;
+            int count = 0;
             Enumeration enumeration = bundle.getEntryPaths("com/acme");
             while (enumeration.hasMoreElements())
             {
                 enumeration.nextElement();
-                cout++;
+                count++;
             }
 
-            assertEquals(6, cout);
+            assertEquals(6, count);
 
-            cout = 0;
+            count = 0;
             enumeration = bundle.getEntryPaths("");
             while (enumeration.hasMoreElements())
             {
                 enumeration.nextElement();
-                cout++;
+                count++;
             }
 
-            assertEquals(4, cout);
+            assertEquals(4, count);
 
-            cout = 0;
+            count = 0;
             enumeration = bundle.findEntries("com/acme", "*.xml", false);
             while (enumeration.hasMoreElements())
             {
                 enumeration.nextElement();
-                cout++;
+                count++;
             }
 
-            assertEquals(1, cout);
+            assertEquals(1, count);
 
-            cout = 0;
+            count = 0;
             enumeration = bundle.findEntries("", "*.class", true);
             while (enumeration.hasMoreElements())
             {
                 enumeration.nextElement();
-                cout++;
+                count++;
             }
 
-            assertEquals(5, cout);
+            assertEquals(5, count);
 
             papoose.stop();
 

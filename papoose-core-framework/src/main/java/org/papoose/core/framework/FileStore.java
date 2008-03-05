@@ -305,7 +305,7 @@ public class FileStore implements Store
             try
             {
                 this.archive = new JarFile(new File(bundleRoot, ARCHIVE_JAR_NAME));
-                this.codeSource = Util.generateUrl(this, "", 0); // TODO: need better URL
+                this.codeSource = Util.generateUrl(this, "", 0); // TODO: need better URL - do we really?
 
                 this.tmp = new File(bundleRoot, TEMP_NAME);
 

@@ -16,10 +16,16 @@
 
     <modules>
         <module>papoose-core-framework</module>
+        <module>papoose-pkg-admin</module>
+        <module>papoose-start-level</module>
+        <module>papoose-cnd-perm-admin</module>
+        <module>papoose-perm-admin</module>
+        <module>papoose-url-handlers</module>
     </modules>
 
     <properties>
         <jettyVersion>6.1.5</jettyVersion>
+        <papooseVersion>1.0-SNAPSHOT</papooseVersion>
         <papooseTestVersion>1.0-SNAPSHOT</papooseTestVersion>
     </properties>
 
@@ -97,6 +103,12 @@
                 <groupId>org.osgi</groupId>
                 <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
                 <version>1.0.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.core</groupId>
+                <artifactId>papoose-core-framework</artifactId>
+                <version>${papooseVersion}</version>
             </dependency>
 
             <dependency>
