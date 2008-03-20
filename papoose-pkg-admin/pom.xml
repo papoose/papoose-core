@@ -34,7 +34,7 @@
                         <Bundle-SymbolicName>${groupId}.${artifactId}</Bundle-SymbolicName>
                         <Bundle-Vendor>Papoose</Bundle-Vendor>
                         <Bundle-Copyright>Copyright 2008 (C) The original author or authors</Bundle-Copyright>
-                        <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.packageadmin;version=1.2</Import-Package>
+                        <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.packageadmin;version=1.2,org.papoose.core.framework.spi;version=${project.version}</Import-Package>
                         <Export-Service>org.osgi.service.packageadmin.PackageAdmin</Export-Service>
                         <Bundle-Activator>org.papoose.core.framework.PackageAdminActivator</Bundle-Activator>
                         <Private-Package>org.papoose.core.framework.*</Private-Package>
@@ -55,9 +55,13 @@
     <dependencies>
 
         <dependency>
+            <groupId>net.jcip</groupId>
+            <artifactId>jcip-annotations</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>

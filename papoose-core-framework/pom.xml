@@ -61,6 +61,11 @@
     <dependencies>
 
         <dependency>
+            <groupId>net.jcip</groupId>
+            <artifactId>jcip-annotations</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.xbean</groupId>
             <artifactId>xbean-classloader</artifactId>
         </dependency>
@@ -68,7 +73,6 @@
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
