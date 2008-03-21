@@ -8,10 +8,10 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>papoose-start-level</artifactId>
+    <artifactId>perm-admin</artifactId>
     <packaging>bundle</packaging>
-    <name>Papoose :: OSGi R4 Start Level Service</name>
-    <description>OSGi R4 Start Level Service</description>
+    <name>Papoose :: OSGi R4 Permission Admin Service</name>
+    <description>OSGi R4 Permission Admin Service</description>
 
     <build>
         <plugins>
@@ -34,9 +34,9 @@
                         <Bundle-SymbolicName>${groupId}.${artifactId}</Bundle-SymbolicName>
                         <Bundle-Vendor>Papoose</Bundle-Vendor>
                         <Bundle-Copyright>Copyright 2008 (C) The original author or authors</Bundle-Copyright>
-                        <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.startlevel;version=1.1</Import-Package>
-                        <Export-Service>org.osgi.service.startlevel.StartLevel</Export-Service>
-                        <Bundle-Activator>org.papoose.core.framework.StartLevelActivator</Bundle-Activator>
+                        <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.permissionadmin;version=1.2</Import-Package>
+                        <Export-Service>org.osgi.service.permissionadmin.PermissionAdmin</Export-Service>
+                        <Bundle-Activator>org.papoose.core.framework.PermissionAdminActivator</Bundle-Activator>
                         <Private-Package>org.papoose.core.framework.*,net.jcip.annotations.*</Private-Package>
                         <Implementation-Title>${name}</Implementation-Title>
                         <Implementation-Version>${project.version}</Implementation-Version>
@@ -66,7 +66,7 @@
 
         <dependency>
             <groupId>org.papoose.core</groupId>
-            <artifactId>papoose-core-framework</artifactId>
+            <artifactId>framework</artifactId>
             <scope>provided</scope>
         </dependency>
 

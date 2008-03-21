@@ -15,17 +15,17 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>papoose-core-framework</module>
-        <module>papoose-pkg-admin</module>
-        <module>papoose-start-level</module>
-        <module>papoose-cnd-perm-admin</module>
-        <module>papoose-perm-admin</module>
-        <module>papoose-url-handlers</module>
+        <module>core-framework</module>
+        <module>pkg-admin</module>
+        <module>start-level</module>
+        <module>cnd-perm-admin</module>
+        <module>perm-admin</module>
+        <module>url-handlers</module>
     </modules>
 
     <properties>
         <jettyVersion>6.1.5</jettyVersion>
-        <papooseVersion>1.0-SNAPSHOT</papooseVersion>
+        <papooseVersion>1.0.0.SNAPSHOT</papooseVersion>
         <papooseTestVersion>1.0-SNAPSHOT</papooseTestVersion>
     </properties>
 
@@ -114,7 +114,7 @@
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
-                <artifactId>papoose-core-framework</artifactId>
+                <artifactId>framework</artifactId>
                 <version>${papooseVersion}</version>
             </dependency>
 

@@ -8,7 +8,7 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>papoose-core-framework</artifactId>
+    <artifactId>framework</artifactId>
     <packaging>jar</packaging>
     <name>Papoose :: OSGi R4 core framework</name>
     <description>OSGi R4 Core Framework</description>
