@@ -56,6 +56,7 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Executor serialExecutor;
     private final Set<FragmentBundleImpl> fragments = new TreeSet<FragmentBundleImpl>();
+    private final Set<ExportDescription> exports = new TreeSet<ExportDescription>();
     private BundleContextImpl bundleContext = null;
     private BundleClassLoader classLoader;
     private int startLevel;

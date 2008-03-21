@@ -48,7 +48,7 @@ public interface BundleManager
 
     Bundle installBundle(String location, InputStream inputStream) throws BundleException;
 
-    void resolve(Bundle bundle);
+    boolean resolve(Bundle bundle);
 
     void requestStart(Bundle bundle);
 
@@ -63,4 +63,14 @@ public interface BundleManager
     void fireFrameworkEvent(FrameworkEvent event);
 
     void fireServiceEvent(ServiceEvent event);
+
+    /**
+     * Bundle changes locked here - not sure on the scope of these changes
+     */
+    void lock();
+
+    /**
+     * Bundle changes unlocked here - not sure on the scope of these changes
+     */
+    void unlock();
 }

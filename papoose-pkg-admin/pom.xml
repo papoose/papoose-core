@@ -37,7 +37,7 @@
                         <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.packageadmin;version=1.2,org.papoose.core.framework.spi;version=${project.version}</Import-Package>
                         <Export-Service>org.osgi.service.packageadmin.PackageAdmin</Export-Service>
                         <Bundle-Activator>org.papoose.core.framework.PackageAdminActivator</Bundle-Activator>
-                        <Private-Package>org.papoose.core.framework.*</Private-Package>
+                        <Private-Package>org.papoose.core.framework.*,net.jcip.annotations.*</Private-Package>
                         <Implementation-Title>${name}</Implementation-Title>
                         <Implementation-Version>${project.version}</Implementation-Version>
                     </instructions>

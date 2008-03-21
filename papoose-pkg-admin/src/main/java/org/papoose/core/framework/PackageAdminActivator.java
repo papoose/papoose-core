@@ -18,28 +18,36 @@ package org.papoose.core.framework;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.packageadmin.PackageAdmin;
 
 /**
+ * Instantiates an instance of the <code>PackageAdminImpl</code> and registers
+ * the <code>PackageAdmin</code>.  A <code>SynchronousBundleListener<code> is
+ * registered so that the service can keep track of bundle state changes
+ * without a tight coupling to the Bundle manager's internals.
+ *
  * @version $Revision$ $Date$
  */
 public class PackageAdminActivator implements BundleActivator
 {
-    private ServiceRegistration reference;
+    private PackageAdminImpl packageAdmin;
 
     public void start(BundleContext bundleContext) throws Exception
     {
         if (!(bundleContext instanceof BundleContextImpl)) throw new IllegalArgumentException("Package Admin Service will only work with Papoose");
 
         BundleContextImpl bundleContextImpl = (BundleContextImpl) bundleContext;
-        PackageAdminImpl packageAdmin = new PackageAdminImpl(bundleContextImpl.getFramework());
+        packageAdmin = new PackageAdminImpl(bundleContextImpl.getFramework());
 
-        this.reference = bundleContext.registerService(PackageAdmin.class.getName(), packageAdmin, null);
+        packageAdmin.start();
+
+        bundleContext.registerService(PackageAdmin.class.getName(), packageAdmin, null);
+
+        bundleContext.addBundleListener(packageAdmin);
     }
 
     public void stop(BundleContext bundleContext) throws Exception
     {
-        this.reference.unregister();
+        packageAdmin.stop();
     }
 }

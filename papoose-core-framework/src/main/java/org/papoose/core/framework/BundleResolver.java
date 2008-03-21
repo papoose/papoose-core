@@ -50,34 +50,31 @@ public class BundleResolver
     {
         imports = new ArrayList<ImportDescriptionWrapper>(imports);
 
-        ImportDescriptionWrapper importWrapper = imports.remove(0);
+        ImportDescriptionWrapper targetImport = imports.remove(0);
 
-        for (ExportDescriptionWrapper candidate : collectEligibleExports(importWrapper, bundles))
+        for (ExportDescriptionWrapper candidate : collectEligibleExports(targetImport, bundles))
         {
-            if (match(importWrapper.getPackageName(), importWrapper.getImportDescription(), candidate.getExportDescription()))
+            if (match(targetImport.getPackageName(), targetImport.getImportDescription(), candidate.getExportDescription()))
             {
-                Set<Candidate> implied = collectImpliedConstraints(candidate.getExportDescription().getUses(), candidate.getBundle());
+                Set<Candidate> impliedCandidates = collectImpliedConstraints(candidate.getExportDescription().getUses(), candidate.getBundle());
 
-                assert implied != null;
+                assert impliedCandidates != null;
 
-                if (isConsistent(impliedSet, implied))
+                if (isConsistent(impliedSet, impliedCandidates))
                 {
-                    Set<Candidate> intersection = new HashSet<Candidate>(implied);
-                    intersection.retainAll(candidates);
-
-                    candidates = new HashSet<Candidate>(candidates);
-                    candidates.add(new Candidate(importWrapper.getPackageName(), candidate.getExportDescription(), candidate.getBundle()));
-
-                    impliedSet = new HashSet<Candidate>(impliedSet);
-                    impliedSet.addAll(implied);
+                    Set<Candidate> candidatesSavePoint = new HashSet<Candidate>(candidates);
+                    candidatesSavePoint.add(new Candidate(targetImport.getPackageName(), candidate.getExportDescription(), candidate.getBundle()));
 
                     if (imports.isEmpty())
                     {
-                        return collectWires(candidates);
+                        return collectWires(candidatesSavePoint);
                     }
                     else
                     {
-                        Set<Wire> result = resolve(imports, bundles, candidates, impliedSet);
+                        Set<Candidate> impliedSetSavePoint = new HashSet<Candidate>(impliedSet);
+                        impliedSetSavePoint.addAll(impliedCandidates);
+
+                        Set<Wire> result = resolve(imports, bundles, candidatesSavePoint, impliedSetSavePoint);
                         if (!result.isEmpty()) return result;
                     }
                 }
@@ -91,14 +88,15 @@ public class BundleResolver
     {
         String bundleName = (String) importWrapper.getParameters().get(Constants.BUNDLE_SYMBOLICNAME_ATTRIBUTE);
         VersionRange bundleVersionRange = (VersionRange) importWrapper.getParameters().get(Constants.BUNDLE_VERSION_ATTRIBUTE);
-        boolean baseMatch = (bundleName == null || bundleName.equals(Constants.SYSTEM_BUNDLE_SYMBOLICNAME));
+        boolean baseNameMatch = bundleName == null || bundleName.equals(Constants.SYSTEM_BUNDLE_SYMBOLICNAME);
+        boolean baseVersionMatch = bundleVersionRange == null;
 
         SortedSet<ExportDescriptionWrapper> sorted = new TreeSet<ExportDescriptionWrapper>();
 
         for (BundleImpl bundle : bundles)
         {
-            boolean nameMatch = baseMatch || bundleName.equals(bundle.getCurrentStore().getBundleSymbolicName());
-            boolean versionMatch = (bundleVersionRange == null || bundleVersionRange.includes(bundle.getCurrentStore().getBundleVersion()));
+            boolean nameMatch = baseNameMatch || bundleName.equals(bundle.getCurrentStore().getBundleSymbolicName());
+            boolean versionMatch = baseVersionMatch || bundleVersionRange.includes(bundle.getCurrentStore().getBundleVersion());
 
             if (nameMatch && versionMatch)
             {
@@ -121,7 +119,7 @@ public class BundleResolver
         {
             for (Wire wire : bundle.getClassLoader().getWires())
             {
-                if (wire.getPackageName().equals(packageName))
+                if (packageName.equals(wire.getPackageName()))
                 {
                     ExportDescription exportDescription = wire.getExportDescription();
 
@@ -135,16 +133,16 @@ public class BundleResolver
         return result;
     }
 
-    private static boolean isConsistent(Set<Candidate> usedSet, Set<Candidate> used)
+    private static boolean isConsistent(Set<Candidate> currentCandiates, Set<Candidate> testCandiates)
     {
-        Set<Candidate> intersection = new HashSet<Candidate>(usedSet);
+        Set<Candidate> intersection = new HashSet<Candidate>(currentCandiates);
 
-        intersection.retainAll(used);
+        intersection.retainAll(testCandiates);
 
         for (Candidate candidate : intersection)
         {
             ExportDescription version = candidate.getExportDescription();
-            for (Candidate c : used)
+            for (Candidate c : testCandiates)
             {
                 if (!version.equals(c.getExportDescription())) return false;
             }
