@@ -16,39 +16,66 @@
  */
 package org.papoose.core.framework;
 
+import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 import org.osgi.service.packageadmin.RequiredBundle;
 
 /**
+ * {@inheritDoc}
+ * <p/>
+ * Developer's notes: This class' thread safety is protected by an internal
+ * monitor instead of "this" so that bundles that obtain an instance of this
+ * class cannot inadvertently, or maliciously, lock this object and hence lock
+ * the framework.
+ *
  * @version $Revision$ $Date$
  */
+@ThreadSafe
 public class RequiredBundleImpl implements RequiredBundle
 {
     private final Object monitor = new Object();
     private final String symbolicName;
     private final Version version;
-    private volatile Bundle bundle;
-    private volatile Bundle[] requiringBundles;
+    @GuardedBy("monitor") private Bundle bundle;
+    @GuardedBy("monitor") private Bundle[] requiringBundles;
 
     public RequiredBundleImpl(String symbolicName, Version version, Bundle bundle, Bundle[] requiringBundles)
     {
+        assert symbolicName != null;
+        assert version != null;
+        assert bundle != null;
+        assert requiringBundles != null;
+
         this.symbolicName = symbolicName;
         this.version = version;
         this.bundle = bundle;
         this.requiringBundles = requiringBundles;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getSymbolicName()
     {
         return symbolicName;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Bundle getBundle()
     {
-        return bundle;
+        synchronized (monitor)
+        {
+            return bundle;
+        }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Bundle[] getRequiringBundles()
     {
         synchronized (monitor)
@@ -63,22 +90,73 @@ public class RequiredBundleImpl implements RequiredBundle
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Version getVersion()
     {
         return version;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isRemovalPending()
     {
-        return bundle == null;
+        synchronized (monitor)
+        {
+            return bundle == null;
+        }
     }
 
+    /**
+     * Method used by <code>PackageAdminImpl</code> to clear this object to
+     * indicate that the bundle reference has become stale.
+     */
     void clear()
     {
         synchronized (monitor)
         {
             bundle = null;
             requiringBundles = null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RequiredBundleImpl that = (RequiredBundleImpl) o;
+
+        return symbolicName.equals(that.symbolicName) && version.equals(that.version);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode()
+    {
+        int result;
+        result = symbolicName.hashCode();
+        result = 31 * result + version.hashCode();
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString()
+    {
+        synchronized (monitor)
+        {
+            return "(RequiredPackageImpl name: " + symbolicName + " version: " + version + (bundle != null ? bundle + " " + requiringBundles.length + " importing bundles" : " stale") + ")";
         }
     }
 }

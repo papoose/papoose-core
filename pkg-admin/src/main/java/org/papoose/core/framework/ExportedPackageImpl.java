@@ -147,4 +147,42 @@ public class ExportedPackageImpl implements ExportedPackage, Comparable
             importingBundles = null;
         }
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ExportedPackageImpl that = (ExportedPackageImpl) o;
+
+        return name.equals(that.name) && version.equals(that.version);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode()
+    {
+        int result;
+        result = name.hashCode();
+        result = 31 * result + version.hashCode();
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString()
+    {
+        synchronized (monitor)
+        {
+            return "(ExportedPackageImpl name: " + name + " version: " + version + (exportingBundle != null ? exportingBundle + " " + importingBundles.length + " importing bundles" : " stale") + ")";
+        }
+    }
 }

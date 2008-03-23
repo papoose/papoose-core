@@ -30,6 +30,7 @@ import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.SynchronousBundleListener;
+import org.osgi.framework.Version;
 
 import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleStore;
@@ -74,6 +75,11 @@ abstract class AbstractBundle implements Bundle
     public String getSymbolicName()
     {
         return currentStore.getBundleSymbolicName();
+    }
+
+    public Version getVersion()
+    {
+        return currentStore.getBundleVersion();
     }
 
     public long getBundleId()

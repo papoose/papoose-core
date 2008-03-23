@@ -64,13 +64,11 @@ public interface BundleManager
 
     void fireServiceEvent(ServiceEvent event);
 
-    /**
-     * Bundle changes locked here - not sure on the scope of these changes
-     */
-    void lock();
+    void readLock() throws InterruptedException;
 
-    /**
-     * Bundle changes unlocked here - not sure on the scope of these changes
-     */
-    void unlock();
+    void readUnlock();
+
+    void writeLock() throws InterruptedException;
+
+    void writeUnlock();
 }

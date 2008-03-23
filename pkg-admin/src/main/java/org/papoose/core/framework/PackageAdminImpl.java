@@ -16,10 +16,19 @@
  */
 package org.papoose.core.framework;
 
-import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.osgi.framework.AdminPermission;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
@@ -37,39 +46,75 @@ import org.papoose.core.framework.spi.BundleManager;
  */
 public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
 {
-    private Set<WeakReference<ExportedPackage>> s = new HashSet<WeakReference<ExportedPackage>>();
+    private final static String CLASSNAME = PackageAdminImpl.class.getName();
+    private final static Logger LOGGER = Logger.getLogger(CLASSNAME);
+    private final Set<Bundle> oldBundles = new HashSet<Bundle>();
     private final Papoose framework;
-    private long lastRefreshed = 0;
 
     public PackageAdminImpl(Papoose framework)
     {
+        assert framework != null;
+
         this.framework = framework;
+
+        if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("framework: " + framework);
     }
 
-    void start()
+    void start() throws InterruptedException
     {
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "start");
+
         BundleManager manager = framework.getBundleManager();
 
-        manager.lock();
+        try
+        {
+            manager.writeLock();
+        }
+        catch (InterruptedException ie)
+        {
+            LOGGER.log(Level.WARNING, "Wait for write lock interrupted", ie);
+            throw ie;
+        }
+
         try
         {
             for (Bundle bundle : manager.getBundles())
             {
                 BundleContext context = bundle.getBundleContext();
                 if (context != null) context.addBundleListener(this);
+
+                if (bundle.getState() == Bundle.UNINSTALLED || (bundle instanceof BundleImpl && ((BundleImpl) bundle).getNextStore() != null))
+                {
+                    oldBundles.add(bundle);
+                }
             }
         }
         finally
         {
-            manager.unlock();
+            manager.writeUnlock();
         }
+
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "start");
     }
 
-    void stop()
+    void stop() throws InterruptedException
     {
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "stop");
+
+        oldBundles.clear();
+
         BundleManager manager = framework.getBundleManager();
 
-        manager.lock();
+        try
+        {
+            manager.writeLock();
+        }
+        catch (InterruptedException ie)
+        {
+            LOGGER.log(Level.WARNING, "Wait for write lock interrupted", ie);
+            throw ie;
+        }
+
         try
         {
             for (Bundle bundle : manager.getBundles())
@@ -80,8 +125,10 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
         }
         finally
         {
-            manager.unlock();
+            manager.writeUnlock();
         }
+
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "stop");
     }
 
     /**
@@ -106,153 +153,306 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public ExportedPackage[] getExportedPackages(Bundle bundle)
     {
-        Set<BundleImpl> collectedBundles = new HashSet<BundleImpl>();
-        Set<ExportedPackageImpl> collectedExports = new HashSet<ExportedPackageImpl>();
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getExportedPackages", bundle);
 
-        if (bundle == null)
+        BundleManager manager = framework.getBundleManager();
+
+        try
         {
+            manager.readLock();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            LOGGER.log(Level.WARNING, "Wait for read lock interrupted", ie);
+            return null;
+        }
+
+        try
+        {
+            Set<BundleImpl> collectedBundles = new HashSet<BundleImpl>();
+            Set<ExportedPackageImpl> collectedExports = new HashSet<ExportedPackageImpl>();
+
+            if (bundle == null)
+            {
+                for (Bundle b : framework.getBundleManager().getBundles())
+                {
+                    if (b instanceof BundleImpl)
+                    {
+                        collectedBundles.add((BundleImpl) b);
+                        if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Added bundle " + b);
+                    }
+                }
+            }
+            else if (bundle instanceof BundleImpl)
+            {
+                BundleImpl bundleImpl = (BundleImpl) bundle;
+                if (bundleImpl.getFramework() == framework)
+                {
+                    collectedBundles.add(bundleImpl);
+                    if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Added bundle " + bundleImpl);
+                }
+                else
+                {
+                    LOGGER.warning("Bundle does not belong to this framework instance");
+                }
+            }
+            else
+            {
+                LOGGER.warning("Bundle does not belong to the Papoose framework");
+            }
+
+            for (BundleImpl bundleImpl : collectedBundles)
+            {
+                BundleClassLoader classLoader = bundleImpl.getClassLoader();
+
+                if (classLoader != null)
+                {
+                    if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Searching bundle " + bundleImpl);
+
+                    for (ExportDescription export : bundleImpl.getCurrentStore().getBundleExportList())
+                    {
+                        Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
+                        for (String packageName : export.getPackages())
+                        {
+                            Set<BundleImpl> importers = new HashSet<BundleImpl>();
+
+                            if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Searching package " + packageName);
+
+                            for (Wire wire : classLoader.getWires())
+                            {
+                                if (packageName.equals(wire.getPackageName()))
+                                {
+                                    importers.add(wire.getBundle());
+                                    if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Added bundle " + wire.getBundle());
+                                }
+                            }
+
+                            collectedExports.add(new ExportedPackageImpl(packageName, version, bundleImpl, importers.toArray(new Bundle[importers.size()])));
+                        }
+
+                    }
+                }
+                else
+                {
+                    if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Bundle " + bundleImpl + " seems to be unresolved");
+                }
+            }
+
+            int numExports = collectedExports.size();
+            ExportedPackage[] result = (numExports == 0 ? null : collectedExports.toArray(new ExportedPackage[numExports]));
+
+            if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getExportedPackages", result);
+
+            return result;
+        }
+        finally
+        {
+            manager.readUnlock();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public ExportedPackage[] getExportedPackages(String targetPackageName)
+    {
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getExportedPackages", targetPackageName);
+
+        BundleManager manager = framework.getBundleManager();
+
+        try
+        {
+            manager.readLock();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            LOGGER.log(Level.WARNING, "Wait for read lock interrupted", ie);
+            return null;
+        }
+
+        try
+        {
+            Set<BundleImpl> collectedBundles = new HashSet<BundleImpl>();
+            Set<ExportedPackageImpl> collectedExports = new HashSet<ExportedPackageImpl>();
+
             for (Bundle b : framework.getBundleManager().getBundles())
             {
                 if (b instanceof BundleImpl)
                 {
                     collectedBundles.add((BundleImpl) b);
+                    if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Added bundle " + b);
                 }
             }
-        }
-        else if (bundle instanceof BundleImpl)
-        {
-            BundleImpl bundleImpl = (BundleImpl) bundle;
-            if (framework.getFrameworkId() == bundleImpl.getFramework().getFrameworkId())
-            {
-                collectedBundles.add(bundleImpl);
-            }
-        }
 
-        for (BundleImpl bundleImpl : collectedBundles)
-        {
-            for (ExportDescription export : bundleImpl.getCurrentStore().getBundleExportList())
+            for (BundleImpl bundleImpl : collectedBundles)
             {
-                Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
-                for (String packageName : export.getPackages())
+                BundleClassLoader classLoader = bundleImpl.getClassLoader();
+
+                if (classLoader != null)
                 {
-                    Set<BundleImpl> importers = new HashSet<BundleImpl>();
-                    BundleClassLoader classLoader = bundleImpl.getClassLoader();
+                    if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Searching bundle " + bundleImpl);
 
-                    if (classLoader != null)
+                    for (ExportDescription export : bundleImpl.getCurrentStore().getBundleExportList())
                     {
-                        for (Wire wire : classLoader.getWires())
+                        Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
+                        for (String packageName : export.getPackages())
                         {
-                            if (packageName.equals(wire.getPackageName())) importers.add(wire.getBundle());
-                        }
-                    }
-
-                    collectedExports.add(new ExportedPackageImpl(packageName, version, bundleImpl, importers.toArray(new Bundle[importers.size()])));
-                }
-            }
-        }
-
-        int numExports = collectedExports.size();
-        return (numExports == 0 ? null : collectedExports.toArray(new ExportedPackage[numExports]));
-    }
-
-    public ExportedPackage[] getExportedPackages(String targetPackageName)
-    {
-        Set<BundleImpl> collectedBundles = new HashSet<BundleImpl>();
-        Set<ExportedPackageImpl> collectedExports = new HashSet<ExportedPackageImpl>();
-
-        for (Bundle b : framework.getBundleManager().getBundles())
-        {
-            if (b instanceof BundleImpl)
-            {
-                collectedBundles.add((BundleImpl) b);
-            }
-        }
-
-        for (BundleImpl bundleImpl : collectedBundles)
-        {
-            for (ExportDescription export : bundleImpl.getCurrentStore().getBundleExportList())
-            {
-                Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
-                for (String packageName : export.getPackages())
-                {
-                    if (targetPackageName.equals(packageName))
-                    {
-                        Set<BundleImpl> importers = new HashSet<BundleImpl>();
-                        BundleClassLoader classLoader = bundleImpl.getClassLoader();
-
-                        if (classLoader != null)
-                        {
-                            for (Wire wire : classLoader.getWires())
+                            if (targetPackageName.equals(packageName))
                             {
-                                if (packageName.equals(wire.getPackageName())) importers.add(wire.getBundle());
+                                Set<BundleImpl> importers = new HashSet<BundleImpl>();
+                                for (Wire wire : classLoader.getWires())
+                                {
+                                    if (packageName.equals(wire.getPackageName()))
+                                    {
+                                        importers.add(wire.getBundle());
+                                        if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Added bundle " + wire.getBundle());
+                                    }
+                                }
+
+                                collectedExports.add(new ExportedPackageImpl(packageName, version, bundleImpl, importers.toArray(new Bundle[importers.size()])));
                             }
                         }
-
-                        collectedExports.add(new ExportedPackageImpl(packageName, version, bundleImpl, importers.toArray(new Bundle[importers.size()])));
                     }
                 }
             }
-        }
 
-        int numExports = collectedExports.size();
-        return (numExports == 0 ? null : collectedExports.toArray(new ExportedPackage[numExports]));
+            int numExports = collectedExports.size();
+            ExportedPackage[] result = (numExports == 0 ? null : collectedExports.toArray(new ExportedPackage[numExports]));
+
+            if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getExportedPackages", result);
+
+            return result;
+        }
+        finally
+        {
+            manager.readUnlock();
+        }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public ExportedPackage getExportedPackage(String targetPackageName)
     {
-        Set<BundleImpl> collectedBundles = new HashSet<BundleImpl>();
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getExportedPackage", targetPackageName);
 
-        for (Bundle b : framework.getBundleManager().getBundles())
+        BundleManager manager = framework.getBundleManager();
+
+        try
         {
-            if (b instanceof BundleImpl)
-            {
-                collectedBundles.add((BundleImpl) b);
-            }
+            manager.readLock();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            LOGGER.log(Level.WARNING, "Wait for read lock interrupted", ie);
+            return null;
         }
 
-        ExportedPackageImpl result = null;
-        for (BundleImpl bundleImpl : collectedBundles)
+        try
         {
-            for (ExportDescription export : bundleImpl.getCurrentStore().getBundleExportList())
-            {
-                Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
-                for (String packageName : export.getPackages())
-                {
-                    if (targetPackageName.equals(packageName))
-                    {
-                        Set<BundleImpl> importers = new HashSet<BundleImpl>();
-                        BundleClassLoader classLoader = bundleImpl.getClassLoader();
+            Set<BundleImpl> collectedBundles = new HashSet<BundleImpl>();
 
-                        if (classLoader != null)
+            for (Bundle b : framework.getBundleManager().getBundles())
+            {
+                if (b instanceof BundleImpl)
+                {
+                    collectedBundles.add((BundleImpl) b);
+                    if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Added bundle " + b);
+                }
+            }
+
+            ExportedPackageImpl result = null;
+            for (BundleImpl bundleImpl : collectedBundles)
+            {
+                BundleClassLoader classLoader = bundleImpl.getClassLoader();
+
+                if (classLoader != null)
+                {
+                    if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Searching bundle " + bundleImpl);
+
+                    for (ExportDescription export : bundleImpl.getCurrentStore().getBundleExportList())
+                    {
+                        Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
+                        for (String packageName : export.getPackages())
                         {
-                            for (Wire wire : classLoader.getWires())
+                            if (targetPackageName.equals(packageName))
                             {
-                                if (packageName.equals(wire.getPackageName())) importers.add(wire.getBundle());
+                                Set<BundleImpl> importers = new HashSet<BundleImpl>();
+                                for (Wire wire : classLoader.getWires())
+                                {
+                                    if (packageName.equals(wire.getPackageName()))
+                                    {
+                                        importers.add(wire.getBundle());
+                                        if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Added bundle " + wire.getBundle());
+                                    }
+                                }
+
+                                ExportedPackageImpl candidate = new ExportedPackageImpl(packageName, version, bundleImpl, importers.toArray(new Bundle[importers.size()]));
+                                if (result == null || result.compareTo(candidate) < 0) result = candidate;
                             }
                         }
-
-                        ExportedPackageImpl candidate = new ExportedPackageImpl(packageName, version, bundleImpl, importers.toArray(new Bundle[importers.size()]));
-                        if (result == null || result.compareTo(candidate) < 0) result = candidate;
                     }
                 }
             }
-        }
 
-        return result;
+            if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getExportedPackage", result);
+
+            return result;
+        }
+        finally
+        {
+            manager.readUnlock();
+        }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void refreshPackages(Bundle[] bundles)
     {
-        //todo: consider this autogenerated code
-        lastRefreshed = System.currentTimeMillis();
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "refreshPackages", bundles);
+
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) sm.checkPermission(new AdminPermission(framework.getBundleManager().getBundle(0), AdminPermission.RESOLVE));
+
+        final Bundle[] checkedBundles = (bundles == null ? oldBundles.toArray(new Bundle[oldBundles.size()]) : bundles);
+
+        oldBundles.clear();
+
+        framework.getExecutorService().submit(new RefreshPackagesRunnable(framework, checkedBundles));
+
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "refreshPackages");
     }
 
+    /**
+     * {@inheritDoc}
+     * Developer's note: This method will not attpempt to refresh any extra
+     * bundles that are not specified by the caller.
+     */
     public boolean resolveBundles(Bundle[] bundles)
     {
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "resolveBundles", bundles);
+
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) sm.checkPermission(new AdminPermission(framework.getBundleManager().getBundle(0), AdminPermission.RESOLVE));
+
         BundleManager manager = framework.getBundleManager();
         boolean result = true;
 
-        manager.lock();
+        try
+        {
+            manager.writeLock();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            LOGGER.log(Level.WARNING, "Wait for write lock interrupted", ie);
+            return false;
+        }
+
         try
         {
             if (bundles == null) bundles = manager.getBundles();
@@ -262,52 +462,343 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
                 if (bundle instanceof BundleImpl)
                 {
                     BundleImpl bundleImpl = (BundleImpl) bundle;
-                    if (framework.getFrameworkId() == bundleImpl.getFramework().getFrameworkId() && bundleImpl.getState() == Bundle.INSTALLED)
+                    if (bundleImpl.getFramework() == framework)
                     {
-                        result = result && manager.resolve(bundleImpl);
+                        if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Testing " + bundleImpl);
+                        if (bundleImpl.getState() == Bundle.INSTALLED) result = result && manager.resolve(bundleImpl);
+                    }
+                    else
+                    {
+                        LOGGER.warning("Bundle does not belong to this framework instance");
                     }
                 }
+                else
+                {
+                    LOGGER.warning("Bundle does not belong to the Papoose framework");
+                }
             }
+
+            if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "resolveBundles", result);
+
             return result;
         }
         finally
         {
-            manager.unlock();
+            manager.writeUnlock();
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public RequiredBundle[] getRequiredBundles(String symbolicName)
     {
-        return new RequiredBundle[0];  //todo: consider this autogenerated code
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getRequiredBundles", symbolicName);
+
+        BundleManager manager = framework.getBundleManager();
+
+        try
+        {
+            manager.readLock();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            LOGGER.log(Level.WARNING, "Wait for read lock interrupted", ie);
+            return null;
+        }
+
+        try
+        {
+            Bundle[] bundles = manager.getBundles();
+
+            Map<String, Set<BundleImpl>> requiringBundles = new HashMap<String, Set<BundleImpl>>();
+            Map<String, BundleImpl> requiredBundles = new HashMap<String, BundleImpl>();
+            for (Bundle bundle : bundles)
+            {
+                if (bundle instanceof BundleImpl)
+                {
+                    BundleImpl bundleImpl = (BundleImpl) bundle;
+
+                    if (symbolicName == null || bundleImpl.getSymbolicName().equals(symbolicName))
+                    {
+                        requiredBundles.put(bundleImpl.getSymbolicName(), bundleImpl);
+                        if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Found required bundle " + bundle);
+                    }
+
+                    for (RequireDescription requireDescription : bundleImpl.getCurrentStore().getBundleRequireBundle())
+                    {
+                        if (symbolicName == null || requireDescription.getSymbolName().equals(symbolicName))
+                        {
+                            Set<BundleImpl> set = requiringBundles.get(requireDescription.getSymbolName());
+                            if (set == null)
+                            {
+                                set = new HashSet<BundleImpl>();
+                                requiringBundles.put(requireDescription.getSymbolName(), set);
+                            }
+                            set.add(bundleImpl);
+                            if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Added requiring bundle " + bundleImpl);
+                        }
+                    }
+                }
+            }
+
+            List<RequiredBundle> list = new ArrayList<RequiredBundle>();
+            for (String name : requiringBundles.keySet())
+            {
+                BundleImpl requiredBundle = requiredBundles.get(name);
+                if (requiredBundle != null)
+                {
+                    Set<BundleImpl> set = requiringBundles.get(name);
+                    list.add(new RequiredBundleImpl(name, requiredBundle.getVersion(), requiredBundle, set.toArray(new Bundle[set.size()])));
+                }
+            }
+
+            RequiredBundle[] result = list.isEmpty() ? null : list.toArray(new RequiredBundle[list.size()]);
+
+            if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getRequiredBundles", result);
+
+            return result;
+        }
+        finally
+        {
+            manager.readUnlock();
+        }
     }
 
-    public Bundle[] getBundles(String s, String s1)
+    /**
+     * {@inheritDoc}
+     */
+    public Bundle[] getBundles(String symbolicName, String versionRange)
     {
-        return new Bundle[0];  //todo: consider this autogenerated code
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getBundles", new Object[]{ symbolicName, versionRange });
+
+        if (symbolicName == null) throw new IllegalArgumentException("symbolicName cannot be null");
+
+        VersionRange range;
+        if (versionRange != null)
+        {
+            try
+            {
+                range = VersionRange.parseVersionRange(versionRange);
+            }
+            catch (Exception e)
+            {
+                range = VersionRange.DEFAULT_VERSION_RANGE;
+                LOGGER.log(Level.WARNING, "Error parsing version range ", e);
+            }
+        }
+        else
+        {
+            range = VersionRange.DEFAULT_VERSION_RANGE;
+        }
+
+        BundleManager manager = framework.getBundleManager();
+
+        try
+        {
+            manager.readLock();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            LOGGER.log(Level.WARNING, "Wait for read lock interrupted", ie);
+            return null;
+        }
+
+        try
+        {
+            Bundle[] bundles = manager.getBundles();
+
+            SortedSet<AbstractBundle> sortedSet = new TreeSet<AbstractBundle>(new Comparator<AbstractBundle>()
+            {
+                public int compare(AbstractBundle o1, AbstractBundle o2)
+                {
+                    return -o1.getVersion().compareTo(o2.getVersion());
+                }
+            });
+
+            for (Bundle bundle : bundles)
+            {
+                AbstractBundle abstractBundle = (AbstractBundle) bundle;
+
+                if (abstractBundle.getSymbolicName().equals(symbolicName) && range.includes(abstractBundle.getVersion()))
+                {
+                    sortedSet.add(abstractBundle);
+                    if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Added bundle " + abstractBundle);
+                }
+            }
+
+            Bundle[] result = sortedSet.isEmpty() ? null : sortedSet.toArray(new Bundle[sortedSet.size()]);
+
+            if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getBundles", result);
+
+            return result;
+        }
+        finally
+        {
+            manager.readUnlock();
+        }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Bundle[] getFragments(Bundle bundle)
     {
-        return new Bundle[0];  //todo: consider this autogenerated code
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getFragments", bundle);
+
+        Bundle[] result = null;
+        if (bundle instanceof BundleImpl)
+        {
+            BundleImpl bundleImpl = (BundleImpl) bundle;
+            if (bundleImpl.getFramework() == framework)
+            {
+                BundleManager manager = framework.getBundleManager();
+
+                try
+                {
+                    manager.readLock();
+                }
+                catch (InterruptedException ie)
+                {
+                    Thread.currentThread().interrupt();
+                    LOGGER.log(Level.WARNING, "Wait for read lock interrupted", ie);
+                    return null;
+                }
+
+                try
+                {
+                    Set<FragmentBundleImpl> fragmentSet = bundleImpl.getFragments();
+                    if (fragmentSet != null && fragmentSet.size() > 0)
+                    {
+                        result = fragmentSet.toArray(new Bundle[fragmentSet.size()]);
+                    }
+                }
+                finally
+                {
+                    manager.readUnlock();
+                }
+            }
+            else
+            {
+                LOGGER.warning("Bundle does not belong to this framework instance");
+            }
+        }
+        else
+        {
+            LOGGER.warning("Bundle does not belong to the Papoose framework");
+        }
+
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getFragments", result);
+
+        return result;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Bundle[] getHosts(Bundle bundle)
     {
-        return new Bundle[0];  //todo: consider this autogenerated code
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getHosts", bundle);
+
+        Bundle[] result = null;
+        if (bundle instanceof FragmentBundleImpl)
+        {
+            FragmentBundleImpl fragmentBundle = (FragmentBundleImpl) bundle;
+            if (fragmentBundle.getFramework() == framework)
+            {
+                BundleManager manager = framework.getBundleManager();
+
+                try
+                {
+                    manager.readLock();
+                }
+                catch (InterruptedException ie)
+                {
+                    Thread.currentThread().interrupt();
+                    LOGGER.log(Level.WARNING, "Wait for read lock interrupted", ie);
+                    return null;
+                }
+
+                try
+                {
+                    Bundle host = fragmentBundle.getHost();
+                    if (host != null) result = new Bundle[]{ host };
+                }
+                finally
+                {
+                    manager.readUnlock();
+                }
+            }
+            else
+            {
+                LOGGER.warning("Bundle does not belong to this framework instance");
+            }
+        }
+        else
+        {
+            LOGGER.warning("Bundle does not belong to the Papoose framework");
+        }
+
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getHosts", result);
+
+        return result;
     }
 
-    public Bundle getBundle(Class aClass)
+    /**
+     * {@inheritDoc}
+     */
+    public Bundle getBundle(Class clazz)
     {
-        return null;  //todo: consider this autogenerated code
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getBundle", clazz);
+
+        Bundle result = null;
+        ClassLoader classLoader = clazz.getClassLoader();
+        if (classLoader instanceof BundleClassLoader)
+        {
+            BundleClassLoader bundleClassLoader = (BundleClassLoader) classLoader;
+            BundleImpl bundle = bundleClassLoader.getBundle();
+            if (bundle.getFramework() == framework)
+            {
+                result = bundle;
+            }
+            else
+            {
+                LOGGER.warning("Class' class loader does not belong to this framework instance");
+            }
+
+        }
+        else
+        {
+            LOGGER.warning("Class was not loaded by the Papoose framework");
+        }
+
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getBundle", result);
+
+        return result;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public int getBundleType(Bundle bundle)
     {
-        return 0;  //todo: consider this autogenerated code
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getBundleType", bundle);
+
+        int result = bundle instanceof FragmentBundleImpl ? BUNDLE_TYPE_FRAGMENT : 0;
+
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getBundleType", result);
+
+        return result;
     }
 
     public void bundleChanged(BundleEvent event)
     {
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "bundleChanged", event);
+
         //todo: consider this autogenerated code
+
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "bundleChanged");
     }
 }
