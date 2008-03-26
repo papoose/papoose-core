@@ -27,15 +27,18 @@ import java.util.ResourceBundle;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import org.apache.xbean.classloader.ResourceHandle;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import org.papoose.core.framework.spi.ArchiveStore;
-import org.papoose.test.PapooseTestCase;
 
 /**
  * @version $Revision$ $Date$
  */
-public class FileStoreTest extends PapooseTestCase
+public class FileStoreTest
 {
+    @Test
     public void test() throws Exception
     {
         File fileStoreRoot = new File("./target/store");
@@ -72,7 +75,7 @@ public class FileStoreTest extends PapooseTestCase
             for (ResourceHandle h : archiveStore.findResources("com/acme/resource/camera.xml"))
             {
                 URL url = h.getUrl();
-                assertNotNull(url.openStream());
+                Assert.assertNotNull(url.openStream());
                 urls.add(url);
             }
 
@@ -84,10 +87,9 @@ public class FileStoreTest extends PapooseTestCase
         }
     }
 
+    @Before
     public void setUp() throws Exception
     {
-        super.setUp();
-
         try
         {
             URL.setURLStreamHandlerFactory(new MockURLStreamHandlerFactory());

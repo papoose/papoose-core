@@ -19,66 +19,67 @@ package org.papoose.core.framework.filter;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
-import junit.framework.TestCase;
+import org.junit.Assert;
+import org.junit.Test;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public class GreaterTest extends TestCase
+public class GreaterTest
 {
+    @Test
     public void test()
     {
         Dictionary<String, Object> dictionary = new Hashtable<String, Object>();
         Greater test = new Greater("foo", "45");
 
         dictionary.put("foo", 44L);
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("foo", 45L);
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("foo", 46L);
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.put("foo", 44);
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("foo", 45);
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("foo", 46);
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.put("foo", (short) 44);
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("foo", (short) 45);
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("foo", (short) 46);
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.put("foo", (byte) 44);
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("foo", (byte) 45);
-        assertTrue(test.match(dictionary));
-        String g = test.attribute;
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("foo", (byte) 46);
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.put("foo", "bar");
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.put("foo", "44");
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("foo", "45");
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("foo", "46");
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
     }
 }

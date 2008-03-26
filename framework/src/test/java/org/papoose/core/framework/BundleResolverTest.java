@@ -3,12 +3,14 @@
  */
 package org.papoose.core.framework;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * @version $Revision$ $Date$
  */
-public class BundleResolverTest extends TestCase
+public class BundleResolverTest
 {
-    public void test() throws Exception { }
+    @Test
+    public void test() throws Exception
+    { }
 }

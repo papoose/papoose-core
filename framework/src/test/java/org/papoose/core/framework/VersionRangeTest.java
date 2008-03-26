@@ -19,15 +19,17 @@ package org.papoose.core.framework;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
+import org.junit.Assert;
+import org.junit.Test;
 import org.osgi.framework.Version;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public class VersionRangeTest extends TestCase
+public class VersionRangeTest
 {
+    @Test
     public void testParameters()
     {
         new VersionRange(new Version(1, 0, 0), new Version(2, 0, 0), false, false);
@@ -35,7 +37,7 @@ public class VersionRangeTest extends TestCase
         try
         {
             new VersionRange(new Version(1, 1, 1), new Version(1, 0, 0), false, false);
-            fail("Should have thrown an IllegalArgumentException");
+            Assert.fail("Should have thrown an IllegalArgumentException");
         }
         catch (IllegalArgumentException iae)
         {
@@ -46,7 +48,7 @@ public class VersionRangeTest extends TestCase
         try
         {
             new VersionRange(new Version(1, 0, 0), new Version(1, 0, 0), false, true);
-            fail("Should have thrown an IllegalArgumentException");
+            Assert.fail("Should have thrown an IllegalArgumentException");
         }
         catch (IllegalArgumentException iae)
         {
@@ -55,7 +57,7 @@ public class VersionRangeTest extends TestCase
         try
         {
             new VersionRange(new Version(1, 0, 0), new Version(1, 0, 0), true, false);
-            fail("Should have thrown an IllegalArgumentException");
+            Assert.fail("Should have thrown an IllegalArgumentException");
         }
         catch (IllegalArgumentException iae)
         {
@@ -66,43 +68,43 @@ public class VersionRangeTest extends TestCase
     {
         VersionRange range = new VersionRange(new Version(1, 0, 0), new Version(2, 0, 0), false, false);
 
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertFalse(range.includes(new Version(0, 0, 1)));
-        assertFalse(range.includes(new Version(1, 0, 0)));
-        assertFalse(range.includes(new Version(2, 0, 0)));
-        assertFalse(range.includes(new Version(3, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(1, 1, 0)));
+        Assert.assertFalse(range.includes(new Version(0, 0, 1)));
+        Assert.assertFalse(range.includes(new Version(1, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(2, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(3, 0, 0)));
 
         range = new VersionRange(new Version(1, 0, 0), new Version(2, 0, 0), true, false);
 
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertFalse(range.includes(new Version(0, 0, 1)));
-        assertTrue(range.includes(new Version(1, 0, 0)));
-        assertFalse(range.includes(new Version(2, 0, 0)));
-        assertFalse(range.includes(new Version(3, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(1, 1, 0)));
+        Assert.assertFalse(range.includes(new Version(0, 0, 1)));
+        Assert.assertTrue(range.includes(new Version(1, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(2, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(3, 0, 0)));
 
         range = new VersionRange(new Version(1, 0, 0), new Version(2, 0, 0), false, true);
 
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertFalse(range.includes(new Version(0, 0, 1)));
-        assertFalse(range.includes(new Version(1, 0, 0)));
-        assertTrue(range.includes(new Version(2, 0, 0)));
-        assertFalse(range.includes(new Version(3, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(1, 1, 0)));
+        Assert.assertFalse(range.includes(new Version(0, 0, 1)));
+        Assert.assertFalse(range.includes(new Version(1, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(2, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(3, 0, 0)));
 
         range = new VersionRange(new Version(1, 0, 0), new Version(2, 0, 0), true, true);
 
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertFalse(range.includes(new Version(0, 0, 1)));
-        assertTrue(range.includes(new Version(1, 0, 0)));
-        assertTrue(range.includes(new Version(2, 0, 0)));
-        assertFalse(range.includes(new Version(3, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(1, 1, 0)));
+        Assert.assertFalse(range.includes(new Version(0, 0, 1)));
+        Assert.assertTrue(range.includes(new Version(1, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(2, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(3, 0, 0)));
 
         range = new VersionRange(new Version(1, 0, 0), null, true, true);
 
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertFalse(range.includes(new Version(0, 0, 1)));
-        assertTrue(range.includes(new Version(1, 0, 0)));
-        assertTrue(range.includes(new Version(2, 0, 0)));
-        assertTrue(range.includes(new Version(3, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(1, 1, 0)));
+        Assert.assertFalse(range.includes(new Version(0, 0, 1)));
+        Assert.assertTrue(range.includes(new Version(1, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(2, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(3, 0, 0)));
 
         try
         {
@@ -118,82 +120,82 @@ public class VersionRangeTest extends TestCase
     {
         VersionRange range = VersionRange.parseVersionRange("(1.0.0,2.0.0)");
 
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertFalse(range.includes(new Version(0, 0, 1)));
-        assertFalse(range.includes(new Version(1, 0, 0)));
-        assertFalse(range.includes(new Version(2, 0, 0)));
-        assertFalse(range.includes(new Version(3, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(1, 1, 0)));
+        Assert.assertFalse(range.includes(new Version(0, 0, 1)));
+        Assert.assertFalse(range.includes(new Version(1, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(2, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(3, 0, 0)));
 
         range = VersionRange.parseVersionRange("  (  1.0.0   ,    2.0.0  )    ");
 
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertFalse(range.includes(new Version(0, 0, 1)));
-        assertFalse(range.includes(new Version(1, 0, 0)));
-        assertFalse(range.includes(new Version(2, 0, 0)));
-        assertFalse(range.includes(new Version(3, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(1, 1, 0)));
+        Assert.assertFalse(range.includes(new Version(0, 0, 1)));
+        Assert.assertFalse(range.includes(new Version(1, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(2, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(3, 0, 0)));
 
         range = VersionRange.parseVersionRange("[1.0.0, 2.0.0)");
 
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertFalse(range.includes(new Version(0, 0, 1)));
-        assertTrue(range.includes(new Version(1, 0, 0)));
-        assertFalse(range.includes(new Version(2, 0, 0)));
-        assertFalse(range.includes(new Version(3, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(1, 1, 0)));
+        Assert.assertFalse(range.includes(new Version(0, 0, 1)));
+        Assert.assertTrue(range.includes(new Version(1, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(2, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(3, 0, 0)));
 
         range = VersionRange.parseVersionRange("(1.0.0, 2.0.0]");
 
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertFalse(range.includes(new Version(0, 0, 1)));
-        assertFalse(range.includes(new Version(1, 0, 0)));
-        assertTrue(range.includes(new Version(2, 0, 0)));
-        assertFalse(range.includes(new Version(3, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(1, 1, 0)));
+        Assert.assertFalse(range.includes(new Version(0, 0, 1)));
+        Assert.assertFalse(range.includes(new Version(1, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(2, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(3, 0, 0)));
 
         range = VersionRange.parseVersionRange("[1.0.0, 2.0.0]");
 
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertFalse(range.includes(new Version(0, 0, 1)));
-        assertTrue(range.includes(new Version(1, 0, 0)));
-        assertTrue(range.includes(new Version(2, 0, 0)));
-        assertFalse(range.includes(new Version(3, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(1, 1, 0)));
+        Assert.assertFalse(range.includes(new Version(0, 0, 1)));
+        Assert.assertTrue(range.includes(new Version(1, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(2, 0, 0)));
+        Assert.assertFalse(range.includes(new Version(3, 0, 0)));
 
         range = VersionRange.parseVersionRange("1.0.0");
 
-        assertTrue(range.includes(new Version(1, 1, 0)));
-        assertFalse(range.includes(new Version(0, 0, 1)));
-        assertTrue(range.includes(new Version(1, 0, 0)));
-        assertTrue(range.includes(new Version(2, 0, 0)));
-        assertTrue(range.includes(new Version(3, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(1, 1, 0)));
+        Assert.assertFalse(range.includes(new Version(0, 0, 1)));
+        Assert.assertTrue(range.includes(new Version(1, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(2, 0, 0)));
+        Assert.assertTrue(range.includes(new Version(3, 0, 0)));
 
-        assertTrue(range.equals(range));
-        assertFalse(range.equals(Version.parseVersion("1.2.3.wrong")));
-        assertTrue(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0, 2.0.0]")));
-        assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0, 2.0.0)")));
-        assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("(1.0.0, 2.0.0]")));
-        assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0.yikes, 2.0.0]")));
-        assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0, 2.0.0.yikes]")));
+        Assert.assertTrue(range.equals(range));
+        Assert.assertFalse(range.equals(Version.parseVersion("1.2.3.wrong")));
+        Assert.assertTrue(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0, 2.0.0]")));
+        Assert.assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0, 2.0.0)")));
+        Assert.assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("(1.0.0, 2.0.0]")));
+        Assert.assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0.yikes, 2.0.0]")));
+        Assert.assertFalse(VersionRange.parseVersionRange("[1.0.0, 2.0.0]").equals(VersionRange.parseVersionRange("[1.0.0, 2.0.0.yikes]")));
 
         Map<VersionRange, String> map = new HashMap<VersionRange, String>();
 
         map.put(VersionRange.parseVersionRange("1.0.0"), "Hello");
 
-        assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("1.0.0"))));
+        Assert.assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("1.0.0"))));
 
         map.put(VersionRange.parseVersionRange("[1.0.0, 2.0.0]"), "Hello");
 
-        assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("[1.0.0, 2.0.0]"))));
+        Assert.assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("[1.0.0, 2.0.0]"))));
 
         map.put(VersionRange.parseVersionRange("(1.0.0, 2.0.0]"), "Hello");
 
-        assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("(1.0.0, 2.0.0]"))));
+        Assert.assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("(1.0.0, 2.0.0]"))));
 
         map.put(VersionRange.parseVersionRange("[1.0.0, 2.0.0)"), "Hello");
 
-        assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("[1.0.0, 2.0.0)"))));
+        Assert.assertTrue("Hello".equals(map.get(VersionRange.parseVersionRange("[1.0.0, 2.0.0)"))));
 
         try
         {
             VersionRange.parseVersionRange("1.yikes.0");
-            fail("Should have thrown an exception");
+            Assert.fail("Should have thrown an exception");
         }
         catch (IllegalArgumentException ignore)
         {
@@ -202,7 +204,7 @@ public class VersionRangeTest extends TestCase
         try
         {
             VersionRange.parseVersionRange("[1.yikes.0, 2.0.0]");
-            fail("Should have thrown an exception");
+            Assert.fail("Should have thrown an exception");
         }
         catch (IllegalArgumentException ignore)
         {
@@ -211,7 +213,7 @@ public class VersionRangeTest extends TestCase
         try
         {
             VersionRange.parseVersionRange("[1.0.0, 2.yikes.0]");
-            fail("Should have thrown an exception");
+            Assert.fail("Should have thrown an exception");
         }
         catch (IllegalArgumentException ignore)
         {
@@ -220,7 +222,7 @@ public class VersionRangeTest extends TestCase
         try
         {
             VersionRange.parseVersionRange("[1.0.0 + 2.0.0]");
-            fail("Should have thrown an exception");
+            Assert.fail("Should have thrown an exception");
         }
         catch (IllegalArgumentException ignore)
         {
@@ -229,7 +231,7 @@ public class VersionRangeTest extends TestCase
         try
         {
             VersionRange.parseVersionRange("[1.0.0, 2.0.0+]");
-            fail("Should have thrown an exception");
+            Assert.fail("Should have thrown an exception");
         }
         catch (IllegalArgumentException ignore)
         {
@@ -238,7 +240,7 @@ public class VersionRangeTest extends TestCase
         try
         {
             VersionRange.parseVersionRange("[1.0.0, 2.0.0 ");
-            fail("Should have thrown an exception");
+            Assert.fail("Should have thrown an exception");
         }
         catch (IllegalArgumentException ignore)
         {
@@ -247,7 +249,7 @@ public class VersionRangeTest extends TestCase
         try
         {
             VersionRange.parseVersionRange("[1.0.0, 2.0.0 }");
-            fail("Should have thrown an exception");
+            Assert.fail("Should have thrown an exception");
         }
         catch (IllegalArgumentException ignore)
         {
@@ -256,7 +258,7 @@ public class VersionRangeTest extends TestCase
         try
         {
             VersionRange.parseVersionRange("[1.0.0, 2.0.0");
-            fail("Should have thrown an exception");
+            Assert.fail("Should have thrown an exception");
         }
         catch (IllegalArgumentException ignore)
         {

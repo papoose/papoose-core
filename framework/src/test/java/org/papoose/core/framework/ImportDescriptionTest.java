@@ -22,24 +22,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import junit.framework.TestCase;
+import org.junit.Assert;
+import org.junit.Test;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public class ImportDescriptionTest extends TestCase
+public class ImportDescriptionTest
 {
+    @Test
     public void testConstruction()
     {
-        Properties p = System.getProperties();
         List<String> packageNames = new ArrayList<String>();
         Map<String, Object> attributes = new HashMap<String, Object>();
 
         try
         {
             new ImportDescription(null, attributes);
-            fail("Should have caught the null package names list");
+            Assert.fail("Should have caught the null package names list");
         }
         catch (AssertionError donothing)
         {
@@ -48,7 +49,7 @@ public class ImportDescriptionTest extends TestCase
         try
         {
             new ImportDescription(packageNames, null);
-            fail("Should have caught the null attributes map");
+            Assert.fail("Should have caught the null attributes map");
         }
         catch (AssertionError donothing)
         {

@@ -16,15 +16,16 @@
  */
 package org.papoose.core.framework;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 import org.osgi.framework.BundleException;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public class BundleClassLoaderTest extends TestCase
+public class BundleClassLoaderTest
 {
+    @Test
     public void testLoad() throws BundleException
     {
     }

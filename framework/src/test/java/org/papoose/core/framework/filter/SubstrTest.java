@@ -23,50 +23,53 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.TreeMap;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import org.junit.Assert;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public class SubstrTest extends TestCase
+public class SubstrTest
 {
+    @Test
     public void testMatch()
     {
         TestSubtr test = new TestSubtr("foo", new String[]{ "", "no", "brown", "" });
 
-        assertTrue(test.match("How now brown cow"));
-        assertTrue(test.match("How nobrown cow"));
-        assertTrue(test.match("nobrown"));
-        assertFalse(test.match("nomatch"));
+        Assert.assertTrue(test.match("How now brown cow"));
+        Assert.assertTrue(test.match("How nobrown cow"));
+        Assert.assertTrue(test.match("nobrown"));
+        Assert.assertFalse(test.match("nomatch"));
 
         test = new TestSubtr("foo", new String[]{ "", "brown", "" });
 
-        assertTrue(test.match("How now brown cow"));
-        assertTrue(test.match("How nobrown cow"));
-        assertTrue(test.match("nobrown"));
-        assertFalse(test.match("nomatch"));
+        Assert.assertTrue(test.match("How now brown cow"));
+        Assert.assertTrue(test.match("How nobrown cow"));
+        Assert.assertTrue(test.match("nobrown"));
+        Assert.assertFalse(test.match("nomatch"));
 
         test = new TestSubtr("foo", new String[]{ "H", "no", "brown", "w" });
 
-        assertTrue(test.match("How now brown cow"));
-        assertTrue(test.match("How nobrown cow"));
-        assertTrue(test.match("Hnobrownw"));
-        assertFalse(test.match("Hnomatchw"));
+        Assert.assertTrue(test.match("How now brown cow"));
+        Assert.assertTrue(test.match("How nobrown cow"));
+        Assert.assertTrue(test.match("Hnobrownw"));
+        Assert.assertFalse(test.match("Hnomatchw"));
 
         test = new TestSubtr("foo", new String[]{ "How", "" });
 
-        assertTrue(test.match("How now brown cow"));
-        assertTrue(test.match("How"));
-        assertFalse(test.match("Hnomatchw"));
+        Assert.assertTrue(test.match("How now brown cow"));
+        Assert.assertTrue(test.match("How"));
+        Assert.assertFalse(test.match("Hnomatchw"));
 
         test = new TestSubtr("foo", new String[]{ "", "cow" });
 
-        assertTrue(test.match("How now brown cow"));
-        assertTrue(test.match("cow"));
-        assertFalse(test.match("Hnomatchw"));
+        Assert.assertTrue(test.match("How now brown cow"));
+        Assert.assertTrue(test.match("cow"));
+        Assert.assertFalse(test.match("Hnomatchw"));
     }
 
+    @Test
     public void testDictionary()
     {
         TestSubtr test = new TestSubtr("FoO", new String[]{ "", "no", "brown", "" });
@@ -111,64 +114,65 @@ public class SubstrTest extends TestCase
         };
 
         dictionary.put("FOO", "How now brown cow");
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("FOO", "How nobrown cow");
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("FOO", "nobrown");
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("FOO", new Object[]{ null, false, 5.0, "nobrown" });
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.put("FOO", new String[]{ null, "false", "5.0", "nobrown" });
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("FOO", "nomatch");
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.put("FOO", 5.0);
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.remove("FOO");
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.put("FOO", new Object[]{ null, false, 5.0, "nomatch" });
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
     }
 
+    @Test
     public void testDictionaryCase()
     {
         TestSubtr test = new TestSubtr("FoO", new String[]{ "", "no", "brown", "" });
         Dictionary<String, Object> dictionary = new Hashtable<String, Object>();
 
         dictionary.put("FoO", "How now brown cow");
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("FoO", "How nobrown cow");
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("FoO", "nobrown");
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("FoO", new Object[]{ null, false, 5.0, "nobrown" });
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.put("FoO", new String[]{ null, "false", "5.0", "nobrown" });
-        assertTrue(test.match(dictionary));
+        Assert.assertTrue(test.match(dictionary));
 
         dictionary.put("FoO", "nomatch");
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.put("FoO", 5.0);
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.remove("FoO");
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
 
         dictionary.put("FoO", new Object[]{ null, false, 5.0, "nomatch" });
-        assertFalse(test.match(dictionary));
+        Assert.assertFalse(test.match(dictionary));
     }
 
     static class TestSubtr extends Substr

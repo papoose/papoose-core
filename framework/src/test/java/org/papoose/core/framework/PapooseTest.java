@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 import org.osgi.framework.BundleException;
 
 import org.papoose.core.framework.spi.BundleStore;
@@ -31,8 +31,9 @@ import org.papoose.core.framework.spi.Store;
 /**
  * @version $Revision$ $Date$
  */
-public class PapooseTest extends TestCase
+public class PapooseTest
 {
+    @Test
     public void test() throws Exception
     {
         Papoose poo = new Papoose(new MockStore(), new ScheduledThreadPoolExecutor(10), new Properties());

@@ -25,16 +25,20 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.osgi.framework.Bundle;
 
 /**
  * @version $Revision$ $Date$
  */
-public class BundleContextImplTest extends TestCase
+public class BundleContextImplTest
 {
     private Locale savedLocale;
 
+    @Test
     public void test() throws Exception
     {
         File fileStoreRoot = new File("./target/store");
@@ -53,49 +57,49 @@ public class BundleContextImplTest extends TestCase
 
             Bundle bundle = context.installBundle(location);
 
-            assertEquals(1, bundle.getBundleId());
+            Assert.assertEquals(1, bundle.getBundleId());
 
-            assertEquals(location, bundle.getLocation());
+            Assert.assertEquals(location, bundle.getLocation());
 
-            assertTrue(earlyTimestamp < bundle.getLastModified());
+            Assert.assertTrue(earlyTimestamp < bundle.getLastModified());
 
             Dictionary headers = bundle.getHeaders("en");
-            assertEquals("org.papoose.test.papoose-test-bundle", (String) headers.get("Bundle-SymbOLicName"));
+            Assert.assertEquals("org.papoose.test.papoose-test-bundle", headers.get("Bundle-SymbOLicName"));
 
             headers = bundle.getHeaders("en");
-            assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
+            Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
 
             headers = bundle.getHeaders();
-            assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
+            Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
 
             headers = bundle.getHeaders(null);
-            assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
+            Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
 
             headers = bundle.getHeaders("en_US");
-            assertEquals("bundle_en", (String) headers.get("L10N-Bundle"));
+            Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
 
             headers = bundle.getHeaders("fr");
-            assertEquals("bundle_fr", (String) headers.get("L10N-Bundle"));
+            Assert.assertEquals("bundle_fr", headers.get("L10N-Bundle"));
 
             headers = bundle.getHeaders("fr_FR");
-            assertEquals("bundle_fr_FR", (String) headers.get("L10N-Bundle"));
+            Assert.assertEquals("bundle_fr_FR", headers.get("L10N-Bundle"));
 
             headers = bundle.getHeaders("");
-            assertEquals("%bundle", (String) headers.get("L10N-Bundle"));
+            Assert.assertEquals("%bundle", headers.get("L10N-Bundle"));
 
             headers = bundle.getHeaders("en");
-            assertEquals("no translation for this entry", (String) headers.get("L10N-NoTranslation"));
+            Assert.assertEquals("no translation for this entry", headers.get("L10N-NoTranslation"));
 
             papoose.getBundleManager().resolve(bundle);
 
             URL url = bundle.getEntry("com/acme/resource/camera.xml");
 
-            assertNotNull(url);
+            Assert.assertNotNull(url);
 
             BufferedReader in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
             String line = in.readLine();
 
-            assertEquals("<status>good</status>", line);
+            Assert.assertEquals("<status>good</status>", line);
 
             int count = 0;
             Enumeration enumeration = bundle.getEntryPaths("com/acme");
@@ -105,7 +109,7 @@ public class BundleContextImplTest extends TestCase
                 count++;
             }
 
-            assertEquals(6, count);
+            Assert.assertEquals(6, count);
 
             count = 0;
             enumeration = bundle.getEntryPaths("");
@@ -115,7 +119,7 @@ public class BundleContextImplTest extends TestCase
                 count++;
             }
 
-            assertEquals(4, count);
+            Assert.assertEquals(4, count);
 
             count = 0;
             enumeration = bundle.findEntries("com/acme", "*.xml", false);
@@ -125,7 +129,7 @@ public class BundleContextImplTest extends TestCase
                 count++;
             }
 
-            assertEquals(1, count);
+            Assert.assertEquals(1, count);
 
             count = 0;
             enumeration = bundle.findEntries("", "*.class", true);
@@ -135,7 +139,7 @@ public class BundleContextImplTest extends TestCase
                 count++;
             }
 
-            assertEquals(5, count);
+            Assert.assertEquals(5, count);
 
             papoose.stop();
 
@@ -147,11 +151,10 @@ public class BundleContextImplTest extends TestCase
         }
     }
 
+    @Before
     @SuppressWarnings({ "EmptyCatchBlock" })
     public void setUp() throws Exception
     {
-        super.setUp();
-
         savedLocale = Locale.getDefault();
         Locale.setDefault(new Locale("en", "US"));
 
@@ -164,11 +167,10 @@ public class BundleContextImplTest extends TestCase
         }
     }
 
+    @After
     public void tearDown() throws Exception
     {
         Locale.setDefault(savedLocale);
         savedLocale = null;
-
-        super.tearDown();
     }
 }

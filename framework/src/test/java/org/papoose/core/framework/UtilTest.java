@@ -21,47 +21,52 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
+import org.junit.Assert;
+import org.junit.Test;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public class UtilTest extends TestCase
+public class UtilTest
 {
+    @Test
     public void testSetter()
     {
         MockPOJO pojo = new MockPOJO();
 
-        assertTrue(Util.callSetter(pojo, "foo", "dogs"));
-        assertEquals(pojo.getFoo(), "dogs");
+        Assert.assertTrue(Util.callSetter(pojo, "foo", "dogs"));
+        Assert.assertEquals(pojo.getFoo(), "dogs");
 
-        assertTrue(Util.callSetter(pojo, "how-now-brown-cow", "cats"));
-        assertEquals(pojo.getHowNowBrownCow(), "cats");
+        Assert.assertTrue(Util.callSetter(pojo, "how-now-brown-cow", "cats"));
+        Assert.assertEquals(pojo.getHowNowBrownCow(), "cats");
     }
 
+    @Test
     public void testMatch()
     {
-        assertTrue(Util.match(":=", "foo:=bar", 3));
-        assertFalse(Util.match(":=", "foo:bar", 3));
-        assertFalse(Util.match(":=", "foo:", 3));
+        Assert.assertTrue(Util.match(":=", "foo:=bar", 3));
+        Assert.assertFalse(Util.match(":=", "foo:bar", 3));
+        Assert.assertFalse(Util.match(":=", "foo:", 3));
     }
 
+    @Test
     public void testSplit()
     {
         String[] tokens = Util.split("foo:=bar", ":=");
 
-        assertTrue(tokens.length == 2);
-        assertEquals(tokens[0], "foo");
-        assertEquals(tokens[1], "bar");
+        Assert.assertTrue(tokens.length == 2);
+        Assert.assertEquals(tokens[0], "foo");
+        Assert.assertEquals(tokens[1], "bar");
 
         tokens = Util.split("\"foo:=bar\":=bar", ":=");
 
-        assertTrue(tokens.length == 2);
-        assertEquals(tokens[0], "foo:=bar");
-        assertEquals(tokens[1], "bar");
+        Assert.assertTrue(tokens.length == 2);
+        Assert.assertEquals(tokens[0], "foo:=bar");
+        Assert.assertEquals(tokens[1], "bar");
     }
 
+    @Test
     public void testParseParameters() throws Exception
     {
         MockPOJO pojo = new MockPOJO();
@@ -70,20 +75,20 @@ public class UtilTest extends TestCase
 
         Util.parseParameters("com.acme.dynamite;com.acme.gasoline;foo:=bar;foo=bar", pojo, parameters, true, paths);
 
-        assertEquals(pojo.getFoo(), "bar");
-        assertEquals(parameters.size(), 1);
-        assertEquals(parameters.get("foo"), "bar");
-        assertEquals(paths.size(), 2);
-        assertEquals(paths.get(0), "com.acme.dynamite");
-        assertEquals(paths.get(1), "com.acme.gasoline");
+        Assert.assertEquals(pojo.getFoo(), "bar");
+        Assert.assertEquals(parameters.size(), 1);
+        Assert.assertEquals(parameters.get("foo"), "bar");
+        Assert.assertEquals(paths.size(), 2);
+        Assert.assertEquals(paths.get(0), "com.acme.dynamite");
+        Assert.assertEquals(paths.get(1), "com.acme.gasoline");
 
         parameters = new HashMap<String, Object>();
         paths = new ArrayList<String>();
 
         Util.parseParameters("com.acme.dynamite", pojo, parameters, true, paths);
 
-        assertEquals(paths.size(), 1);
-        assertEquals(paths.get(0), "com.acme.dynamite");
+        Assert.assertEquals(paths.size(), 1);
+        Assert.assertEquals(paths.get(0), "com.acme.dynamite");
 
         parameters = new HashMap<String, Object>();
         paths = new ArrayList<String>();
@@ -91,27 +96,27 @@ public class UtilTest extends TestCase
 
         Util.parseParameters("com.acme.dynamite;com.acme.gasoline", pojo, parameters, true, paths);
 
-        assertEquals(pojo.getFoo(), null);
-        assertEquals(parameters.size(), 0);
-        assertEquals(paths.size(), 2);
-        assertEquals(paths.get(0), "com.acme.dynamite");
-        assertEquals(paths.get(1), "com.acme.gasoline");
+        Assert.assertEquals(pojo.getFoo(), null);
+        Assert.assertEquals(parameters.size(), 0);
+        Assert.assertEquals(paths.size(), 2);
+        Assert.assertEquals(paths.get(0), "com.acme.dynamite");
+        Assert.assertEquals(paths.get(1), "com.acme.gasoline");
 
         parameters = new HashMap<String, Object>();
 
         Util.parseParameters("foo:=\"bar;car;star\";foo=bar", pojo, parameters, true);
 
-        assertEquals(pojo.getFoo(), "bar;car;star");
-        assertEquals(parameters.size(), 1);
-        assertEquals(parameters.get("foo"), "bar");
+        Assert.assertEquals(pojo.getFoo(), "bar;car;star");
+        Assert.assertEquals(parameters.size(), 1);
+        Assert.assertEquals(parameters.get("foo"), "bar");
 
         parameters = new HashMap<String, Object>();
 
         Util.parseParameters("foo:=bar;foo=\"bar;car;star\"", pojo, parameters, true);
 
-        assertEquals(pojo.getFoo(), "bar");
-        assertEquals(parameters.size(), 1);
-        assertEquals(parameters.get("foo"), "bar;car;star");
+        Assert.assertEquals(pojo.getFoo(), "bar");
+        Assert.assertEquals(parameters.size(), 1);
+        Assert.assertEquals(parameters.get("foo"), "bar;car;star");
     }
 
     private static class MockPOJO

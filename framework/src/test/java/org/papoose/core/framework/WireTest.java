@@ -20,14 +20,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import junit.framework.TestCase;
+import org.junit.Assert;
+import org.junit.Test;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public class WireTest extends TestCase
+public class WireTest
 {
+    @Test
     public void testMatch()
     {
         List<String> packages = new ArrayList<String>();
@@ -37,18 +39,18 @@ public class WireTest extends TestCase
 
         Wire test = new Wire("com.acme", description, null);
 
-        assertTrue(test.validFor("com.acme.Dynamite"));
+        Assert.assertTrue(test.validFor("com.acme.Dynamite"));
 
         description.setIncluded(Collections.singletonList(new String[]{ "Dynamite" }));
 
-        assertTrue(test.validFor("com.acme.Dynamite"));
+        Assert.assertTrue(test.validFor("com.acme.Dynamite"));
 
         description.setIncluded(Collections.singletonList(new String[]{ "Dynam", "" }));
 
-        assertTrue(test.validFor("com.acme.Dynamite"));
+        Assert.assertTrue(test.validFor("com.acme.Dynamite"));
 
         description.setIncluded(Collections.singletonList(new String[]{ "", "nam", "" }));
 
-        assertTrue(test.validFor("com.acme.Dynamite"));
+        Assert.assertTrue(test.validFor("com.acme.Dynamite"));
     }
 }

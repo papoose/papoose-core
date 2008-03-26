@@ -23,24 +23,25 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.TreeMap;
 
-import junit.framework.TestCase;
+import org.junit.Assert;
+import org.junit.Test;
 import org.osgi.framework.InvalidSyntaxException;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public class ParserTest extends TestCase
+public class ParserTest
 {
     private final Parser parser = new Parser();
 
+    @Test
     public void test() throws Exception
     {
-
         try
         {
             parser.parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson)( vendor  ~ibm) ) ) ");
-            fail("Should have thrown an exception");
+            Assert.fail("Should have thrown an exception");
         }
         catch (InvalidSyntaxException doNothing)
         {
@@ -50,81 +51,81 @@ public class ParserTest extends TestCase
         dictionary.put("c and f", new String[]{ "a", "b", "c" });
         Expr filter = parser.parse("   ( c and f    =c) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         dictionary.put("service.pid", "USB-1232312452");
         dictionary.put("vendor", "ibm");
         filter = parser.parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson)( vendor  ~=ibm) ) ) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         dictionary.put("vendor", "ericssin");
         filter = parser.parse(" ( & (service.pid=USB-1232312452)( | (   vendor   ~=ericsson)(vendor~=ibm) ) ) ");
 
-        assertFalse(filter.match(dictionary));
+        Assert.assertFalse(filter.match(dictionary));
 
         dictionary.put("vendor", "ericssin01");
         filter = parser.parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson01)(vendor~=ibm) ) (!(vendor=ibm))) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         dictionary.put("present", "oohrah");
         filter = parser.parse(" ( present =*) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         dictionary.put("substr", "How now brown cow");
         filter = parser.parse(" ( substr =*no*brown*) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         filter = parser.parse(" ( substr =*now*) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         filter = parser.parse(" ( substr =*own*) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         filter = parser.parse(" ( substr =*own*o*) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         filter = parser.parse(" ( substr =H*no*brown*w) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         filter = parser.parse(" ( substr =How*) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         filter = parser.parse(" ( substr =*cow) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         filter = parser.parse(" ( substr =How*br*n cow) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         dictionary.put("substr", "How now brown cow ");
         filter = parser.parse(" ( substr =How*br*n cow ) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         dictionary.put("substr", "How now* brown cow ");
         filter = parser.parse(" ( substr =How*\\**br*n cow ) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         dictionary.put("substr", "How now* brown (cow) ");
         filter = parser.parse(" ( substr =How*\\**br*n \\(cow\\) ) ");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
         dictionary.remove("substr");
         dictionary.put("SuBsTr", "How now* brown (cow) ");
 
-        assertFalse(filter.match(dictionary));
+        Assert.assertFalse(filter.match(dictionary));
 
 
         dictionary = new Dictionary<String, Object>()
@@ -172,7 +173,7 @@ public class ParserTest extends TestCase
 
         filter = parser.parse("(&(service.pid=USB-1232312452)(|(vendor~=ericssin01)(vendor~=ibm))(!(vendor=ibm)))");
 
-        assertTrue(filter.match(dictionary));
+        Assert.assertTrue(filter.match(dictionary));
 
 
         long start = System.currentTimeMillis();
