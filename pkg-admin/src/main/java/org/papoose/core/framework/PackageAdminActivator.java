@@ -16,6 +16,9 @@
  */
 package org.papoose.core.framework;
 
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.packageadmin.PackageAdmin;
@@ -30,10 +33,14 @@ import org.osgi.service.packageadmin.PackageAdmin;
  */
 public class PackageAdminActivator implements BundleActivator
 {
+    private final static String CLASSNAME = PackageAdminActivator.class.getName();
+    private final static Logger LOGGER = Logger.getLogger(CLASSNAME);
     private PackageAdminImpl packageAdmin;
 
     public void start(BundleContext bundleContext) throws Exception
     {
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "start", bundleContext);
+
         if (!(bundleContext instanceof BundleContextImpl)) throw new IllegalArgumentException("Package Admin Service will only work with Papoose");
 
         BundleContextImpl bundleContextImpl = (BundleContextImpl) bundleContext;
@@ -44,10 +51,16 @@ public class PackageAdminActivator implements BundleActivator
         bundleContext.registerService(PackageAdmin.class.getName(), packageAdmin, null);
 
         bundleContext.addBundleListener(packageAdmin);
+
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "start");
     }
 
     public void stop(BundleContext bundleContext) throws Exception
     {
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "stop", bundleContext);
+
         packageAdmin.stop();
+
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "stop");
     }
 }
