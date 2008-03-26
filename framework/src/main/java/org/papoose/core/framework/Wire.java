@@ -68,17 +68,24 @@ public class Wire
 
         if (this.packageName.equals(packageName))
         {
+            boolean matched = exportDescription.getIncluded().isEmpty();
             for (String[] include : exportDescription.getIncluded())
             {
-                if (!Util.match(include, resource)) return false;
+                if (Util.match(include, resource))
+                {
+                    matched = true;
+                    break;
+                }
             }
+            if (!matched) return false;
 
             for (String[] exclude : exportDescription.getExcluded())
             {
                 if (Util.match(exclude, resource)) return false;
             }
+            return true;
         }
-        return true;
+        return false;
     }
 
 
