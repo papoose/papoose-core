@@ -15,11 +15,12 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>cnd-perm-admin</module>
         <module>framework</module>
+        <module>perm-admin</module>
         <module>pkg-admin</module>
         <module>start-level</module>
-        <module>cnd-perm-admin</module>
-        <module>perm-admin</module>
+        <module>store</module>
         <module>url-handlers</module>
     </modules>
 
