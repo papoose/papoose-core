@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2007 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.framework.util;
+package org.papoose.core.framework;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.papoose.core.framework.protocols.bundle.BundleUrlConnection;
 
 
 /**
  * Miscellaneous URL utility methods. For internal use within the framework and
  * the URL Handlers Service.
+ * <p/>
+ * This class is not in the usual utils package because it needs package level
+ * access to the framework's package protected methods.
  *
  * @version $Revision$ $Date$
  */
@@ -35,6 +42,8 @@ public class UrlUtils
 
     /**
      * Generate a URL that references a resource within a ResourceHandle inside a Bundle.
+     * <p/>
+     * <code>bundle://bundle@framework:location/file</code>
      *
      * @param frameworkName the name of the particular framework instance
      * @param bundleId      the id of the Bundle
@@ -60,9 +69,16 @@ public class UrlUtils
     }
 
     /**
-     * Generate a code source URL used when loading classes from a particular Bundle
+     * Generate a code source URL used when loading classes from a particular Bundle.
+     * We could have used the Bundle location but we cannot guarantee that the
+     * location will be a valid URL.
+     * <p/>
+     * This URL can be used to access the JAR that was loaded.
+     * <p/>
+     * <code>codesource://bundle@framework</code>
+     *
      * @param frameworkName the name of the particular framework instance
-     * @param bundleId the id of the Bundle
+     * @param bundleId      the id of the Bundle
      * @return a URL that represents a particular Bundle's code source.
      */
     public static URL generateCodeSourceUrl(String frameworkName, long bundleId)
@@ -77,6 +93,38 @@ public class UrlUtils
             LOGGER.log(Level.WARNING, "Unable to generate bundle code source URL", e);
         }
         return result;
+    }
+
+    public static URLConnection allocateBundleConnection(URL url) throws IOException
+    {
+        try
+        {
+            Integer frameworkId = Integer.parseInt(url.getUserInfo());
+
+            if (frameworkId < 0) throw new MalformedURLException("Invalid format");
+
+            Papoose framework = Papoose.getFramework(frameworkId);
+
+            if (framework == null) throw new MalformedURLException("Invalid format");
+
+            int bundleId = Integer.parseInt(url.getHost());
+
+            if (bundleId < 0) throw new MalformedURLException("Invalid format");
+
+            int generation = url.getPort();
+
+            return new BundleUrlConnection(url, framework.getBundleManager(), bundleId, generation);
+        }
+        catch (NumberFormatException ignore)
+        {
+        }
+
+        throw new MalformedURLException("Invalid format");
+    }
+
+    public static URLConnection allocateCodesourceConnection(URL url)
+    {
+        return null;  //To change body of created methods use File | Settings | File Templates.
     }
 
     private UrlUtils() { }

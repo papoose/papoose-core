@@ -49,8 +49,8 @@ import org.papoose.core.framework.AbstractArchiveStore;
 import org.papoose.core.framework.L18nResourceBundle;
 import org.papoose.core.framework.NativeCodeDescription;
 import org.papoose.core.framework.Papoose;
+import org.papoose.core.framework.UrlUtils;
 import org.papoose.core.framework.Util;
-import org.papoose.core.framework.util.UrlUtils;
 
 
 /**

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2008 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.framework.bundle;
+package org.papoose.core.framework.protocols.codesource;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLStreamHandler;
+import java.net.URLConnection;
+import java.net.URL;
+import java.io.IOException;
 
-import org.papoose.core.framework.BundleURLStreamHandler;
+import org.papoose.core.framework.UrlUtils;
 
 
 /**
@@ -35,6 +35,6 @@ public class Handler extends URLStreamHandler
 {
     protected URLConnection openConnection(URL url) throws IOException
     {
-        return BundleURLStreamHandler.allocateConnection(url);
+        return UrlUtils.allocateCodesourceConnection(url);
     }
 }

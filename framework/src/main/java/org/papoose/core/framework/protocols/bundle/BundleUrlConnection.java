@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2008 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,37 +14,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.framework;
+package org.papoose.core.framework.protocols.bundle;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.net.URLConnection;
+import java.net.URL;
+import java.io.InputStream;
+import java.io.IOException;
+
+import org.papoose.core.framework.BundleManager;
 
 
 /**
  * @version $Revision$ $Date$
  */
-class BundleURLConnection extends URLConnection
+public class BundleUrlConnection extends URLConnection
 {
     private final BundleManager bundleManager;
     private final int bundleId;
-    private final int generation;
+    private final int location;
     private InputStream inputStream;
 
-    public BundleURLConnection(URL url, BundleManager bundleManager, int bundleId, int generation)
+    public BundleUrlConnection(URL url, BundleManager bundleManager, int bundleId, int location)
     {
         super(url);
         this.bundleManager = bundleManager;
         this.bundleId = bundleId;
-        this.generation = generation;
+        this.location = location;
     }
 
     public synchronized void connect() throws IOException
     {
         if (connected) return;
 
-        inputStream = bundleManager.getInputStream(bundleId, generation);
+        inputStream = bundleManager.getInputStream(bundleId, location);
 
         connected = true;
     }
