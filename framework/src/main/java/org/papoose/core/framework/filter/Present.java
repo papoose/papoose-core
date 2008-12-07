@@ -18,10 +18,13 @@ package org.papoose.core.framework.filter;
 
 import java.util.Dictionary;
 
+import net.jcip.annotations.Immutable;
+
 
 /**
  * @version $Revision$ $Date$
  */
+@Immutable
 class Present implements Expr
 {
     private transient volatile String string;

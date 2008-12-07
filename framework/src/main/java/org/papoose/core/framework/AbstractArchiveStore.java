@@ -35,19 +35,18 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.Version;
-
 import org.papoose.core.framework.spi.ArchiveStore;
+import org.papoose.core.framework.util.AttributeUtils;
 import org.papoose.core.framework.util.AttributesWrapper;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public abstract class AbstractStore implements ArchiveStore
+public abstract class AbstractArchiveStore implements ArchiveStore
 {
     private final Papoose framework;
     private final long bundleId;
-    private final int generation;
     private final Attributes attributes;
     private final String bundleActivatorClass;
     private final List<String> bundleCategories;
@@ -75,11 +74,10 @@ public abstract class AbstractStore implements ArchiveStore
     private final List<String> bundleImportService;
     private final List<RequireDescription> bundleRequireBundle;
 
-    protected AbstractStore(Papoose framework, long bundleId, int generation, Attributes attributes) throws BundleException
+    protected AbstractArchiveStore(Papoose framework, long bundleId, Attributes attributes) throws BundleException
     {
         this.framework = framework;
         this.bundleId = bundleId;
-        this.generation = generation;
 
         this.attributes = new AttributesWrapper(attributes);
 
@@ -100,7 +98,7 @@ public abstract class AbstractStore implements ArchiveStore
         this.bundleVendor = this.attributes.getValue(Constants.BUNDLE_VENDOR);
         this.bundleVersion = Version.parseVersion(this.attributes.getValue(Constants.BUNDLE_VERSION));
         this.bundleDynamicImportSet = obtainBundleDynamicImportSet(this.attributes);
-        this.bundleExportList = obtainBundleExportList(this.attributes);
+        this.bundleExportList = obtainBundleExportList(this.attributes, bundleSymbolicName, bundleVersion);
         this.bundleExportService = obtainBundleExportService(this.attributes);
         this.bundleFragmentHost = obtainBundleFragementHost(this.attributes);
         this.bundleImportList = obtainBundleImportList(this.attributes);
@@ -134,11 +132,6 @@ public abstract class AbstractStore implements ArchiveStore
     public long getBundleId()
     {
         return bundleId;
-    }
-
-    public int getGeneration()
-    {
-        return generation;
     }
 
     public Attributes getAttributes()
@@ -193,8 +186,8 @@ public abstract class AbstractStore implements ArchiveStore
 
     public int compareTo(Object o)
     {
-        if (!(o instanceof AbstractStore)) return 1;
-        return Long.valueOf(bundleId).compareTo(((AbstractStore) o).getBundleId());
+        if (!(o instanceof AbstractArchiveStore)) return 1;
+        return Long.valueOf(bundleId).compareTo(((AbstractArchiveStore) o).getBundleId());
     }
 
     public int hashCode()
@@ -347,7 +340,7 @@ public abstract class AbstractStore implements ArchiveStore
 
             for (String nativecode : nativecodes)
             {
-                List<String> paths = new ArrayList<String>(1);
+                Set<String> paths = new HashSet<String>(1);
                 Map<String, Object> parameters = new HashMap<String, Object>();
                 NativeCodeDescription nativeCodeDescription = new NativeCodeDescription(paths, parameters, ordinal++);
 
@@ -409,7 +402,7 @@ public abstract class AbstractStore implements ArchiveStore
 
             for (String importDescription : importDescriptions)
             {
-                List<String> paths = new ArrayList<String>(1);
+                Set<String> paths = new HashSet<String>(1);
                 Map<String, Object> parameters = new HashMap<String, Object>();
                 DynamicDescription description = new DynamicDescription(paths, parameters);
 
@@ -425,57 +418,15 @@ public abstract class AbstractStore implements ArchiveStore
         return result;
     }
 
-    protected static List<ExportDescription> obtainBundleExportList(Attributes headers) throws BundleException
+    protected static List<ExportDescription> obtainBundleExportList(Attributes headers, String bundleSymbolicName, Version bundleVersion) throws BundleException
     {
         List<ExportDescription> result = Collections.emptyList();
 
         if (headers.containsKey(Constants.EXPORT_PACKAGE))
         {
-            result = parseBundleExportList(headers.getValue(Constants.EXPORT_PACKAGE));
+            result = AttributeUtils.parseBundleExportList(headers.getValue(Constants.EXPORT_PACKAGE), bundleSymbolicName, bundleVersion);
         }
 
-        return result;
-    }
-
-    public static List<ExportDescription> parseBundleExportList(String value) throws BundleException
-    {
-        String[] exportDescriptions = Util.split(value, ",");
-        List<ExportDescription> result = new ArrayList<ExportDescription>(exportDescriptions.length);
-
-        for (String exportDescription : exportDescriptions)
-        {
-            List<String> paths = new ArrayList<String>(1);
-            Map<String, Object> parameters = new HashMap<String, Object>();
-            ExportDescription description = new ExportDescription(paths, parameters);
-
-            Util.parseParameters(exportDescription, description, parameters, true, paths);
-
-            if (parameters.containsKey("specification-version")) parameters.put("specification-version", Version.parseVersion((String) parameters.get("specification-version")));
-
-            if (!parameters.containsKey("version"))
-            {
-                if (parameters.containsKey("specification-version"))
-                {
-                    parameters.put("version", parameters.get("specification-version"));
-                }
-                else
-                {
-                    parameters.put("version", ExportDescription.DEFAULT_VERSION);
-                }
-            }
-            else
-            {
-                parameters.put("version", Version.parseVersion((String) parameters.get("version")));
-            }
-
-            if (parameters.containsKey("specification-version") && !parameters.get("specification-version").equals(parameters.get("version"))) throw new BundleException("version and specification-version do not match");
-
-            if (parameters.containsKey("bundle-symbolic-name")) throw new BundleException("Attempted to set bundle-symbolic-name in Export-Package");
-
-            if (parameters.containsKey("bundle-version")) throw new BundleException("Attempted to set bundle-version in Export-Package");
-
-            result.add(description);
-        }
         return result;
     }
 
@@ -513,7 +464,7 @@ public abstract class AbstractStore implements ArchiveStore
         return fragmentDescription;
     }
 
-    @SuppressWarnings({ "deprecation" })
+    @SuppressWarnings({"deprecation"})
     protected static List<String> obtainBundleExportService(Attributes headers)
     {
         List<String> result = Collections.emptyList();
@@ -536,12 +487,12 @@ public abstract class AbstractStore implements ArchiveStore
         if (headers.containsKey(Constants.IMPORT_PACKAGE))
         {
             Set<String> importedPaths = new HashSet<String>();
-            String[] importDescriptions = headers.getValue(Constants.IMPORT_PACKAGE).split(",");
+            String[] importDescriptions = Util.split(headers.getValue(Constants.IMPORT_PACKAGE), ",");
             result = new ArrayList<ImportDescription>(importDescriptions.length);
 
             for (String importDescription : importDescriptions)
             {
-                List<String> paths = new ArrayList<String>(1);
+                Set<String> paths = new HashSet<String>(1);
                 Map<String, Object> parameters = new HashMap<String, Object>();
 
                 ImportDescription description = new ImportDescription(paths, parameters);
@@ -596,7 +547,7 @@ public abstract class AbstractStore implements ArchiveStore
         return result;
     }
 
-    @SuppressWarnings({ "deprecation" })
+    @SuppressWarnings({"deprecation"})
     protected static List<String> obtainBundleImportService(Attributes headers)
     {
         List<String> result = Collections.emptyList();

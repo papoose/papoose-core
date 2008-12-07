@@ -16,9 +16,12 @@
  */
 package org.papoose.core.framework;
 
+import net.jcip.annotations.Immutable;
+
 /**
  * @version $Revision$ $Date$
  */
+@Immutable
 public class Wire
 {
     private final String packageName;
@@ -27,6 +30,10 @@ public class Wire
 
     Wire(String packageName, ExportDescription exportDescription, BundleImpl bundle)
     {
+        if (packageName == null) throw new IllegalArgumentException("Package name cannot be null");
+        if (exportDescription == null) throw new IllegalArgumentException("Export description cannot be null");
+        if (bundle == null) throw new IllegalArgumentException("Bundle cannot be null");
+
         this.packageName = packageName;
         this.exportDescription = exportDescription;
         this.bundle = bundle;
@@ -68,8 +75,8 @@ public class Wire
 
         if (this.packageName.equals(packageName))
         {
-            boolean matched = exportDescription.getIncluded().isEmpty();
-            for (String[] include : exportDescription.getIncluded())
+            boolean matched = exportDescription.getInclude().isEmpty();
+            for (String[] include : exportDescription.getInclude())
             {
                 if (Util.match(include, resource))
                 {
@@ -79,7 +86,7 @@ public class Wire
             }
             if (!matched) return false;
 
-            for (String[] exclude : exportDescription.getExcluded())
+            for (String[] exclude : exportDescription.getExclude())
             {
                 if (Util.match(exclude, resource)) return false;
             }

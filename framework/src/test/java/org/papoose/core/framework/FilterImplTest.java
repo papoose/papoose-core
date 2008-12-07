@@ -41,10 +41,12 @@ public class FilterImplTest
         Filter filter = new FilterImpl(parser.parse("   ( c and f    =c) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
+        Assert.assertEquals("(c and f=c)", filter.toString());
 
         dictionary.put("service.pid", "USB-1232312452");
         dictionary.put("vendor", "ibm");
         filter = new FilterImpl(parser.parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson)( vendor  ~=ibm) ) ) "));
+        Assert.assertEquals("(&(service.pid=USB-1232312452)(|(vendor~=ericsson)(vendor~=ibm)))", filter.toString());
 
         Assert.assertTrue(filter.matchCase(dictionary));
 

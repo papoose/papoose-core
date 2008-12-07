@@ -16,13 +16,13 @@
  */
 package org.papoose.core.framework.spi;
 
-import java.io.File;
 import java.security.Permission;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.jar.Attributes;
+import java.net.URL;
 
 import org.apache.xbean.classloader.ResourceHandle;
 import org.osgi.framework.BundleException;
@@ -42,8 +42,6 @@ public interface ArchiveStore extends Comparable
     String getFrameworkName();
 
     long getBundleId();
-
-    int getGeneration();
 
     Attributes getAttributes();
 
@@ -67,8 +65,6 @@ public interface ArchiveStore extends Comparable
 
     String loadLibrary(String libname);
 
-    Permission[] getPermissionCollection();
-
     ResourceHandle getEntry(String name);
 
     Enumeration getEntryPaths(String path);
@@ -81,7 +77,9 @@ public interface ArchiveStore extends Comparable
 
     List<ResourceHandle> findResources(String resourceName);
 
-    L18nResourceBundle getResourceBundle(Locale local);
+    L18nResourceBundle getResourceBundle(Locale locale);
+
+    URL generateUrl(String path);
 
     void close();
 }

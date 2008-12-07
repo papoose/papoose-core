@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.osgi.framework.BundleException;
 
-import org.papoose.core.framework.AbstractStore;
 import org.papoose.core.framework.Papoose;
 
 
@@ -34,13 +33,11 @@ public interface Store
 
     BundleStore allocateBundleStore(long bundleId, String location) throws BundleException;
 
-    BundleStore loadBundleStore(long bundleId) throws BundleException;
-
     void removeBundleStore(long bundleId) throws BundleException;
 
-    AbstractStore allocateArchiveStore(Papoose framework, long bundleId, int generaton, InputStream inputStream) throws BundleException;
+    ArchiveStore allocateArchiveStore(Papoose framework, long bundleId, InputStream inputStream) throws BundleException;
 
-    List<AbstractStore> loadArchiveStores(Papoose framework, long bundleId) throws BundleException;
+    ArchiveStore loadArchiveStore(Papoose framework, long bundleId) throws BundleException;
 
-    void removeArchiveStore(long bundleId, int generation) throws BundleException;
+    void pack(Papoose framework, long bundleId) throws BundleException;
 }

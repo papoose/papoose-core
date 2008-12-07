@@ -16,11 +16,10 @@
  */
 package org.papoose.core.framework;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,7 +33,7 @@ public class ImportDescriptionTest
     @Test
     public void testConstruction()
     {
-        List<String> packageNames = new ArrayList<String>();
+        Set<String> packageNames = new HashSet<String>();
         Map<String, Object> attributes = new HashMap<String, Object>();
 
         try

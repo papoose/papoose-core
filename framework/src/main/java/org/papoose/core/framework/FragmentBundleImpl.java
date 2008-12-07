@@ -32,14 +32,14 @@ import org.papoose.core.framework.spi.BundleStore;
 /**
  * @version $Revision$ $Date$
  */
-class FragmentBundleImpl extends AbstractBundle
+public class FragmentBundleImpl extends AbstractBundle
 {
     private final FragmentDescription bundleFragmentHost;
     private BundleImpl host;
 
-    public FragmentBundleImpl(Papoose framework, long bundleId, String location, BundleStore bundleStore, AbstractStore archiveStore, FragmentDescription bundleFragmentHost)
+    FragmentBundleImpl(Papoose framework, long bundleId, String location, AbstractArchiveStore archiveArchiveStore, FragmentDescription bundleFragmentHost)
     {
-        super(framework, bundleId, location, bundleStore, archiveStore);
+        super(framework, bundleId, location, archiveArchiveStore);
         this.bundleFragmentHost = bundleFragmentHost;
     }
 

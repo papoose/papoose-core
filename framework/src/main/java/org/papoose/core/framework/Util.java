@@ -17,17 +17,22 @@
 package org.papoose.core.framework;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.osgi.framework.BundleException;
@@ -60,10 +65,13 @@ public final class Util
     @SuppressWarnings({ "EmptyCatchBlock" })
     public static boolean callSetter(Object pojo, String property, Object value)
     {
+        assert pojo != null;
+        assert property != null;
+        assert value != null;
+
         try
         {
-            Method method = pojo.getClass().getDeclaredMethod(constructMethodName(property), value.getClass());
-
+            Method method = getDeclaredMethod(constructMethodName(property), pojo.getClass(), value.getClass());
             method.setAccessible(true);
             method.invoke(pojo, value);
 
@@ -78,15 +86,33 @@ public final class Util
         catch (SecurityException fallThrough)
         {
         }
-        catch (NoSuchMethodException fallThrough)
-        {
-        }
 
         return false;
     }
 
+    private static Method getDeclaredMethod(String name, Class pojoClass, Class propertyClass)
+    {
+        if (propertyClass == null) return null;
+
+        try
+        {
+            return pojoClass.getDeclaredMethod(name, propertyClass);
+        }
+        catch (NoSuchMethodException e)
+        {
+            Method method;
+            for (Class iface : propertyClass.getInterfaces())
+            {
+                if ((method = getDeclaredMethod(name, pojoClass, iface)) != null) return method;
+            }
+            return getDeclaredMethod(name, pojoClass, propertyClass.getSuperclass());
+        }
+    }
+
     private static String constructMethodName(String property)
     {
+        assert property != null;
+
         if (property.contains("-"))
         {
             StringBuilder builder = new StringBuilder("set");
@@ -118,6 +144,8 @@ public final class Util
 
     public static boolean isValidPackageName(String path)
     {
+        assert path != null;
+
         for (String token : path.split("\\."))
         {
             if (!isJavaIdentifier(token)) return false;
@@ -134,7 +162,9 @@ public final class Util
      */
     public static String[] parseNameAndValidate(String name)
     {
-        if ("*".equals(name)) return new String[]{ };
+        assert name != null;
+
+        if ("*".equals(name)) return new String[]{ "" };
 
         List<String> values = new ArrayList<String>();
         StringBuilder builder = new StringBuilder();
@@ -167,8 +197,28 @@ public final class Util
         return values.toArray(new String[values.size()]);
     }
 
+    public static String encodeName(String[] parts)
+    {
+        StringBuilder builder = new StringBuilder();
+
+        for (String part : parts)
+        {
+            if (part.length() == 0)
+            {
+                builder.append("*");
+            }
+            else
+            {
+                builder.append(part);
+            }
+        }
+        return builder.toString();
+    }
+
     public static boolean isJavaIdentifier(String token)
     {
+        assert token != null;
+
         if (token.length() == 0) return false;
 
         if (!Character.isJavaIdentifierStart(token.charAt(0))) return false;
@@ -187,6 +237,9 @@ public final class Util
      */
     public static String[] split(String string, String pattern)
     {
+        assert string != null;
+        assert pattern != null;
+
         List<String> list = new ArrayList<String>(1);
         StringBuilder builder = new StringBuilder();
         boolean inQuotes = false;
@@ -202,6 +255,7 @@ public final class Util
             else if (string.charAt(i) == '"')
             {
                 inQuotes = !inQuotes;
+                builder.append(string.charAt(i));
             }
             else
             {
@@ -216,6 +270,9 @@ public final class Util
 
     public static boolean match(String pattern, String string, int start)
     {
+        assert pattern != null;
+        assert string != null;
+
         int j = 0;
         for (int i = start; i < string.length() && j < pattern.length(); i++, j++)
         {
@@ -226,17 +283,23 @@ public final class Util
 
     public static String checkSymbolName(String string)
     {
+        assert string != null;
+
         new State(string).eatSymbolName();
         return string;
     }
 
     public static void parseParameters(String string, Object pojo, Map<String, Object> parameters, boolean preventDuplicates) throws BundleException
     {
-        parseParameters(string, pojo, parameters, preventDuplicates, new ArrayList<String>(0));
+        parseParameters(string, pojo, parameters, preventDuplicates, new HashSet<String>(0));
     }
 
-    public static void parseParameters(String string, Object pojo, Map<String, Object> parameters, boolean preventDuplicates, List<String> paths) throws BundleException
+    public static void parseParameters(String string, Object pojo, Map<String, Object> parameters, boolean preventDuplicates, Set<String> paths) throws BundleException
     {
+        assert string != null;
+        assert pojo != null;
+        assert parameters != null;
+
         Set<String> parameterKeys = new HashSet<String>();
         Set<String> argumentKeys = new HashSet<String>();
         State state = new State(string);
@@ -316,15 +379,15 @@ public final class Util
                     else if ("uses".equals(token))
                     {
                         String[] packageNames = ((String) argument).split(",");
-                        List<String> list = new ArrayList<String>(packageNames.length);
+                        Set<String> set = new HashSet<String>(packageNames.length);
 
                         for (String packageName : packageNames)
                         {
                             if (!isValidPackageName(packageName)) throw new BundleException("Malformed package name: " + packageName);
-                            list.add(packageName);
+                            set.add(packageName);
                         }
 
-                        argument = list;
+                        argument = set;
                     }
                     else if ("mandatory".equals(token))
                     {
@@ -394,7 +457,7 @@ public final class Util
 
     public static boolean match(String[] values, String test)
     {
-        if (values.length == 1) return test.equals(values[0]);
+        if (values.length == 1) return values[0].length() == 0 || test.equals(values[0]);
 
         if (!values[0].regionMatches(0, test, 0, values[0].length())) return false;
 
@@ -419,28 +482,6 @@ public final class Util
         return test.substring(pointer).endsWith(values[values.length - 1]);
     }
 
-    @SuppressWarnings({ "EmptyCatchBlock" })
-    public static URL generateUrl(ArchiveStore archiveStore, String path, int location)
-    {
-        URL result = null;
-        try
-        {
-            String userInfo = (location < 0 ? Long.toString(archiveStore.getBundleId()) : archiveStore.getBundleId() + ":" + location);
-            if (archiveStore.getGeneration() == 0)
-            {
-                result = new URL("papoose://" + userInfo + "@" + archiveStore.getFrameworkName() + path);
-            }
-            else
-            {
-                result = new URL("papoose://" + userInfo + "@" + archiveStore.getFrameworkName() + ":" + archiveStore.getGeneration() + path);
-            }
-        }
-        catch (MalformedURLException e)
-        {
-        }
-        return result;
-    }
-
     private static class State
     {
         private final String string;
@@ -448,6 +489,8 @@ public final class Util
 
         public State(String string)
         {
+            assert string != null;
+
             this.string = string;
         }
 
@@ -547,7 +590,7 @@ public final class Util
 
         private boolean isValidTokenChar(char c)
         {
-            return Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '.';
+            return Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '.' || c == ',';
         }
 
         private boolean isValidArgumentChar(char c)
@@ -559,6 +602,147 @@ public final class Util
         {
             return string.substring(Math.min(pointer, string.length() - 1));
         }
+    }
+
+    public static String strip(String src)
+    {
+        StringBuilder builder = new StringBuilder();
+
+        for (char c : src.toCharArray())
+        {
+            switch (c)
+            {
+                case '/':
+                {
+                    builder.append('_');
+                    break;
+                }
+                case '_':
+                {
+                    builder.append("__");
+                    break;
+                }
+                default:
+                    builder.append(c);
+            }
+        }
+
+        return builder.toString();
+    }
+
+    public static InputStream safeStream(File file) throws BundleException
+    {
+        try
+        {
+            return new FileInputStream(file);
+        }
+        catch (FileNotFoundException ioe)
+        {
+            throw new BundleException("Unable to obtain input stream", ioe);
+        }
+    }
+
+    public static <T> Iterable<List<T>> combinations(final List<T> set)
+    {
+        final List<T> list = new ArrayList<T>(set);
+        return new Iterable<List<T>>()
+        {
+            public Iterator<List<T>> iterator()
+            {
+                return new Iterator<List<T>>()
+                {
+                    int i = set.size();
+                    Iterator<List<T>> iterator = combinations(list, i);
+
+                    public boolean hasNext()
+                    {
+                        return i > 0 || iterator.hasNext();
+                    }
+
+                    public List<T> next()
+                    {
+                        try
+                        {
+                            return iterator.next();
+                        }
+                        catch (NoSuchElementException e)
+                        {
+                            return (iterator = combinations(list, --i)).next();
+                        }
+                    }
+
+                    public void remove() { throw new UnsupportedOperationException(); }
+                };
+            }
+        };
+    }
+
+    public static <T> Iterator<List<T>> combinations(final List<T> list, final int z)
+    {
+        return new Iterator<List<T>>()
+        {
+            final private int n = list.size();
+            final private int r = z;
+            final private int[] indexes = new int[z];
+            final private BigInteger total;
+            private BigInteger numLeft;
+
+            {
+                BigInteger nFact = getFactorial(n);
+                BigInteger rFact = getFactorial(r);
+                BigInteger nminusrFact = getFactorial(n - r);
+
+                total = nFact.divide(rFact.multiply(nminusrFact));
+
+                for (int i = 0; i < indexes.length; i++) indexes[i] = i;
+
+                numLeft = new BigInteger(total.toString());
+            }
+
+            public boolean hasNext()
+            {
+                return numLeft.compareTo(BigInteger.ZERO) == 1;
+            }
+
+            public List<T> next()
+            {
+                if (numLeft.compareTo(BigInteger.ZERO) != 1)
+                {
+                    throw new NoSuchElementException();
+                }
+                else if (numLeft.equals(total))
+                {
+                    numLeft = numLeft.subtract(BigInteger.ONE);
+                }
+                else
+                {
+                    int i = r - 1;
+                    while (indexes[i] == n - r + i) i--;
+                    indexes[i] = indexes[i] + 1;
+                    for (int j = i + 1; j < r; j++) indexes[j] = indexes[i] + j - i;
+
+                    numLeft = numLeft.subtract(BigInteger.ONE);
+                }
+
+                List<T> result = new ArrayList<T>(indexes.length);
+
+                for (int index : indexes) result.add(list.get(index));
+
+                return result;
+            }
+
+            public void remove() { throw new UnsupportedOperationException(); }
+        };
+    }
+
+
+    private static BigInteger getFactorial(int n)
+    {
+        BigInteger fact = BigInteger.ONE;
+
+        for (int i = n; i > 1; i--) fact = fact.multiply(new BigInteger(Integer.toString(i)));
+
+        return fact;
     }
 
     private Util()

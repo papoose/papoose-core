@@ -16,16 +16,10 @@
  */
 package org.papoose.core.framework;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
-
-import org.apache.xbean.classloader.ResourceHandle;
-
-import org.papoose.core.framework.spi.ArchiveStore;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 
 /**
@@ -33,79 +27,50 @@ import org.papoose.core.framework.spi.ArchiveStore;
  */
 class ServiceURLStreamHandlerFactory implements URLStreamHandlerFactory
 {
-    private static String PREFIX = "sun.net.www.protocol";
+    private static final String PROTOCOL_PATH_PROPERTY = "java.protocol.handler.pkgs";
+    private static final String PAPOOSE_PREFIX = "org.papoose.core.framework.protocols";
+    private static final String SUN_PREFIX = "sun.net.www.protocol";
 
     public URLStreamHandler createURLStreamHandler(String protocol)
     {
-        if ("papoose".equals(protocol)) return new Handler();
+        String packagePrefixList = PAPOOSE_PREFIX + "|";
 
-        String name = PREFIX + "." + protocol + ".Handler";
-        try
+        packagePrefixList += AccessController.doPrivileged(new PrivilegedAction<String>()
         {
-            Class c = Class.forName(name);
-            return (URLStreamHandler) c.newInstance();
-        }
-        catch (ClassNotFoundException e)
+            public String run()
+            {
+                String prefixList = System.getProperty(PROTOCOL_PATH_PROPERTY, "");
+                if (!prefixList.equals("")) prefixList += "|";
+                prefixList += SUN_PREFIX;
+                return prefixList;
+            }
+        });
+
+        URLStreamHandler handler = null;
+
+        for (String packagePrefix : packagePrefixList.split("\\|"))
         {
-            e.printStackTrace();
-        }
-        catch (InstantiationException e)
-        {
-            e.printStackTrace();
-        }
-        catch (IllegalAccessException e)
-        {
-            e.printStackTrace();
+            packagePrefix = packagePrefix.trim();
+
+            try
+            {
+                String clsName = packagePrefix + "." + protocol + ".Handler";
+                Class clazz = null;
+                try
+                {
+                    clazz = Class.forName(clsName);
+                }
+                catch (ClassNotFoundException e)
+                {
+                    ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+                    if (classLoader != null) clazz = classLoader.loadClass(clsName);
+                }
+                if (clazz != null) return (URLStreamHandler) clazz.newInstance();
+            }
+            catch (Exception ignored)
+            {
+            }
         }
         throw new InternalError("could not load " + protocol + "system protocol handler");
-    }
-
-    private static class Handler extends URLStreamHandler
-    {
-        protected URLConnection openConnection(final URL url) throws IOException
-        {
-            return new URLConnection(url)
-            {
-                private ResourceHandle handle;
-
-                {
-                    try
-                    {
-                        String frameworkId = url.getHost();
-                        String[] tokens = url.getUserInfo().split(":");
-                        long bundleId = Long.valueOf(tokens[0]);
-                        int location = Integer.valueOf(tokens[1]);
-                        String path = url.getPath().substring(1);
-                        if (path.contains("!/")) path = path.split("!")[1].substring(1);
-
-                        Papoose papoose = Papoose.getFramework(frameworkId);
-
-                        if (papoose == null) throw new IOException("Framework instance not found");
-
-                        AbstractBundle bundle = (AbstractBundle) papoose.getBundleManager().getBundle(bundleId);
-
-                        if (bundle == null) throw new IOException("Bundle instance not found");
-
-                        ArchiveStore archiveStore = bundle.getCurrentStore();
-
-                        handle = archiveStore.getResource(path, location);
-                    }
-                    catch (NumberFormatException nfe)
-                    {
-                        throw new IOException("Invalid id " + url);
-                    }
-                    if (handle == null) throw new IOException("Missing matching archive store " + url);
-                }
-
-                public void connect() throws IOException
-                {
-                }
-
-                public InputStream getInputStream() throws IOException
-                {
-                    return handle.getInputStream();
-                }
-            };
-        }
     }
 }

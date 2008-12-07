@@ -20,18 +20,20 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.osgi.framework.Version;
+import net.jcip.annotations.ThreadSafe;
 
 
 /**
  * @version $Revision$ $Date$
  */
+@ThreadSafe
 public class RequireDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
     private final String symbolName;
     private final Map<String, Object> parameters;
-    private Visibility visibility = Visibility.PRIVATE;
-    private Resolution resolution = Resolution.MANDATORY;
+    private volatile Visibility visibility = Visibility.PRIVATE;
+    private volatile Resolution resolution = Resolution.MANDATORY;
 
     public RequireDescription(String symbolName, Map<String, Object> parameters)
     {

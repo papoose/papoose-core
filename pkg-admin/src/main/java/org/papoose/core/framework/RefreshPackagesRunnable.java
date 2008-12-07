@@ -24,8 +24,6 @@ import java.util.logging.Logger;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkEvent;
 
-import org.papoose.core.framework.spi.BundleManager;
-
 /**
  * @version $Revision$ $Date$
  */
@@ -83,7 +81,7 @@ public class RefreshPackagesRunnable implements Runnable
 
             for (Bundle bundle : old)
             {
-                
+
             }
 
             framework.getBundleManager().fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.PACKAGES_REFRESHED, framework.getBundleManager().getBundle(0), null));

@@ -17,8 +17,8 @@
 package org.papoose.core.framework;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.osgi.framework.Version;
 
@@ -29,19 +29,19 @@ import org.osgi.framework.Version;
 public class DynamicDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
-    private final List<String> packages;
+    private final Set<String> packages;
     private final Map<String, Object> parameters;
     private VersionRange version;
     private String bundleSymbolicName;
     private VersionRange bundleVersion;
 
-    public DynamicDescription(List<String> packages, Map<String, Object> parameters)
+    public DynamicDescription(Set<String> packages, Map<String, Object> parameters)
     {
-        this.packages = Collections.unmodifiableList(packages);
+        this.packages = Collections.unmodifiableSet(packages);
         this.parameters = Collections.unmodifiableMap(parameters);
     }
 
-    public List<String> getPackages()
+    public Set<String> getPackages()
     {
         return packages;
     }

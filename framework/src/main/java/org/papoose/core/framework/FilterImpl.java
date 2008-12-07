@@ -26,6 +26,7 @@ import org.osgi.framework.Filter;
 import org.osgi.framework.ServiceReference;
 
 import org.papoose.core.framework.filter.Expr;
+import org.papoose.core.framework.util.ToStringCreator;
 
 
 /**
@@ -120,4 +121,9 @@ public class FilterImpl implements Filter
         return expr.match(dictionary);
     }
 
+    @Override
+    public String toString()
+    {
+        return expr.toString();
+    }
 }

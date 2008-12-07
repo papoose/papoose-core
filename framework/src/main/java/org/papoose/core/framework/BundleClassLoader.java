@@ -19,10 +19,7 @@ package org.papoose.core.framework;
 import java.io.IOException;
 import java.net.URL;
 import java.security.AccessController;
-import java.security.CodeSigner;
 import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.Certificate;
@@ -31,17 +28,14 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import org.apache.xbean.classloader.NamedClassLoader;
 import org.apache.xbean.classloader.ResourceHandle;
+import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
-import org.osgi.framework.Version;
 
 import org.papoose.core.framework.spi.ArchiveStore;
 
@@ -62,47 +56,43 @@ public class BundleClassLoader extends NamedClassLoader
     private final Papoose framework;
     private final BundleImpl bundle;
     private final String[] bootDelegates;
+    private final Set<Wire> wires;
     private final List<Wire> requiredBundles;
     private final String[] exportedPackages;
     private final Set<DynamicDescription> dynamicImports;
-    private final SortedSet<ArchiveStore> archiveStores = new TreeSet<ArchiveStore>();
-    private final List<String> classPath = new ArrayList<String>();
-    private Set<Wire> wires;
+    private final List<ResourceLocation> boundClassPath;
+    private final Set<ArchiveStore> archiveStores;
+
 
     BundleClassLoader(String name, ClassLoader parent,
                       Papoose framework,
                       BundleImpl bundle,
+                      Set<Wire> wires,
                       List<Wire> requiredBundles,
                       String[] bootDelegates,
                       String[] exportedPackages,
                       Set<DynamicDescription> dynamicImports,
-                      final List<ArchiveStore> archiveStores)
+                      List<ResourceLocation> boundClassPath,
+                      Set<ArchiveStore> archiveStores) throws BundleException
     {
         super(name, EMPTY_URLS, parent);
 
         assert name != null;
         assert framework != null;
         assert bundle != null;
+        assert wires != null;
         assert requiredBundles != null;
+        assert boundClassPath != null;
 
         this.framework = framework;
         this.bundle = bundle;
+        this.wires = Collections.unmodifiableSet(wires);
         this.requiredBundles = requiredBundles;
         this.bootDelegates = bootDelegates;
         this.exportedPackages = exportedPackages;
-        this.dynamicImports = dynamicImports;
-
-
-        ArchiveStore store = bundle.getCurrentStore();
-        List<RequireDescription> list = store.getBundleRequireBundle();
-        for (RequireDescription description : list)
-        {
-//            Wire wire = new Wire(description.)
-        }
-
-        addArchiveStore(new BundleArchiveStore(archiveStores.get(0)));
-
-        for (int i = 1; i < archiveStores.size(); i++) addArchiveStore(archiveStores.get(i));
+        this.dynamicImports = Collections.synchronizedSet(dynamicImports);
+        this.boundClassPath = boundClassPath;
+        this.archiveStores = archiveStores;
     }
 
 
@@ -116,39 +106,12 @@ public class BundleClassLoader extends NamedClassLoader
         return wires;
     }
 
-    void setWires(Set<Wire> wires)
-    {
-        assert this.wires == null;
-        this.wires = Collections.unmodifiableSet(wires);
-    }
-
-    /**
-     * Add an archive store to a sorted set of archive store and rebuild the
-     * bundle classpath after adding the new store's own classpath.
-     *
-     * @param archiveStore the store to be added
-     */
-    void addArchiveStore(ArchiveStore archiveStore)
-    {
-        archiveStores.add(archiveStore);
-
-        classPath.clear();
-        for (ArchiveStore a : archiveStores)
-        {
-            for (String path : a.getBundleClassPath())
-            {
-                if (!classPath.contains(path)) classPath.add(path);
-            }
-        }
-    }
-
     @SuppressWarnings({ "EmptyCatchBlock" })
     public Class<?> loadClass(String className) throws ClassNotFoundException
     {
         if (className.startsWith("java.")) return getParent().loadClass(className);
 
-        int packageIndex = className.lastIndexOf('.');
-        String packageName = className.substring(0, (packageIndex < 0 ? 0 : packageIndex));
+        String packageName = className.substring(0, Math.max(0, className.lastIndexOf('.')));
 
         for (String delegate : bootDelegates)
         {
@@ -169,25 +132,24 @@ public class BundleClassLoader extends NamedClassLoader
 
     public URL getResource(String resourceName)
     {
-        for (ArchiveStore archiveStore : archiveStores)
+        ResourceHandle handle;
+
+        for (ResourceLocation location : boundClassPath)
         {
-            ResourceHandle handle = archiveStore.getResource(resourceName);
-            if (handle != null) return handle.getUrl();
+            if ((handle = location.getResourceHandle(resourceName)) != null) return handle.getUrl();
         }
 
         return null;
     }
 
-    public Enumeration<URL> findResources(final String resourceName) throws IOException
+    public Enumeration<URL> findResources(String resourceName) throws IOException
     {
         List<URL> urls = new ArrayList<URL>();
+        ResourceHandle handle;
 
-        for (ArchiveStore archiveStore : archiveStores)
+        for (ResourceLocation location : boundClassPath)
         {
-            for (ResourceHandle handle : archiveStore.findResources(resourceName))
-            {
-                urls.add(handle.getUrl());
-            }
+            if ((handle = location.getResourceHandle(resourceName)) != null) urls.add(handle.getUrl());
         }
 
         return Collections.enumeration(urls);
@@ -203,21 +165,6 @@ public class BundleClassLoader extends NamedClassLoader
         return path;
     }
 
-    protected PermissionCollection getPermissions(CodeSource codesource)
-    {
-        PermissionCollection collection = super.getPermissions(codesource);
-
-        if (codesource instanceof BundleCodeSource)
-        {
-            for (Permission permission : ((BundleCodeSource) codesource).getArchiveStore().getPermissionCollection())
-            {
-                collection.add(permission);
-            }
-        }
-
-        return collection;
-    }
-
     @SuppressWarnings({ "EmptyCatchBlock" })
     protected Class<?> delegateLoadClass(String className) throws ClassNotFoundException
     {
@@ -227,8 +174,7 @@ public class BundleClassLoader extends NamedClassLoader
 
         try
         {
-            int packageIndex = className.lastIndexOf('.');
-            String packageName = className.substring(0, (packageIndex < 0 ? 0 : packageIndex));
+            String packageName = className.substring(0, Math.max(0, className.lastIndexOf('.')));
 
             for (Wire wire : wires)
             {
@@ -246,11 +192,11 @@ public class BundleClassLoader extends NamedClassLoader
                 }
             }
 
-            for (ArchiveStore archiveStore : archiveStores)
+            for (ResourceLocation location : boundClassPath)
             {
                 try
                 {
-                    return findClass(archiveStore, className);
+                    return findClass(location, className);
                 }
                 catch (ClassNotFoundException doNothing)
                 {
@@ -262,13 +208,17 @@ public class BundleClassLoader extends NamedClassLoader
                 if (exportedPackage.equals(packageName)) throw new ClassNotFoundException();
             }
 
-            for (DynamicDescription dynamicDescription : dynamicImports)
+            synchronized (dynamicImports)
             {
-                Wire wire = framework.resolve(dynamicDescription);
-                if (wire != null)
+                for (DynamicDescription dynamicDescription : dynamicImports)
                 {
-                    wires.add(wire);
-                    if (!inSet(wire.getBundleClassLoader())) return wire.getBundleClassLoader().delegateLoadClass(className);
+                    Wire wire = framework.getBundleManager().resolve(dynamicDescription);
+                    if (wire != null)
+                    {
+                        dynamicImports.remove(dynamicDescription);
+                        wires.add(wire);
+                        if (!inSet(wire.getBundleClassLoader())) return wire.getBundleClassLoader().delegateLoadClass(className);
+                    }
                 }
             }
 
@@ -280,7 +230,7 @@ public class BundleClassLoader extends NamedClassLoader
         }
     }
 
-    protected Class<?> findClass(final ArchiveStore archiveStore, final String className) throws ClassNotFoundException
+    protected Class<?> findClass(final ResourceLocation location, final String className) throws ClassNotFoundException
     {
         try
         {
@@ -292,11 +242,10 @@ public class BundleClassLoader extends NamedClassLoader
                     SecurityManager securityManager = System.getSecurityManager();
                     if (securityManager != null)
                     {
-                        String packageName;
                         int packageEnd = className.lastIndexOf('.');
                         if (packageEnd >= 0)
                         {
-                            packageName = className.substring(0, packageEnd);
+                            String packageName = className.substring(0, packageEnd);
                             securityManager.checkPackageDefinition(packageName);
                         }
                     }
@@ -305,11 +254,9 @@ public class BundleClassLoader extends NamedClassLoader
                     String resourceName = className.replace('.', '/') + ".class";
 
                     // find the class file resource
-                    ResourceHandle resourceHandle = archiveStore.getResource(resourceName);
-                    if (resourceHandle == null)
-                    {
-                        throw new ClassNotFoundException(className);
-                    }
+                    ResourceHandle resourceHandle = location.getResourceHandle(resourceName);
+
+                    if (resourceHandle == null) throw new ClassNotFoundException(className);
 
                     byte[] bytes;
                     Manifest manifest;
@@ -423,10 +370,8 @@ public class BundleClassLoader extends NamedClassLoader
 
     private boolean isSealed(Attributes packageAttributes, Attributes mainAttributes)
     {
-        String sealed = getAttribute(Attributes.Name.SEALED, packageAttributes, mainAttributes);
-        return sealed != null && "true".equalsIgnoreCase(sealed);
+        return "true".equalsIgnoreCase(getAttribute(Attributes.Name.SEALED, packageAttributes, mainAttributes));
     }
-
 
     private static boolean inSet(BundleClassLoader bundleClassLoader)
     {
@@ -441,86 +386,5 @@ public class BundleClassLoader extends NamedClassLoader
     private static void unregister(BundleClassLoader bundleClassLoader)
     {
         LOADER_VISITED.get().remove(bundleClassLoader);
-    }
-
-    private final static class BundleCodeSource extends CodeSource
-    {
-        private final AbstractStore archiveStore;
-
-        public BundleCodeSource(URL url, Certificate certs[], AbstractStore archiveStore)
-        {
-            super(url, certs);
-            this.archiveStore = archiveStore;
-        }
-
-        public BundleCodeSource(URL url, CodeSigner[] signers, AbstractStore archiveStore)
-        {
-            super(url, signers);
-            this.archiveStore = archiveStore;
-        }
-
-        public AbstractStore getArchiveStore()
-        {
-            return archiveStore;
-        }
-    }
-
-    /**
-     * A nice wrapper that makes sure that this particular archive is first in
-     * the list, i.e. the bundle archive.
-     */
-    static class BundleArchiveStore implements ArchiveStore
-    {
-        private final ArchiveStore delegate;
-
-        public BundleArchiveStore(ArchiveStore delegate) { this.delegate = delegate; }
-
-        public String getFrameworkName() { return delegate.getFrameworkName(); }
-
-        public long getBundleId() { return delegate.getBundleId(); }
-
-        public int getGeneration() { return delegate.getGeneration(); }
-
-        public Attributes getAttributes() { return delegate.getAttributes(); }
-
-        public String getBundleActivatorClass() { return delegate.getBundleActivatorClass(); }
-
-        public String getBundleSymbolicName() { return delegate.getBundleSymbolicName(); }
-
-        public Version getBundleVersion() { return delegate.getBundleVersion(); }
-
-        public List<String> getBundleClassPath() { return delegate.getBundleClassPath(); }
-
-        public List<ExportDescription> getBundleExportList() { return delegate.getBundleExportList(); }
-
-        public List<ImportDescription> getBundleImportList() { return delegate.getBundleImportList(); }
-
-        public List<RequireDescription> getBundleRequireBundle() { return delegate.getBundleRequireBundle(); }
-
-        public Set<DynamicDescription> getDynamicImportSet() {return delegate.getDynamicImportSet();}
-
-        public void refreshClassPath(List<String> classPath) throws BundleException { delegate.refreshClassPath(classPath); }
-
-        public String loadLibrary(String libname) { return delegate.loadLibrary(libname); }
-
-        public Permission[] getPermissionCollection() { return delegate.getPermissionCollection(); }
-
-        public ResourceHandle getEntry(String name) { return delegate.getResource(name); }
-
-        public Enumeration getEntryPaths(String path) { return delegate.getEntryPaths(path); }
-
-        public Enumeration findEntries(String path, String filePattern, boolean recurse) { return delegate.findEntries(path, filePattern, recurse); }
-
-        public ResourceHandle getResource(String resourceName) { return delegate.getResource(resourceName); }
-
-        public ResourceHandle getResource(String resourceName, int location) { return delegate.getResource(resourceName, location); }
-
-        public List<ResourceHandle> findResources(String resourceName) { return delegate.findResources(resourceName); }
-
-        public L18nResourceBundle getResourceBundle(Locale local) { return delegate.getResourceBundle(local); }
-
-        public void close() { delegate.close(); }
-
-        public int compareTo(Object o) { return 1; }
     }
 }

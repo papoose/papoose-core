@@ -16,13 +16,15 @@
  */
 package org.papoose.core.framework;
 
+import net.jcip.annotations.Immutable;
 import org.osgi.framework.Version;
 
 
 /**
  * @version $Revision$ $Date$
  */
-class VersionRange
+@Immutable
+public class VersionRange
 {
     public static final Version DEFAULT_VERSION = new Version(0, 0, 0);
     public static final VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);

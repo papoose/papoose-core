@@ -20,40 +20,48 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.net.URL;
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleException;
+import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.ThreadSafe;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
-
 import org.papoose.core.framework.filter.Parser;
-import org.papoose.core.framework.spi.BundleManager;
+import org.papoose.core.framework.spi.Resolver;
 import org.papoose.core.framework.spi.Store;
+import org.papoose.core.framework.util.ToStringCreator;
 
 
 /**
  * @version $Revision$ $Date: $
  */
+@ThreadSafe
 public final class Papoose
 {
     public final static String FRAMEWORK_VERSION = "1.4";
     public final static String PAPOOSE_VERSION = "org.papoose.framework.version";
 
-    private final static String className = Papoose.class.getName();
-    private final static Logger logger = Logger.getLogger(className);
+    private final static String CLASS_NAME = Papoose.class.getName();
+    private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-    private static int frameworkCounter = 0;
-    private final static Map<Integer, Reference<Papoose>> frameworksById = new HashMap<Integer, Reference<Papoose>>();
-    private final static Map<String, Reference<Papoose>> frameworksByName = new HashMap<String, Reference<Papoose>>();
+    private final static Properties DEFAULTS = new Properties();
 
+    private static volatile int FRAMEWORK_COUNTER = 0;
+    private final static Map<Integer, Reference<Papoose>> FRAMEWORKS_BY_ID = new HashMap<Integer, Reference<Papoose>>();
+    private final static Map<String, Reference<Papoose>> FRAMEWORKS_BY_NAME = new HashMap<String, Reference<Papoose>>();
+
+    private final Object lock = new Object();
+    private volatile boolean running = false;
     private final AccessControlContext acc = AccessController.getContext();
     private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private final BundleManager bundleManager;
@@ -61,9 +69,44 @@ public final class Papoose
     private final Properties properties;
     private final String frameworkName;
     private final int frameworkId;
-    private long waitPeriod;
-    private Parser parser = new Parser();
-    private BundleResolver resolver = new BundleResolver();
+    private volatile long waitPeriod;
+    @GuardedBy("lock")
+    private volatile Parser parser = new Parser();
+    @GuardedBy("lock")
+    private volatile Resolver resolver = new DefaultResolver();
+
+    static
+    {
+        DEFAULTS.setProperty(Constants.FRAMEWORK_VERSION, FRAMEWORK_VERSION);
+        DEFAULTS.setProperty(Constants.FRAMEWORK_VENDOR, "Papoose");
+
+        String language = Locale.getDefault().getLanguage();
+        DEFAULTS.setProperty(Constants.FRAMEWORK_LANGUAGE, (language.length() == 0 ? "en" : language));
+
+        DEFAULTS.setProperty(Constants.FRAMEWORK_PROCESSOR, System.getProperty("os.arch"));
+        DEFAULTS.setProperty(Constants.FRAMEWORK_OS_VERSION, standardizeVersion(System.getProperty("os.version")));
+        DEFAULTS.setProperty(Constants.FRAMEWORK_OS_NAME, System.getProperty("os.name"));
+
+        DEFAULTS.setProperty(Constants.SUPPORTS_FRAMEWORK_EXTENSION, Boolean.TRUE.toString());
+        DEFAULTS.setProperty(Constants.SUPPORTS_BOOTCLASSPATH_EXTENSION, Boolean.TRUE.toString());
+        DEFAULTS.setProperty(Constants.SUPPORTS_FRAMEWORK_FRAGMENT, Boolean.TRUE.toString());
+        DEFAULTS.setProperty(Constants.SUPPORTS_FRAMEWORK_REQUIREBUNDLE, Boolean.TRUE.toString());
+    }
+
+
+    /**
+     * Install the store, thread pool and setup a hierarchy of properties.
+     * <p/>
+     * The framework instance gets registered and is accessable via its unique
+     * framework id.
+     *
+     * @param store           the bundle store to use
+     * @param executorService the thread pool to use
+     */
+    public Papoose(Store store, ExecutorService executorService)
+    {
+        this(null, store, executorService, null);
+    }
 
     /**
      * Install the store, thread pool and setup a hierarchy of properties.
@@ -78,6 +121,26 @@ public final class Papoose
     public Papoose(Store store, ExecutorService executorService, Properties properties)
     {
         this(null, store, executorService, properties);
+    }
+
+
+    /**
+     * Install the store, thread pool and setup a hierarchy of properties.
+     * <p/>
+     * The framework instance gets registered and is accessable via its unique
+     * framework id.
+     *
+     * @param frameworkName   the name of this framework instance.  It must be
+     *                        unique for the JVM that is has been instantiated
+     *                        and it must be follow the same format as a bundle
+     *                        symbolic name.
+     * @param store           the bundle store to use
+     * @param executorService the thread pool to use
+     */
+    public Papoose(String frameworkName, Store store, ExecutorService executorService)
+    {
+        this(frameworkName, store, executorService, null);
+
     }
 
     /**
@@ -99,16 +162,7 @@ public final class Papoose
         if (store == null) throw new IllegalArgumentException("store is null");
         if (executorService == null) throw new IllegalArgumentException("threadPool is null");
 
-        this.bundleManager = new BundleManagerImpl(this, store);
-        this.executorService = executorService;
-
-        Properties defaults = new Properties(System.getProperties());
-        initProperties(defaults);
-
-        defaults = new Properties(defaults);
-        defaults.putAll(properties);
-
-        this.frameworkId = frameworkCounter++;
+        this.frameworkId = FRAMEWORK_COUNTER++;
 
         if (frameworkName == null)
         {
@@ -119,14 +173,23 @@ public final class Papoose
             this.frameworkName = frameworkName;
         }
 
-        Properties instance = new Properties(defaults);
-        instance.put("org.papoose.framework.name", this.frameworkName);
-        instance.put("org.papoose.framework.id", this.frameworkId);
+        if (FRAMEWORKS_BY_NAME.containsKey(this.frameworkName)) throw new IllegalArgumentException("Papoose instance with framework name " + this.frameworkName + " already registered");
 
-        this.properties = new Properties(instance);
+        FRAMEWORKS_BY_ID.put(this.frameworkId, new WeakReference<Papoose>(this));
+        FRAMEWORKS_BY_NAME.put(this.frameworkName, new WeakReference<Papoose>(this));
 
-        frameworksById.put(this.frameworkId, new WeakReference<Papoose>(this));
-        frameworksByName.put(this.frameworkName, new WeakReference<Papoose>(this));
+        this.bundleManager = new BundleManager(this, store);
+        this.executorService = executorService;
+        this.properties = assembleProperties(properties);
+
+        if (LOGGER.isLoggable(Level.CONFIG))
+        {
+            LOGGER.config("Framework name: " + frameworkName);
+            LOGGER.config("Framework ID: " + frameworkId);
+            LOGGER.config("Framework store: " + store);
+            LOGGER.config("Framework executor service: " + executorService);
+            LOGGER.config("Framework properties: " + this.properties);
+        }
     }
 
     AccessControlContext getAcc()
@@ -159,6 +222,11 @@ public final class Papoose
         return frameworkId;
     }
 
+    public boolean isRunning()
+    {
+        return running;
+    }
+
     public long getWaitPeriod()
     {
         return waitPeriod;
@@ -169,14 +237,37 @@ public final class Papoose
         this.waitPeriod = waitPeriod;
     }
 
+    /**
+     * Get the filter parser that this framework instances uses.
+     *
+     * @return the filter parser that this framework instances uses
+     */
     public Parser getParser()
     {
         return parser;
     }
 
+    /**
+     * Set the filter parser for this framework instance to use.  This allows
+     * one to supply their own approximation comparison algorithm.
+     *
+     * @param parser the filter parser for this framework instance to use
+     * @throws IllegalStateException if framework instance has already started
+     * @see Parser
+     */
     public void setParser(Parser parser)
     {
-        this.parser = parser;
+        if (parser == null) throw new IllegalArgumentException("Parser cannot be null");
+
+        synchronized (lock)
+        {
+            if (running) throw new IllegalStateException("Cannot change parser after framework has started");
+
+            this.parser = parser;
+
+            if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("Framework parser: " + parser);
+        }
+
     }
 
     Object getProperty(String key)
@@ -184,88 +275,182 @@ public final class Papoose
         return properties.get(key);
     }
 
-    public Dictionary getProperties()
+    public Properties getProperties()
     {
         return properties;
     }
 
-    public BundleResolver getResolver()
+    public Resolver getResolver()
     {
         return resolver;
     }
 
-    public void setResolver(BundleResolver resolver)
+    public void setResolver(Resolver resolver)
     {
-        this.resolver = resolver;
+        if (resolver == null) throw new IllegalArgumentException("Resolver cannot be null");
+
+        synchronized (lock)
+        {
+            if (running) throw new IllegalStateException("Cannot change resolver after framework has started");
+
+            this.resolver = resolver;
+
+            if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("Framework resolver: " + resolver);
+        }
     }
 
-    public void start() throws BundleException
+    public BundleContext getSystemBundleContext()
     {
-        logger.entering(className, "start");
+        LOGGER.entering(CLASS_NAME, "getSystemBundleContext");
 
-        getBundleManager().installSystemBundle(new Version(properties.getProperty(PAPOOSE_VERSION)));
+        BundleContext systemBundleContext;
 
-        logger.exiting(className, "start");
+        synchronized (lock)
+        {
+            if (!running) throw new IllegalStateException("Framework has not started");
+
+            BundleManager manager = getBundleManager();
+
+            systemBundleContext = manager.getBundle(0).getBundleContext();
+        }
+
+        LOGGER.exiting(CLASS_NAME, "getSystemBundleContext", systemBundleContext);
+
+        return systemBundleContext;
     }
 
-    public void stop() throws BundleException
+    @GuardedBy("lock")
+    public void start() throws PapooseException
     {
-        logger.entering(className, "stop");
+        LOGGER.entering(CLASS_NAME, "start");
 
-        Bundle system = getBundleManager().getBundle(0);
+        synchronized (lock)
+        {
+            if (running)
+            {
+                LOGGER.warning("Framework already started");
+                return;
+            }
 
-        system.stop();
+            try
+            {
+                URL.setURLStreamHandlerFactory(new ServiceURLStreamHandlerFactory());
+            }
+            catch (Error e)
+            {
+                LOGGER.log(Level.SEVERE, "Unable to register Papoose URL stream handler factory", e);
+                throw new PapooseException("Unable to register Papoose URL stream handler factory", e);
+            }
 
-        logger.exiting(className, "stop");
+            BundleManager manager = getBundleManager();
+
+            try
+            {
+                resolver.start(this);
+
+                manager.installSystemBundle(new Version(properties.getProperty(PAPOOSE_VERSION)));
+
+                ((SystemBundleImpl) manager.getBundle(0)).performStart(0);
+
+                running = true;
+            }
+            catch (PapooseException pe)
+            {
+                LOGGER.log(Level.SEVERE, "Framework startup exception", pe);
+                manager.uninstallSystemBundle();
+                throw pe;
+            }
+            catch (Exception e)
+            {
+                LOGGER.log(Level.SEVERE, "Framework startup exception", e);
+                manager.uninstallSystemBundle();
+                throw new PapooseException(e);
+            }
+        }
+
+        LOGGER.exiting(CLASS_NAME, "start");
+    }
+
+    @GuardedBy("lock")
+    public void stop() throws PapooseException
+    {
+        LOGGER.entering(CLASS_NAME, "stop");
+
+        synchronized (lock)
+        {
+            if (!running)
+            {
+                LOGGER.warning("Framework was not started");
+                return;
+            }
+
+            BundleManager manager = getBundleManager();
+
+            try
+            {
+                SystemBundleImpl system = (SystemBundleImpl) manager.getBundle(0);
+
+                system.performStop(0);
+            }
+            finally
+            {
+                manager.uninstallSystemBundle();
+                resolver.stop();
+                running = false;
+            }
+        }
+
+        LOGGER.exiting(CLASS_NAME, "stop");
+    }
+
+    @Override
+    public String toString()
+    {
+        ToStringCreator creator = new ToStringCreator(this);
+
+        creator.append("frameworkName", frameworkName);
+        creator.append("frameworkId", frameworkId);
+        creator.append("executorService", executorService);
+        creator.append("resolver", resolver);
+
+        return creator.toString();
     }
 
     static Papoose getFramework(Integer frameworkId)
     {
-        Papoose result = frameworksById.get(frameworkId).get();
+        Papoose result = FRAMEWORKS_BY_ID.get(frameworkId).get();
 
-        if (result == null) frameworksById.remove(frameworkId);
+        if (result == null) FRAMEWORKS_BY_ID.remove(frameworkId);
 
         return result;
     }
 
     static Papoose getFramework(String name)
     {
-        Papoose result = frameworksByName.get(name).get();
+        Papoose result = FRAMEWORKS_BY_NAME.get(name).get();
 
-        if (result == null) frameworksByName.remove(name);
+        if (result == null) FRAMEWORKS_BY_NAME.remove(name);
 
         return result;
     }
 
-    void unregisterServices(AbstractBundle bundle)
+    private Properties assembleProperties(Properties properties)
     {
-    }
+        Properties result = DEFAULTS;
 
-    void releaseServices(AbstractBundle bundle)
-    {
-    }
-
-    Wire resolve(DynamicDescription dynamicDescription)
-    {
-        return null;
-    }
-
-    @SuppressWarnings({ "EmptyCatchBlock" })
-    private static void initProperties(Properties defaults)
-    {
         InputStream inputStream = null;
         try
         {
             inputStream = Papoose.class.getClassLoader().getResourceAsStream("papoose.properties");
             if (inputStream != null)
             {
-                Properties p = new Properties();
-                p.load(inputStream);
-                defaults.putAll(p);
+                result = new Properties(result);
+                result.load(inputStream);
             }
         }
-        catch (IOException doNothing)
+        catch (IOException ioe)
         {
+            LOGGER.log(Level.WARNING, "Error loading papoose.properties", ioe);
         }
         finally
         {
@@ -273,23 +458,35 @@ public final class Papoose
             {
                 if (inputStream != null) inputStream.close();
             }
-            catch (IOException doNothing)
+            catch (IOException ioe)
             {
+                LOGGER.log(Level.WARNING, "Error closing papoose.properties", ioe);
             }
         }
 
-        defaults.put(Constants.FRAMEWORK_VERSION, FRAMEWORK_VERSION);
+        result = new Properties(result);
+        result.putAll(System.getProperties());
 
-        defaults.put(Constants.FRAMEWORK_PROCESSOR, System.getProperty("os.arch"));
-        defaults.put(Constants.FRAMEWORK_OS_VERSION, standardizeVersion(System.getProperty("os.version")));
-        defaults.put(Constants.FRAMEWORK_OS_NAME, System.getProperty("os.name"));
+        if (properties != null)
+        {
+            result = new Properties(result);
+            result.putAll(properties);
+        }
 
-        defaults.put("org.osgi.supports.framework.extension", true);
-        defaults.put("org.osgi.supports.bootclasspath.extension", true);
-        defaults.put("org.osgi.supports.framework.fragment", true);
-        defaults.put("org.osgi.supports.framework.requirebundle", true);
+        result = new Properties(result);
+        result.setProperty("org.papoose.framework.name", this.frameworkName);
+        result.setProperty("org.papoose.framework.id", Integer.toString(this.frameworkId));
+
+        return new Properties(result);
     }
 
+    /**
+     * Attempt to convert the OS version from the System properties into a
+     * canonical form.
+     *
+     * @param version the OS version as returned from the System properties
+     * @return a canonical form of the OS version
+     */
     private static String standardizeVersion(String version)
     {
         StringBuilder builder = new StringBuilder();

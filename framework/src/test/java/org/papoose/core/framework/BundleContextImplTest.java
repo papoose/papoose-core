@@ -17,8 +17,12 @@ package org.papoose.core.framework;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Locale;
@@ -31,11 +35,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 
+import org.papoose.core.framework.mock.MockStore;
+import org.papoose.core.framework.spi.Store;
+import org.papoose.framework.mock.MockURLStreamHandlerFactory;
+import org.papoose.framework.mock.MockURLStreamHandlerProvider;
+
 /**
  * @version $Revision$ $Date$
  */
 public class BundleContextImplTest
 {
+    private MockURLStreamHandlerProvider provider;
     private Locale savedLocale;
 
     @Test
@@ -45,7 +55,7 @@ public class BundleContextImplTest
         try
         {
             final long earlyTimestamp = System.currentTimeMillis();
-            FileStore fileStore = new FileStore(fileStoreRoot);
+            Store fileStore = new MockStore();
             Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new ScheduledThreadPoolExecutor(10), new Properties());
 
             papoose.start();
@@ -161,6 +171,36 @@ public class BundleContextImplTest
         try
         {
             URL.setURLStreamHandlerFactory(new MockURLStreamHandlerFactory());
+            MockURLStreamHandlerFactory.addProvider(provider = new MockURLStreamHandlerProvider()
+            {
+                public URLConnection openConnection(URL url) throws IOException
+                {
+                    return new URLConnection(url)
+                    {
+                        private final byte[] bytes;
+
+                        {
+                            if ("/com/acme/resource/camera.xml".equals(url.getFile()))
+                            {
+                                bytes = "<status>good</status>".getBytes();
+                            }
+                            else
+                            {
+                                bytes = new byte[0];
+                            }
+                        }
+
+                        public void connect() throws IOException
+                        {
+                        }
+
+                        public InputStream getInputStream() throws IOException
+                        {
+                            return new ByteArrayInputStream(bytes);
+                        }
+                    };
+                }
+            });
         }
         catch (Throwable t)
         {
@@ -170,6 +210,9 @@ public class BundleContextImplTest
     @After
     public void tearDown() throws Exception
     {
+        MockURLStreamHandlerFactory.removeProvider(provider);
+        provider = null;
+
         Locale.setDefault(savedLocale);
         savedLocale = null;
     }

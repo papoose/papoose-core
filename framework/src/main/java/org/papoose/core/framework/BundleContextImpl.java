@@ -33,6 +33,8 @@ import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
+import org.papoose.core.framework.util.ToStringCreator;
+
 
 /**
  * @version $Revision$ $Date$
@@ -175,5 +177,16 @@ class BundleContextImpl implements BundleContext
     public Filter createFilter(String filter) throws InvalidSyntaxException
     {
         return new FilterImpl(getFramework().getParser().parse(filter));
+    }
+
+    @Override
+    public String toString()
+    {
+        ToStringCreator creator = new ToStringCreator(this);
+
+        creator.append("bundle", bundle);
+
+        return creator.toString();
+
     }
 }

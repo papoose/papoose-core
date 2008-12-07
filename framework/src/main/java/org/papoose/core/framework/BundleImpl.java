@@ -57,16 +57,19 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
     private final Executor serialExecutor;
     private final Set<FragmentBundleImpl> fragments = new TreeSet<FragmentBundleImpl>();
     private final Set<ExportDescription> exports = new TreeSet<ExportDescription>();
+    private final BundleStore bundleStore;
     private BundleContextImpl bundleContext = null;
     private BundleClassLoader classLoader;
-    private int startLevel;
     private volatile State state;
 
 
     BundleImpl(Papoose framework, long bundleId, String location, BundleStore bundleStore, ArchiveStore archiveStore)
     {
-        super(framework, bundleId, location, bundleStore, archiveStore);
+        super(framework, bundleId, location, archiveStore);
 
+        assert bundleStore != null;
+
+        this.bundleStore = bundleStore;
         this.serialExecutor = new SerialExecutor(framework.getExecutorService());
         this.state = INSTALLED_STATE;
     }
@@ -79,6 +82,11 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
     Set<FragmentBundleImpl> getFragments()
     {
         return fragments;
+    }
+
+    BundleStore getBundleStore()
+    {
+        return bundleStore;
     }
 
     BundleClassLoader getClassLoader()
@@ -239,39 +247,33 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
         return "[bundle:" + getSymbolicName() + "]";
     }
 
-    void setUninstalledState() throws BundleException
+    void setUninstalledState()
     {
-        getBundleStore().updateLastModified();
         state = UNINSTALLED_STATE;
     }
 
-    void setInstalledState() throws BundleException
+    void setInstalledState()
     {
-        getBundleStore().updateLastModified();
         state = INSTALLED_STATE;
     }
 
-    void setResolvedState() throws BundleException
+    void setResolvedState()
     {
-        getBundleStore().updateLastModified();
         state = RESOLVED_STATE;
     }
 
-    void setStartingState() throws BundleException
+    void setStartingState()
     {
-        getBundleStore().updateLastModified();
         state = STARTING_STATE;
     }
 
-    void setStopingState() throws BundleException
+    void setStopingState()
     {
-        getBundleStore().updateLastModified();
         state = STOPPING_STATE;
     }
 
-    void setActiveState() throws BundleException
+    void setActiveState() 
     {
-        getBundleStore().updateLastModified();
         state = ACTIVE_STATE;
     }
 
@@ -434,8 +436,8 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
             {
                 state = RESOLVED_STATE;
 
-                getFramework().unregisterServices(BundleImpl.this);
-                getFramework().releaseServices(BundleImpl.this);
+                getFramework().getBundleManager().unregisterServices(BundleImpl.this);
+                getFramework().getBundleManager().releaseServices(BundleImpl.this);
 
                 bundleListeners.clear();
 
@@ -603,8 +605,8 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
             {
                 state = RESOLVED_STATE;
 
-                getFramework().unregisterServices(BundleImpl.this);
-                getFramework().releaseServices(BundleImpl.this);
+                getFramework().getBundleManager().unregisterServices(BundleImpl.this);
+                getFramework().getBundleManager().releaseServices(BundleImpl.this);
 
                 bundleListeners.clear();
 
@@ -822,13 +824,8 @@ public class BundleImpl extends AbstractBundle implements Comparable<BundleImpl>
                 if (result != null && result.length() > 0 && result.charAt(0) == '%')
                 {
                     result = result.substring(1);
-                    try
-                    {
-                        result = resourceBundle.getString(result);
-                    }
-                    catch (MissingResourceException ignore)
-                    {
-                    }
+
+                    if (resourceBundle != null) try { result = resourceBundle.getString(result); } catch (MissingResourceException ignore) { }
                 }
                 return result;
             }

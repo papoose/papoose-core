@@ -31,12 +31,4 @@ public interface BundleStore
     String getLocation();
 
     File getDataRoot();
-
-    boolean isStarted() throws BundleException;
-
-    void setStarted(boolean started) throws BundleException;
-
-    long getLastModified() throws BundleException;
-
-    void updateLastModified() throws BundleException;
 }

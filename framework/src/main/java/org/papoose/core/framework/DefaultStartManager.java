@@ -18,7 +18,6 @@ package org.papoose.core.framework;
 
 import org.osgi.framework.Bundle;
 
-import org.papoose.core.framework.spi.BundleManager;
 import org.papoose.core.framework.spi.StartManager;
 
 /**
@@ -36,5 +35,10 @@ public class DefaultStartManager implements StartManager
     public void start(Bundle bundle)
     {
         bundleManager.performStart(bundle);
+    }
+
+    public void stop(Bundle bundle)
+    {
+        bundleManager.performStop(bundle);
     }
 }

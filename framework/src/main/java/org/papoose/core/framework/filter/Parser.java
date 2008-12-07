@@ -21,11 +21,13 @@ import java.util.List;
 import java.util.Vector;
 
 import org.osgi.framework.InvalidSyntaxException;
+import net.jcip.annotations.Immutable;
 
 
 /**
  * @version $Revision$ $Date$
  */
+@Immutable
 public final class Parser
 {
     private final ApproxAlgorithm approxAlgorithm;
@@ -37,11 +39,15 @@ public final class Parser
 
     public Parser(ApproxAlgorithm approxAlgorithm)
     {
+        if (approxAlgorithm == null) throw new IllegalArgumentException("Approx algorithm cannot be null");
+
         this.approxAlgorithm = approxAlgorithm;
     }
 
     public Expr parse(String expression) throws InvalidSyntaxException
     {
+        if (expression == null) throw new IllegalArgumentException("The expression cannot be null");
+
         try
         {
             return parseFilter(new State(expression));

@@ -40,8 +40,6 @@ import org.osgi.service.packageadmin.ExportedPackage;
 import org.osgi.service.packageadmin.PackageAdmin;
 import org.osgi.service.packageadmin.RequiredBundle;
 
-import org.papoose.core.framework.spi.BundleManager;
-
 /**
  * @version $Revision$ $Date$
  */

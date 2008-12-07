@@ -24,4 +24,6 @@ import org.osgi.framework.Bundle;
 public interface StartManager
 {
     public void start(Bundle bundle);
+
+    public void stop(Bundle bundle);
 }

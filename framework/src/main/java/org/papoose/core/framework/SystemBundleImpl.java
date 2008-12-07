@@ -17,13 +17,14 @@
 package org.papoose.core.framework;
 
 import java.io.InputStream;
-import java.security.Permission;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,26 +33,27 @@ import org.apache.xbean.classloader.ResourceHandle;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.Version;
-
 import org.papoose.core.framework.spi.ArchiveStore;
-import org.papoose.core.framework.spi.BundleManager;
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.spi.StartManager;
+import org.papoose.core.framework.util.AttributeUtils;
 import org.papoose.core.framework.util.AttributesWrapper;
+
 
 /**
  * @version $Revision$ $Date$
  */
 public class SystemBundleImpl extends BundleImpl
 {
-    private final static String className = SystemBundleImpl.class.getName();
-    private final static Logger logger = Logger.getLogger(className);
+    private final static String CLASS_NAME = SystemBundleImpl.class.getName();
+    private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-    SystemBundleImpl(Papoose framework, long bundleId, BundleStore bundleStore, Version version)
+    SystemBundleImpl(Papoose framework, long bundleId, BundleStore bundleStore, Version version) throws BundleException
     {
         super(framework, bundleId, Constants.SYSTEM_BUNDLE_LOCATION, bundleStore, new SystemArchiveStore(framework, version));
 
@@ -78,7 +80,7 @@ public class SystemBundleImpl extends BundleImpl
         }
         catch (InvalidSyntaxException ise)
         {
-            logger.log(Level.SEVERE, "Unable to add service manager listener", ise);
+            LOGGER.log(Level.SEVERE, "Unable to add service manager listener", ise);
         }
     }
 
@@ -136,6 +138,16 @@ public class SystemBundleImpl extends BundleImpl
 
     void performStart(int options)
     {
+        Papoose framework = getFramework();
+        BundleManager manager = framework.getBundleManager();
+
+        setStartingState();
+
+        manager.loadAndStartBundles();
+
+        setActiveState();
+
+        manager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.STARTED, this, null));
     }
 
     void performStop(int options)
@@ -150,7 +162,7 @@ public class SystemBundleImpl extends BundleImpl
         private final Version version;
         private final Attributes attributes;
 
-        public SystemArchiveStore(Papoose framework, Version version)
+        public SystemArchiveStore(Papoose framework, Version version) throws BundleException
         {
             assert framework != null;
             assert version != null;
@@ -159,22 +171,25 @@ public class SystemBundleImpl extends BundleImpl
             this.version = version;
 
             String packages = (String) framework.getProperty(Constants.FRAMEWORK_SYSTEMPACKAGES);
-
             if (packages != null)
             {
-                try
-                {
-                    exportDescriptions.addAll(AbstractStore.parseBundleExportList(packages));
-                }
-                catch (BundleException be)
-                {
-                    logger.log(Level.WARNING, "Unable to parse " + Constants.FRAMEWORK_SYSTEMPACKAGES + ":" + packages, be);
-                }
+                exportDescriptions.addAll(AttributeUtils.parseBundleExportList(packages, getBundleSymbolicName(), getBundleVersion()));
             }
+            exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.framework", getBundleSymbolicName(), getBundleVersion()));
 
-            exportDescriptions.add(new ExportDescription(Collections.singletonList("org.osgi.framework"), Collections.<String, Object>singletonMap("version", getBundleVersion())));
-
+            Properties p = framework.getProperties();
             Attributes a = new Attributes();
+            a.putValue(Constants.BUNDLE_CLASSPATH, ".");
+            a.putValue(Constants.BUNDLE_CONTACTADDRESS, p.getProperty(PapooseConstants.PAPOOSE_CONTACT_ADDRESS));
+            a.putValue(Constants.BUNDLE_COPYRIGHT, p.getProperty(PapooseConstants.PAPOOSE_COPYRIGHT));
+            a.putValue(Constants.BUNDLE_DESCRIPTION, p.getProperty(PapooseConstants.PAPOOSE_DESCRIPTION));
+            a.putValue(Constants.BUNDLE_DOCURL, p.getProperty(PapooseConstants.PAPOOSE_DOC_URL));
+            a.putValue(Constants.BUNDLE_MANIFESTVERSION, Integer.toString(2));
+            a.putValue(Constants.BUNDLE_NAME, "Papoose OSGi R4 System Bundle");
+            a.putValue(Constants.BUNDLE_SYMBOLICNAME, getBundleSymbolicName());
+            a.putValue(Constants.BUNDLE_VENDOR, p.getProperty(PapooseConstants.PAPOOSE_VENDOR));
+            a.putValue(Constants.BUNDLE_VERSION, version.toString());
+
             attributes = new AttributesWrapper(a);
         }
 
@@ -215,9 +230,7 @@ public class SystemBundleImpl extends BundleImpl
 
         public List<String> getBundleClassPath()
         {
-            List<String> result = new ArrayList<String>(1);
-            result.add(".");
-            return result;
+            return Collections.singletonList(".");
         }
 
         public List<ExportDescription> getBundleExportList()
@@ -247,11 +260,6 @@ public class SystemBundleImpl extends BundleImpl
         public String loadLibrary(String libname)
         {
             return null;
-        }
-
-        public Permission[] getPermissionCollection()
-        {
-            return new Permission[0];  //todo: consider this autogenerated code
         }
 
         public ResourceHandle getEntry(String name)
@@ -285,6 +293,11 @@ public class SystemBundleImpl extends BundleImpl
         }
 
         public L18nResourceBundle getResourceBundle(Locale local)
+        {
+            return null;  //todo: consider this autogenerated code
+        }
+
+        public URL generateUrl(String path)
         {
             return null;  //todo: consider this autogenerated code
         }

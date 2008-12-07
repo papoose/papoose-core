@@ -18,10 +18,23 @@ package org.papoose.core.framework;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+
+import org.papoose.core.framework.mock.MockArchiveStore;
+import org.papoose.core.framework.mock.MockBundleStore;
+import org.papoose.core.framework.mock.MockStore;
 
 
 /**
@@ -29,70 +42,73 @@ import org.junit.Test;
  */
 public class WireTest
 {
+    private ExecutorService executorService;
+    private Papoose mockFramework;
+
     @Test
     public void testMatch()
     {
-        List<String> packages = new ArrayList<String>();
+        Set<String> packages = new HashSet<String>();
         packages.add("com.acme");
 
         ExportDescription description = new ExportDescription(packages, Collections.<String, Object>emptyMap());
 
-        Wire test = new Wire("com.acme", description, null);
+        Wire test = new Wire("com.acme", description, new BundleImpl(mockFramework, 1, "http://bundles.acme.com/", new MockBundleStore(1, "http://bundles.acme.com/"), new MockArchiveStore()));
 
         Assert.assertTrue(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
         Assert.assertTrue(test.validFor("com.acme.Anvil"));
 
-        description.setIncluded(Collections.singletonList(new String[]{ "Dynamite" }));
+        description.setInclude(Collections.singletonList(new String[]{ "Dynamite" }));
 
         Assert.assertTrue(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.Anvil"));
 
-        description.setIncluded(Collections.singletonList(new String[]{ "Dynam", "" }));
+        description.setInclude(Collections.singletonList(new String[]{ "Dynam", "" }));
 
         Assert.assertTrue(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.Anvil"));
 
-        description.setIncluded(Collections.singletonList(new String[]{ "", "nam", "" }));
+        description.setInclude(Collections.singletonList(new String[]{ "", "nam", "" }));
 
         Assert.assertTrue(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.Anvil"));
 
-        description.setIncluded(Collections.<String[]>emptyList());
-        description.setExcluded(Collections.singletonList(new String[]{ "Dynamite" }));
+        description.setInclude(Collections.<String[]>emptyList());
+        description.setExclude(Collections.singletonList(new String[]{ "Dynamite" }));
 
         Assert.assertFalse(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
         Assert.assertTrue(test.validFor("com.acme.Anvil"));
 
-        description.setExcluded(Collections.singletonList(new String[]{ "Dynam", "" }));
+        description.setExclude(Collections.singletonList(new String[]{ "Dynam", "" }));
 
         Assert.assertFalse(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
         Assert.assertTrue(test.validFor("com.acme.Anvil"));
 
-        description.setExcluded(Collections.singletonList(new String[]{ "", "nam", "" }));
+        description.setExclude(Collections.singletonList(new String[]{ "", "nam", "" }));
 
         Assert.assertFalse(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
         Assert.assertTrue(test.validFor("com.acme.Anvil"));
 
-        description.setIncluded(Collections.singletonList(new String[]{ "Dynamite" }));
+        description.setInclude(Collections.singletonList(new String[]{ "Dynamite" }));
 
         Assert.assertFalse(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.Anvil"));
 
-        description.setIncluded(Collections.singletonList(new String[]{ "Dynam", "" }));
+        description.setInclude(Collections.singletonList(new String[]{ "Dynam", "" }));
 
         Assert.assertFalse(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.Anvil"));
 
-        description.setIncluded(Collections.singletonList(new String[]{ "", "nam", "" }));
+        description.setInclude(Collections.singletonList(new String[]{ "", "nam", "" }));
 
         Assert.assertFalse(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
@@ -101,7 +117,7 @@ public class WireTest
         List<String[]> included = new ArrayList<String[]>();
         included.add(new String[]{ "", "nam", "" });
         included.add(new String[]{ "", "vi", "" });
-        description.setIncluded(included);
+        description.setInclude(included);
 
         Assert.assertFalse(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
@@ -110,11 +126,27 @@ public class WireTest
         List<String[]> excluded = new ArrayList<String[]>();
         excluded.add(new String[]{ "", "nam", "" });
         excluded.add(new String[]{ "", "vi", "" });
-        description.setExcluded(excluded);
+        description.setExclude(excluded);
 
         Assert.assertFalse(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.Anvil"));
         Assert.assertFalse(test.validFor("com.acme.Spring"));
+    }
+
+    @Before
+    public void setUp()
+    {
+        executorService = new ThreadPoolExecutor(5, 5, 60, TimeUnit.SECONDS, new PriorityBlockingQueue<Runnable>());
+        mockFramework = new Papoose(new MockStore(), executorService, new Properties());
+    }
+
+    @After
+    public void tearDown()
+    {
+        executorService.shutdownNow();
+
+        executorService = null;
+        mockFramework = null;
     }
 }

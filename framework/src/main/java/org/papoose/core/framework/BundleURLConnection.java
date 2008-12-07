@@ -21,8 +21,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
-import org.papoose.core.framework.spi.BundleManager;
-
 
 /**
  * @version $Revision$ $Date$

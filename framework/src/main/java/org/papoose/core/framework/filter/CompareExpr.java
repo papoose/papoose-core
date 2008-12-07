@@ -22,10 +22,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Dictionary;
 
+import net.jcip.annotations.Immutable;
+
 
 /**
  * @version $Revision$ $Date$
  */
+@Immutable
 abstract class CompareExpr implements Expr
 {
     protected final String attribute;

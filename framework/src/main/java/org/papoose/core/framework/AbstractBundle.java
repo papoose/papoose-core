@@ -39,7 +39,7 @@ import org.papoose.core.framework.spi.BundleStore;
 /**
  * @version $Revision$ $Date$
  */
-abstract class AbstractBundle implements Bundle
+public abstract class AbstractBundle implements Bundle
 {
     protected final Set<BundleListener> bundleListeners = new CopyOnWriteArraySet<BundleListener>();
     protected final Set<SynchronousBundleListener> syncBundleListeners = new CopyOnWriteArraySet<SynchronousBundleListener>();
@@ -49,18 +49,20 @@ abstract class AbstractBundle implements Bundle
     private final Papoose framework;
     private final long bundleId;
     private final String location;
-    private final BundleStore bundleStore;
     private ArchiveStore currentStore;
     private ArchiveStore nextStore;
     private final List<ArchiveStore> stores = new ArrayList<ArchiveStore>();
     private volatile long lastModified;
 
-    protected AbstractBundle(Papoose framework, long bundleId, String location, BundleStore bundleStore, ArchiveStore currentStore)
+    protected AbstractBundle(Papoose framework, long bundleId, String location, ArchiveStore currentStore)
     {
+        assert framework != null;
+        assert location != null;
+        assert currentStore != null;
+
         this.framework = framework;
         this.bundleId = bundleId;
         this.location = location;
-        this.bundleStore = bundleStore;
         this.currentStore = currentStore;
 
         this.stores.add(currentStore);
@@ -95,11 +97,6 @@ abstract class AbstractBundle implements Bundle
     public List<ExportDescription> getBundleExportList()
     {
         return currentStore.getBundleExportList();
-    }
-
-    BundleStore getBundleStore()
-    {
-        return bundleStore;
     }
 
     ArchiveStore getCurrentStore()
@@ -139,7 +136,7 @@ abstract class AbstractBundle implements Bundle
 
     void markInstalled() throws BundleException
     {
-        bundleStore.setStarted(true);
+        // TODO
     }
 
     void addBundleListener(BundleListener bundleListener)

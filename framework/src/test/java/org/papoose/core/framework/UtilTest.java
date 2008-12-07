@@ -17,9 +17,12 @@
 package org.papoose.core.framework;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -62,8 +65,8 @@ public class UtilTest
         tokens = Util.split("\"foo:=bar\":=bar", ":=");
 
         Assert.assertTrue(tokens.length == 2);
-        Assert.assertEquals(tokens[0], "foo:=bar");
-        Assert.assertEquals(tokens[1], "bar");
+        Assert.assertEquals("\"foo:=bar\"", tokens[0]);
+        Assert.assertEquals("bar", tokens[1]);
     }
 
     @Test
@@ -71,7 +74,7 @@ public class UtilTest
     {
         MockPOJO pojo = new MockPOJO();
         Map<String, Object> parameters = new HashMap<String, Object>();
-        List<String> paths = new ArrayList<String>();
+        Set<String> paths = new HashSet<String>();
 
         Util.parseParameters("com.acme.dynamite;com.acme.gasoline;foo:=bar;foo=bar", pojo, parameters, true, paths);
 
@@ -79,30 +82,31 @@ public class UtilTest
         Assert.assertEquals(parameters.size(), 1);
         Assert.assertEquals(parameters.get("foo"), "bar");
         Assert.assertEquals(paths.size(), 2);
-        Assert.assertEquals(paths.get(0), "com.acme.dynamite");
-        Assert.assertEquals(paths.get(1), "com.acme.gasoline");
+        Assert.assertTrue(paths.contains("com.acme.dynamite"));
+        Assert.assertTrue(paths.contains("com.acme.gasoline"));
 
         parameters = new HashMap<String, Object>();
-        paths = new ArrayList<String>();
+        paths = new HashSet<String>();
 
         Util.parseParameters("com.acme.dynamite", pojo, parameters, true, paths);
 
         Assert.assertEquals(paths.size(), 1);
-        Assert.assertEquals(paths.get(0), "com.acme.dynamite");
+        Assert.assertTrue(paths.contains("com.acme.dynamite"));
 
         parameters = new HashMap<String, Object>();
-        paths = new ArrayList<String>();
-        pojo.setFoo(null);
+        paths = new HashSet<String>();
+        pojo = new MockPOJO();
 
         Util.parseParameters("com.acme.dynamite;com.acme.gasoline", pojo, parameters, true, paths);
 
         Assert.assertEquals(pojo.getFoo(), null);
         Assert.assertEquals(parameters.size(), 0);
         Assert.assertEquals(paths.size(), 2);
-        Assert.assertEquals(paths.get(0), "com.acme.dynamite");
-        Assert.assertEquals(paths.get(1), "com.acme.gasoline");
+        Assert.assertTrue(paths.contains("com.acme.dynamite"));
+        Assert.assertTrue(paths.contains("com.acme.gasoline"));
 
         parameters = new HashMap<String, Object>();
+        pojo = new MockPOJO();
 
         Util.parseParameters("foo:=\"bar;car;star\";foo=bar", pojo, parameters, true);
 
@@ -111,18 +115,70 @@ public class UtilTest
         Assert.assertEquals(parameters.get("foo"), "bar");
 
         parameters = new HashMap<String, Object>();
+        pojo = new MockPOJO();
 
         Util.parseParameters("foo:=bar;foo=\"bar;car;star\"", pojo, parameters, true);
 
         Assert.assertEquals(pojo.getFoo(), "bar");
         Assert.assertEquals(parameters.size(), 1);
         Assert.assertEquals(parameters.get("foo"), "bar;car;star");
+
+        parameters = new HashMap<String, Object>();
+        pojo = new MockPOJO();
+
+        Util.parseParameters("foo:=bar;include:=\"Qux*,BarImpl,*Foo,*,*Baf*\";exclude:=QuxImpl", pojo, parameters, true);
+
+        Assert.assertEquals("bar", pojo.getFoo());
+        Assert.assertEquals(5, pojo.getInclude().size());
+        Assert.assertEquals(1, pojo.getExclude().size());
+        Assert.assertTrue(Util.match(pojo.getInclude().get(0), "QuxFoo"));
+        Assert.assertTrue(Util.match(pojo.getInclude().get(1), "BarImpl"));
+        Assert.assertTrue(Util.match(pojo.getInclude().get(2), "QuxFoo"));
+        Assert.assertTrue(Util.match(pojo.getInclude().get(3), "ANYTHING"));
+        Assert.assertTrue(Util.match(pojo.getInclude().get(4), "ANYBafTHING"));
+        Assert.assertEquals("Qux*", Util.encodeName(pojo.getInclude().get(0)));
+        Assert.assertEquals("BarImpl", Util.encodeName(pojo.getInclude().get(1)));
+        Assert.assertEquals("*Foo", Util.encodeName(pojo.getInclude().get(2)));
+        Assert.assertEquals("*", Util.encodeName(pojo.getInclude().get(3)));
+        Assert.assertEquals("*Baf*", Util.encodeName(pojo.getInclude().get(4)));
+    }
+
+    @Test
+    public void testCombinations()
+    {
+        List<String> strings = new ArrayList<String>();
+
+        strings.add("a");
+        strings.add("b");
+        strings.add("c");
+        strings.add("d");
+        strings.add("e");
+        strings.add("f");
+
+        int count = 0;
+        for (List<String> set : Util.combinations(strings))
+        {
+            System.err.print("'");
+            for (String s : set) System.err.print(s);
+            System.err.println("'");
+            count++;
+        }
+        Assert.assertTrue(count == 64);
+
+        count = 0;
+        for (List<String> set : Util.combinations(Collections.<String>emptyList()))
+        {
+            Assert.assertTrue(set.isEmpty());
+            Assert.assertTrue(count++ == 0);
+        }
     }
 
     private static class MockPOJO
     {
         private String foo;
         private String howNowBrownCow;
+        private List<String[]> include = Collections.emptyList();
+        private List<String[]> exclude = Collections.emptyList();
 
         public String getFoo()
         {
@@ -142,6 +198,26 @@ public class UtilTest
         void setHowNowBrownCow(String howNowBrownCow)
         {
             this.howNowBrownCow = howNowBrownCow;
+        }
+
+        public List<String[]> getInclude()
+        {
+            return include;
+        }
+
+        void setInclude(List<String[]> include)
+        {
+            this.include = include;
+        }
+
+        public List<String[]> getExclude()
+        {
+            return exclude;
+        }
+
+        void setExclude(List<String[]> exclude)
+        {
+            this.exclude = exclude;
         }
     }
 }

@@ -26,17 +26,15 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceReference;
 
-import org.papoose.core.framework.spi.BundleStore;
-
 
 /**
  * @version $Revision$ $Date$
  */
 class ExtensionBundleImpl extends AbstractBundle
 {
-    public ExtensionBundleImpl(Papoose framework, long bundleId, String location, BundleStore bundleStore, AbstractStore archiveStore)
+    public ExtensionBundleImpl(Papoose framework, long bundleId, String location, AbstractArchiveStore archiveArchiveStore)
     {
-        super(framework, bundleId, location, bundleStore, archiveStore);
+        super(framework, bundleId, location, archiveArchiveStore);
     }
 
     public int getState()

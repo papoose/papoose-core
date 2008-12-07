@@ -16,9 +16,12 @@
  */
 package org.papoose.core.framework.filter;
 
+import net.jcip.annotations.Immutable;
+
 /**
  * @version $Revision$ $Date$
  */
+@Immutable
 class Equal extends CompareExpr
 {
     private transient volatile String string;

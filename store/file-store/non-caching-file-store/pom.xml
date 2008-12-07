@@ -23,6 +23,32 @@
                 </configuration>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.papoose.test</groupId>
+                                    <artifactId>papoose-test-bundle</artifactId>
+                                    <version>${papooseTestVersion}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>target</outputDirectory>
+                                    <destFileName>bundle.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <resources>
             <resource>
@@ -47,6 +73,11 @@
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core</groupId>
+            <artifactId>framework</artifactId>
         </dependency>
 
         <dependency>

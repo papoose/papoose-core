@@ -29,9 +29,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
@@ -46,8 +46,8 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
 
 import org.papoose.core.framework.spi.ArchiveStore;
-import org.papoose.core.framework.spi.BundleManager;
 import org.papoose.core.framework.spi.BundleStore;
+import org.papoose.core.framework.spi.Solution;
 import org.papoose.core.framework.spi.StartManager;
 import org.papoose.core.framework.spi.Store;
 
@@ -55,10 +55,10 @@ import org.papoose.core.framework.spi.Store;
 /**
  * @version $Revision$ $Date$
  */
-public class BundleManagerImpl implements BundleManager
+public class BundleManager
 {
-    private final String className = getClass().getName();
-    private final Logger logger = Logger.getLogger(className);
+    private final static String CLASS_NAME = BundleManager.class.getName();
+    private final Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     private final Map<String, AbstractBundle> locations = new HashMap<String, AbstractBundle>();
     private final Map<Long, AbstractBundle> installedbundles = new HashMap<Long, AbstractBundle>();
@@ -69,11 +69,16 @@ public class BundleManagerImpl implements BundleManager
     private long bundleCounter = 1;
 
 
-    public BundleManagerImpl(final Papoose framework, Store store)
+    public BundleManager(Papoose framework, Store store)
     {
         this.framework = framework;
         this.store = store;
         this.startManager = new DefaultStartManager(this);
+    }
+
+    public Store getStore()
+    {
+        return store;
     }
 
     public void setStartManager(StartManager startManager)
@@ -108,7 +113,7 @@ public class BundleManagerImpl implements BundleManager
 
     public Bundle installSystemBundle(Version version) throws BundleException
     {
-        logger.entering(className, "installSystemBundle");
+        LOGGER.entering(CLASS_NAME, "installSystemBundle");
 
         if (locations.containsKey(Constants.SYSTEM_BUNDLE_LOCATION)) return locations.get(Constants.SYSTEM_BUNDLE_LOCATION);
 
@@ -122,28 +127,32 @@ public class BundleManagerImpl implements BundleManager
             locations.put(Constants.SYSTEM_BUNDLE_LOCATION, bundle);
             installedbundles.put(bundleId, bundle);
             bundles.put(bundleId, (BundleImpl) bundle);
+            framework.getResolver().added((BundleImpl) bundle);
 
-            logger.exiting(className, "installSystemBundle", bundle);
+            LOGGER.exiting(CLASS_NAME, "installSystemBundle", bundle);
 
             return bundle;
         }
         catch (BundleException be)
         {
             store.removeBundleStore(bundleId);
-            logger.log(Level.SEVERE, "Unable to install system bundle " + Constants.SYSTEM_BUNDLE_LOCATION, be);
             throw be;
         }
         catch (Exception e)
         {
             store.removeBundleStore(bundleId);
-            logger.log(Level.SEVERE, "Unable to install system bundle " + Constants.SYSTEM_BUNDLE_LOCATION, e);
             throw new BundleException("Error occured while loading location " + Constants.SYSTEM_BUNDLE_LOCATION, e);
         }
     }
 
+    public void uninstallSystemBundle()
+    {
+
+    }
+
     public Bundle installBundle(String location, InputStream inputStream) throws BundleException
     {
-        logger.entering(getClass().getName(), "installBundle", new Object[]{ location, inputStream });
+        LOGGER.entering(CLASS_NAME, "installBundle", new Object[]{ location, inputStream });
 
         if (locations.containsKey(location)) return locations.get(location);
 
@@ -152,7 +161,7 @@ public class BundleManagerImpl implements BundleManager
         {
             BundleStore bundleStore = store.allocateBundleStore(bundleId, location);
 
-            AbstractStore archiveStore = store.allocateArchiveStore(framework, bundleId, 0, inputStream);
+            ArchiveStore archiveStore = store.allocateArchiveStore(framework, bundleId, inputStream);
 
             AbstractBundle bundle = allocateBundle(bundleId, location, bundleStore, archiveStore);
 
@@ -160,74 +169,130 @@ public class BundleManagerImpl implements BundleManager
 
             locations.put(location, bundle);
             installedbundles.put(bundleId, bundle);
-            if (bundle instanceof BundleImpl) bundles.put(bundleId, (BundleImpl) bundle);
+            if (bundle instanceof BundleImpl)
+            {
+                bundles.put(bundleId, (BundleImpl) bundle);
+                framework.getResolver().added((BundleImpl) bundle);
+            }
 
             return bundle;
         }
         catch (BundleException be)
         {
             store.removeBundleStore(bundleId);
-            logger.log(Level.WARNING, "Unable to install bundle " + location, be);
             throw be;
         }
         catch (Exception e)
         {
             store.removeBundleStore(bundleId);
-            logger.log(Level.WARNING, "Unable to install bundle " + location, e);
             throw new BundleException("Error occured while loading location " + location, e);
         }
     }
 
-    public boolean resolve(Bundle bundle)
+    public boolean resolve(Bundle target)
     {
+        if (target.getState() != Bundle.INSTALLED) return false;
+
         try
         {
-            BundleImpl bundleImpl = (BundleImpl) bundle;
-            ArchiveStore currentStore = bundleImpl.getCurrentStore();
-            Set<Wire> wires = framework.getResolver().resolve(currentStore.getBundleImportList(), new HashSet<BundleImpl>(bundles.values()));
-            List<Wire> requiredBundles = new ArrayList<Wire>();
+            BundleImpl bundleImpl = (BundleImpl) target;
+            Set<Solution> solutions = framework.getResolver().resolve(bundleImpl);
 
             String bootDelegateString = (String) framework.getProperty(Constants.FRAMEWORK_BOOTDELEGATION);
             String[] bootDelegates = (bootDelegateString == null ? new String[]{ } : bootDelegateString.split(","));
 
-            Set<String> exportedPackages = new HashSet<String>();
+            for (int i = 0; i < bootDelegates.length; i++) bootDelegates[i] = bootDelegates[i].trim();
 
-            for (ImportDescription desc : currentStore.getBundleImportList())
+            for (Solution solution : solutions)
             {
-                exportedPackages.addAll(desc.getPackageNames());
-            }
+                BundleImpl bundle = solution.getBundle();
+                ArchiveStore currentStore = bundle.getCurrentStore();
+                Set<Wire> wires = solution.getWires();
+                List<Wire> requiredBundles = new ArrayList<Wire>();
 
-            for (ExportDescription desc : currentStore.getBundleExportList())
+                Set<String> exportedPackages = new HashSet<String>();
+
+                for (ImportDescription desc : currentStore.getBundleImportList())
+                {
+                    exportedPackages.addAll(desc.getPackageNames());
+                }
+
+                for (ExportDescription desc : currentStore.getBundleExportList())
+                {
+                    exportedPackages.addAll(desc.getPackages());
+                }
+
+                for (Wire wire : requiredBundles)
+                {
+                    exportedPackages.add(wire.getPackageName());
+                }
+
+                List<ResourceLocation> resourceLocations = new ArrayList<ResourceLocation>();
+                Set<ArchiveStore> archiveStores = new HashSet<ArchiveStore>();
+
+                BundleClassLoader classLoader = new BundleClassLoader(bundle.getLocation(),
+                                                                      framework.getClassLoader(),
+                                                                      framework,
+                                                                      bundle,
+                                                                      wires,
+                                                                      requiredBundles,
+                                                                      bootDelegates,
+                                                                      exportedPackages.toArray(new String[exportedPackages.size()]),
+                                                                      currentStore.getDynamicImportSet(),
+                                                                      resourceLocations,
+                                                                      archiveStores);
+
+                bundle.setClassLoader(classLoader);
+
+                bundle.setResolvedState();
+            }
+        }
+        catch (BundleException e)
+        {
+            e.printStackTrace();  //todo: consider this autogenerated code
+            return false;
+        }
+        return true; // todo: not correct
+    }
+
+    public Wire resolve(DynamicDescription dynamicDescription)
+    {
+        return null; // todo:
+    }
+
+    public void loadAndStartBundles()
+    {
+        try
+        {
+            List<BundleStore> bundleStores = store.loadBundleStores();
+
+            for (BundleStore bundleStore : bundleStores)
             {
-                exportedPackages.addAll(desc.getPackages());
+                long bundleId = bundleStore.getBundleId();
+
+                if (bundleId == 0) continue;
+
+                String location = bundleStore.getLocation();
+                ArchiveStore archiveStore = store.loadArchiveStore(framework, bundleId);
+
+                AbstractBundle bundle = allocateBundle(bundleId, location, bundleStore, archiveStore);
+
+                locations.put(location, bundle);
+                installedbundles.put(bundleId, bundle);
+                if (bundle instanceof BundleImpl)
+                {
+                    BundleImpl b = (BundleImpl) bundle;
+                    bundles.put(bundleId, b);
+                    framework.getResolver().added(b);
+
+                    if (b.getHeaders().get(Constants.BUNDLE_ACTIVATOR) != null) startManager.start(b);
+                }
             }
-
-            for (Wire wire : requiredBundles)
-            {
-                exportedPackages.add(wire.getPackageName());
-            }
-
-            BundleClassLoader classLoader = new BundleClassLoader(bundle.getLocation(),
-                                                                  framework.getClassLoader(),
-                                                                  framework,
-                                                                  bundleImpl,
-                                                                  requiredBundles,
-                                                                  bootDelegates,
-                                                                  exportedPackages.toArray(new String[exportedPackages.size()]),
-                                                                  currentStore.getDynamicImportSet(),
-                                                                  bundleImpl.getStores());
-
-            classLoader.setWires(wires);  // todo: why this separate call?
-
-            bundleImpl.setClassLoader(classLoader);
-
-            bundleImpl.setResolvedState();
         }
         catch (BundleException e)
         {
             e.printStackTrace();  //todo: consider this autogenerated code
         }
-        return true; // todo: not correct
     }
 
     public void requestStart(Bundle bundle)
@@ -235,17 +300,33 @@ public class BundleManagerImpl implements BundleManager
         startManager.start(bundle);
     }
 
+    public void requestStop(Bundle bundle)
+    {
+        startManager.stop(bundle);
+    }
+
     public void performStart(Bundle bundle)
     {
         //todo: consider this autogenerated code
     }
 
-    public void stop(Bundle bundle)
+    public void performStop(Bundle bundle)
     {
         //todo: consider this autogenerated code
     }
 
     public void uninstall(Bundle bundle)
+    {
+        //todo: consider this autogenerated code
+        framework.getResolver().removed((BundleImpl) bundle);
+    }
+
+    public void unregisterServices(Bundle bundle)
+    {
+        //todo: consider this autogenerated code
+    }
+
+    public void releaseServices(Bundle bundle)
     {
         //todo: consider this autogenerated code
     }
@@ -450,7 +531,7 @@ public class BundleManagerImpl implements BundleManager
         }
     }
 
-    private AbstractBundle allocateBundle(long bundleId, String location, BundleStore bundleStore, AbstractStore archiveStore)
+    private AbstractBundle allocateBundle(long bundleId, String location, BundleStore bundleStore, ArchiveStore archiveStore)
     {
         return new BundleImpl(framework, bundleId, location, bundleStore, archiveStore);
     }

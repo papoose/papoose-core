@@ -31,6 +31,11 @@ public class L18nResourceBundle extends PropertyResourceBundle
         super(stream);
     }
 
+    /**
+     * Expose the protected method.
+     *
+     * @param parent this bundle's parent bundle.
+     */
     @Override
     public void setParent(ResourceBundle parent)
     {

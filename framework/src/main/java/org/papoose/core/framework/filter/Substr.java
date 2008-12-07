@@ -19,12 +19,15 @@ package org.papoose.core.framework.filter;
 import java.util.Collection;
 import java.util.Dictionary;
 
+import net.jcip.annotations.Immutable;
+
 import org.papoose.core.framework.Util;
 
 
 /**
  * @version $Revision$ $Date$
  */
+@Immutable
 class Substr implements Expr
 {
     private final String attribute;

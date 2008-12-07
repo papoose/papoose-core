@@ -17,8 +17,8 @@
 package org.papoose.core.framework;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.osgi.framework.Version;
 
@@ -29,21 +29,20 @@ import org.osgi.framework.Version;
 public class ImportDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
-    private final List<String> packageNames;
+    private final Set<String> packageNames;
     private final Map<String, Object> parameters;
-    private Resolution resolution;
-    private transient volatile String string;
+    private Resolution resolution = Resolution.MANDATORY;
 
-    public ImportDescription(List<String> packageNames, Map<String, Object> parameters)
+    public ImportDescription(Set<String> packageNames, Map<String, Object> parameters)
     {
         assert packageNames != null;
         assert parameters != null;
 
-        this.packageNames = Collections.unmodifiableList(packageNames);
+        this.packageNames = Collections.unmodifiableSet(packageNames);
         this.parameters = Collections.unmodifiableMap(parameters);
     }
 
-    public List<String> getPackageNames()
+    public Set<String> getPackageNames()
     {
         return packageNames;
     }
@@ -66,30 +65,26 @@ public class ImportDescription
 
     public String toString()
     {
-        if (string == null)
+        StringBuilder builder = new StringBuilder();
+
+        for (String pkg : packageNames)
         {
-            StringBuilder builder = new StringBuilder();
-
-            for (String pkg : packageNames)
-            {
-                if (builder.length() > 0) builder.append(";");
-                builder.append(pkg);
-            }
-            builder.append(";resolution=");
-            builder.append(resolution);
-            if (!parameters.isEmpty())
-            {
-                for (String key : parameters.keySet())
-                {
-                    builder.append(";");
-                    builder.append(key);
-                    builder.append("=");
-                    builder.append(parameters.get(key));
-                }
-            }
-
-            string = builder.toString();
+            if (builder.length() > 0) builder.append(";");
+            builder.append(pkg);
         }
-        return string;
+        builder.append(";resolution:=");
+        builder.append(resolution);
+        if (!parameters.isEmpty())
+        {
+            for (String key : parameters.keySet())
+            {
+                builder.append(";");
+                builder.append(key);
+                builder.append("=");
+                builder.append(parameters.get(key));
+            }
+        }
+
+        return builder.toString();
     }
 }

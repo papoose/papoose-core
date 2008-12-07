@@ -17,31 +17,35 @@
 package org.papoose.core.framework;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Version;
+
+import org.papoose.core.framework.util.ToStringCreator;
 
 
 /**
  * @version $Revision$ $Date$
  */
+@ThreadSafe
 public class NativeCodeDescription implements Comparable
 {
-    private final List<String> paths;
+    private final Set<String> paths;
     private final Map<String, Object> parameters;
     private final int ordinal;
     private transient Version osVersion;
     private transient String language;
 
-    public NativeCodeDescription(List<String> paths, Map<String, Object> parameters, int ordinal)
+    public NativeCodeDescription(Set<String> paths, Map<String, Object> parameters, int ordinal)
     {
-        this.paths = Collections.unmodifiableList(paths);
+        this.paths = Collections.unmodifiableSet(paths);
         this.parameters = Collections.unmodifiableMap(parameters);
         this.ordinal = ordinal;
     }
 
-    public List<String> getPaths()
+    public Set<String> getPaths()
     {
         return paths;
     }
@@ -76,6 +80,7 @@ public class NativeCodeDescription implements Comparable
         return language;
     }
 
+    @Override
     public boolean equals(Object o)
     {
         if (this == o) return true;
@@ -86,6 +91,7 @@ public class NativeCodeDescription implements Comparable
         return parameters.equals(that.parameters) && paths.equals(that.paths);
     }
 
+    @Override
     public int hashCode()
     {
         int result = paths.hashCode();
@@ -102,5 +108,20 @@ public class NativeCodeDescription implements Comparable
         if (result == 0 && getLanguage() != null && that.getLanguage() != null) result = getLanguage().compareTo(that.getLanguage());
         if (result == 0) result = ordinal - that.ordinal;
         return result;
+    }
+
+    @Override
+    public String toString()
+    {
+        ToStringCreator creator = new ToStringCreator(this);
+
+        creator.append("paths", paths);
+        creator.append("parameters", parameters);
+        creator.append("ordinal", ordinal);
+        creator.append("osVersion", getOsVersion());
+        creator.append("language", getLanguage());
+
+        return creator.toString();
+
     }
 }
