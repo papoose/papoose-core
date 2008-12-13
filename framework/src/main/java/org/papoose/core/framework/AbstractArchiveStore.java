@@ -47,6 +47,7 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 {
     private final Papoose framework;
     private final long bundleId;
+    private final int generation;
     private final Attributes attributes;
     private final String bundleActivatorClass;
     private final List<String> bundleCategories;
@@ -74,10 +75,11 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     private final List<String> bundleImportService;
     private final List<RequireDescription> bundleRequireBundle;
 
-    protected AbstractArchiveStore(Papoose framework, long bundleId, Attributes attributes) throws BundleException
+    protected AbstractArchiveStore(Papoose framework, long bundleId, int generation, Attributes attributes) throws BundleException
     {
         this.framework = framework;
         this.bundleId = bundleId;
+        this.generation = generation;
 
         this.attributes = new AttributesWrapper(attributes);
 
@@ -132,6 +134,11 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     public long getBundleId()
     {
         return bundleId;
+    }
+
+    public int getGeneration()
+    {
+        return generation;
     }
 
     public Attributes getAttributes()

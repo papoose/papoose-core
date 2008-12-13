@@ -43,6 +43,8 @@ public interface ArchiveStore extends Comparable
 
     long getBundleId();
 
+    int getGeneration();
+
     Attributes getAttributes();
 
     String getBundleActivatorClass();
@@ -78,8 +80,6 @@ public interface ArchiveStore extends Comparable
     List<ResourceHandle> findResources(String resourceName);
 
     L18nResourceBundle getResourceBundle(Locale locale);
-
-    URL generateUrl(String path);
 
     void close();
 }

@@ -614,12 +614,7 @@ public final class Util
             {
                 case '/':
                 {
-                    builder.append('_');
-                    break;
-                }
-                case '_':
-                {
-                    builder.append("__");
+                    builder.append(File.separatorChar);
                     break;
                 }
                 default:

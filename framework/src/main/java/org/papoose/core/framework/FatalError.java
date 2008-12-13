@@ -14,27 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.framework.protocols.codesource;
-
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
-
-import org.papoose.core.framework.UrlUtils;
-
+package org.papoose.core.framework;
 
 /**
- * This URLStreamHandler will be used if our URLStreamHandlerFactory has not
- * been registered w/ URL.
- *
  * @version $Revision$ $Date$
- * @see org.papoose.core.framework.ServiceURLStreamHandlerFactory
  */
-public class Handler extends URLStreamHandler
+public class FatalError extends Error
 {
-    protected URLConnection openConnection(URL url) throws IOException
+    public FatalError()
     {
-        return UrlUtils.allocateCodesourceConnection(url);
+    }
+
+    public FatalError(String message)
+    {
+        super(message);
+    }
+
+    public FatalError(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
+    public FatalError(Throwable cause)
+    {
+        super(cause);
     }
 }

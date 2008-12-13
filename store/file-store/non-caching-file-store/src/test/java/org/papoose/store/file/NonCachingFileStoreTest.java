@@ -40,6 +40,7 @@ import org.papoose.core.framework.Papoose;
 import org.papoose.core.framework.Util;
 import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.Store;
+import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.framework.mock.MockURLStreamHandlerFactory;
 import org.papoose.framework.mock.MockURLStreamHandlerProvider;
 
@@ -59,6 +60,8 @@ public class NonCachingFileStoreTest
             Store fileStore = new NonCachingFileStore(fileStoreRoot);
             Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new ScheduledThreadPoolExecutor(10), new Properties());
             File testBundle = new File("./target/bundle.jar");
+
+            BundleStore bundleStore = fileStore.allocateBundleStore(1, "Test Bundle 1");
 
             ArchiveStore archiveStore = fileStore.allocateArchiveStore(papoose, 1, testBundle.toURL().openStream());
 

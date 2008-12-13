@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.framework.protocols.bundle;
+package org.papoose.core.framework.protocols.resource;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,14 +27,15 @@ import org.papoose.core.framework.BundleManager;
 /**
  * @version $Revision$ $Date$
  */
-public class BundleUrlConnection extends URLConnection
+public class ResourceUrlConnection extends URLConnection
 {
     private final BundleManager bundleManager;
     private final int bundleId;
     private final int generation;
+    private final int location;
     private InputStream inputStream;
 
-    public BundleUrlConnection(URL url, BundleManager bundleManager, int bundleId, int generation)
+    public ResourceUrlConnection(URL url, BundleManager bundleManager, int bundleId, int generation, int location)
     {
         super(url);
 
@@ -42,17 +43,19 @@ public class BundleUrlConnection extends URLConnection
         assert bundleManager != null;
         assert bundleId >= 0;
         assert generation >= 0;
+        assert location >= 0;
 
         this.bundleManager = bundleManager;
         this.bundleId = bundleId;
         this.generation = generation;
+        this.location = location;
     }
 
     public synchronized void connect() throws IOException
     {
         if (connected) return;
 
-        inputStream = bundleManager.getInputStream(bundleId, generation);
+        inputStream = bundleManager.getInputStream(bundleId, generation, location);
 
         connected = true;
     }

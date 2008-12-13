@@ -38,6 +38,4 @@ public interface Store
     ArchiveStore allocateArchiveStore(Papoose framework, long bundleId, InputStream inputStream) throws BundleException;
 
     ArchiveStore loadArchiveStore(Papoose framework, long bundleId) throws BundleException;
-
-    void pack(Papoose framework, long bundleId) throws BundleException;
 }

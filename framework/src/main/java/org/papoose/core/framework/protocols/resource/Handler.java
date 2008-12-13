@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.framework.protocols.codesource;
+package org.papoose.core.framework.protocols.resource;
 
 import java.io.IOException;
 import java.net.URL;
@@ -35,6 +35,6 @@ public class Handler extends URLStreamHandler
 {
     protected URLConnection openConnection(URL url) throws IOException
     {
-        return UrlUtils.allocateCodesourceConnection(url);
+        return UrlUtils.allocateResourceConnection(url);
     }
 }

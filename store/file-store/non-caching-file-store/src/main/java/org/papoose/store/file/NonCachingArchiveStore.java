@@ -22,7 +22,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,6 +50,7 @@ import org.papoose.core.framework.NativeCodeDescription;
 import org.papoose.core.framework.Papoose;
 import org.papoose.core.framework.UrlUtils;
 import org.papoose.core.framework.Util;
+import org.papoose.core.framework.util.FileUtils;
 
 
 /**
@@ -69,21 +69,21 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
     private final URL codeSource;
     private SortedSet<NativeCodeDescription> nativeCodeDescriptions;
 
-    public NonCachingArchiveStore(Papoose framework, long bundleId, File bundleRoot) throws BundleException
+    public NonCachingArchiveStore(Papoose framework, long bundleId, int generaton, File archiveRoot) throws BundleException
     {
-        this(framework, bundleId, bundleRoot, Util.safeStream(new File(bundleRoot, ARCHIVE_JAR_NAME)));
+        this(framework, bundleId, generaton, archiveRoot, Util.safeStream(new File(archiveRoot, ARCHIVE_JAR_NAME)));
     }
 
-    public NonCachingArchiveStore(Papoose framework, long bundleId, File bundleRoot, InputStream inputStream) throws BundleException
+    public NonCachingArchiveStore(Papoose framework, long bundleId, int generaton, File archiveRoot, InputStream inputStream) throws BundleException
     {
-        super(framework, bundleId, loadAndProvideAttributes(bundleRoot, inputStream));
-        this.bundleRoot = bundleRoot;
+        super(framework, bundleId, generaton, loadAndProvideAttributes(archiveRoot, inputStream));
+        this.bundleRoot = archiveRoot;
         try
         {
-            this.archive = new JarFile(new File(bundleRoot, ARCHIVE_JAR_NAME));
+            this.archive = new JarFile(new File(archiveRoot, ARCHIVE_JAR_NAME));
             this.codeSource = UrlUtils.generateCodeSourceUrl(getFrameworkName(), getBundleId());
 
-            this.tmp = new File(bundleRoot, TEMP_NAME);
+            this.tmp = new File(archiveRoot, TEMP_NAME);
 
             if (!tmp.exists() && !tmp.mkdirs()) throw new BundleException("Unable to create temp directory: " + tmp);
         }
@@ -277,19 +277,6 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         return null;
     }
 
-    public URL generateUrl(String path)
-    {
-        URL result = null;
-        try
-        {
-            result = new URL("papoose://" + Long.toString(getBundleId()) + "@" + getFrameworkName() + path);
-        }
-        catch (MalformedURLException e)
-        {
-        }
-        return result;
-    }
-
     @SuppressWarnings({"EmptyCatchBlock"})
     public void close()
     {
@@ -322,7 +309,11 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         public ResourceHandle getResourceHandle(String resourceName)
         {
             ZipEntry entry = archive.getEntry(path + resourceName);
-            if (entry != null) return new BundleDirectoryResourceHandle(entry, generateUrl(path + "/" + entry.getName()));
+            if (entry != null)
+            {
+                NonCachingArchiveStore archiveStore = NonCachingArchiveStore.this;
+                return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), path + "/" + entry.getName(), location));
+            }
             return null;
         }
 
@@ -371,6 +362,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
 
             try
             {
+                FileUtils.buildDirectoriesFromFilePath(tmp, entry.getName(), '/');
                 File jarLocation = new File(tmp, Util.strip(entry.getName()));
 
                 Util.copy(archive.getInputStream(entry), new FileOutputStream(jarLocation));
