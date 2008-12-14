@@ -332,16 +332,6 @@ public final class Papoose
                 return;
             }
 
-            try
-            {
-                URL.setURLStreamHandlerFactory(new ServiceURLStreamHandlerFactory());
-            }
-            catch (Error e)
-            {
-                LOGGER.log(Level.SEVERE, "Unable to register Papoose URL stream handler factory", e);
-                throw new PapooseException("Unable to register Papoose URL stream handler factory", e);
-            }
-
             BundleManager manager = getBundleManager();
 
             try
