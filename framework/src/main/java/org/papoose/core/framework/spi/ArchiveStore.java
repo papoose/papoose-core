@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,27 @@
  */
 package org.papoose.core.framework.spi;
 
-import java.security.Permission;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.jar.Attributes;
-import java.net.URL;
 
-import org.apache.xbean.classloader.ResourceHandle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 
 import org.papoose.core.framework.DynamicDescription;
 import org.papoose.core.framework.ExportDescription;
+import org.papoose.core.framework.FragmentDescription;
 import org.papoose.core.framework.ImportDescription;
 import org.papoose.core.framework.L18nResourceBundle;
+import org.papoose.core.framework.NativeCodeDescription;
 import org.papoose.core.framework.RequireDescription;
+
 
 /**
  * @version $Revision$ $Date$
@@ -55,6 +59,10 @@ public interface ArchiveStore extends Comparable
 
     List<String> getBundleClassPath();
 
+    List<NativeCodeDescription> getBundleNativeCodeList();
+
+    List<String> getBundleRequiredExecutionEnvironment();
+
     List<ExportDescription> getBundleExportList();
 
     List<ImportDescription> getBundleImportList();
@@ -63,23 +71,30 @@ public interface ArchiveStore extends Comparable
 
     Set<DynamicDescription> getDynamicImportSet();
 
+    FragmentDescription getBundleFragmentHost();
+
     void refreshClassPath(List<String> classPath) throws BundleException;
 
     String loadLibrary(String libname);
 
-    ResourceHandle getEntry(String name);
-
-    Enumeration getEntryPaths(String path);
-
-    Enumeration findEntries(String path, String filePattern, boolean recurse);
-
-    ResourceHandle getResource(String resourceName);
-
-    ResourceHandle getResource(String resourceName, int location);
-
-    List<ResourceHandle> findResources(String resourceName);
+    Enumeration<URL> findEntries(String path, String filePattern, boolean includeDirectory, boolean recurse);
 
     L18nResourceBundle getResourceBundle(Locale locale);
+
+    InputStream getInputStreamForCodeSource() throws IOException;
+
+    InputStream getInputStreamForEntry(String path) throws IOException;
+
+    InputStream getInputStreamForResource(int location, String path) throws IOException;
+
+    /**
+     * Set the native code descriptions that the bundle store is to use
+     * when loading native code libraries.
+     *
+     * @param nativeCodeDescriptions the sorted set of native code descriptions
+     * @throws BundleException if any entry in the set does not have a physical library
+     */
+    void assignNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException;
 
     void close();
 }

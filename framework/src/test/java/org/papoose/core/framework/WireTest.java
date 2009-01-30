@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,8 @@ public class WireTest
 
         ExportDescription description = new ExportDescription(packages, Collections.<String, Object>emptyMap());
 
-        Wire test = new Wire("com.acme", description, new BundleImpl(mockFramework, 1, "http://bundles.acme.com/", new MockBundleStore(1, "http://bundles.acme.com/"), new MockArchiveStore()));
+        BundleController mockBundleController = new BundleController(mockFramework, new MockBundleStore(1, "mock:location"));
+        Wire test = new Wire("com.acme", description, new BundleGeneration(mockBundleController, new MockArchiveStore()));
 
         Assert.assertTrue(test.validFor("com.acme.Dynamite"));
         Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));

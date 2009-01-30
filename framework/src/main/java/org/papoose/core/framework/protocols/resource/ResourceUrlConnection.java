@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,12 @@ import org.papoose.core.framework.BundleManager;
 public class ResourceUrlConnection extends URLConnection
 {
     private final BundleManager bundleManager;
-    private final int bundleId;
+    private final long bundleId;
     private final int generation;
     private final int location;
     private InputStream inputStream;
 
-    public ResourceUrlConnection(URL url, BundleManager bundleManager, int bundleId, int generation, int location)
+    public ResourceUrlConnection(URL url, BundleManager bundleManager, long bundleId, int generation, int location)
     {
         super(url);
 
@@ -55,7 +55,7 @@ public class ResourceUrlConnection extends URLConnection
     {
         if (connected) return;
 
-        inputStream = bundleManager.getInputStream(bundleId, generation, location);
+        inputStream = bundleManager.getInputStreamForResource(bundleId, generation, location, url.getPath());
 
         connected = true;
     }

@@ -71,10 +71,6 @@ public class RefreshPackagesRunnable implements Runnable
             Set<Bundle> old = new HashSet<Bundle>();
             for (Bundle bundle : bundles)
             {
-                if (bundle.getState() == Bundle.UNINSTALLED || (bundle instanceof BundleImpl && ((BundleImpl) bundle).getNextStore() != null))
-                {
-                    old.add(bundle);
-                }
             }
 
             old = searchz(old);

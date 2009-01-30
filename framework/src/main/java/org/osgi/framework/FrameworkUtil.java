@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.osgi.framework;
 
 import org.papoose.core.framework.FilterImpl;
 import org.papoose.core.framework.filter.Parser;
+
 
 /**
  * @version $Revision$ $Date$

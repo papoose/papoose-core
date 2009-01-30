@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.papoose.core.framework;
 
 import net.jcip.annotations.Immutable;
 
+
 /**
  * @version $Revision$ $Date$
  */
@@ -26,17 +27,24 @@ public class Wire
 {
     private final String packageName;
     private final ExportDescription exportDescription;
-    private final BundleImpl bundle;
+    private final BundleGeneration bundleGeneration;
 
-    Wire(String packageName, ExportDescription exportDescription, BundleImpl bundle)
+    /**
+     * Construct an instance of Wire
+     *
+     * @param packageName       the package that this wire exports
+     * @param exportDescription the export description used for this wire
+     * @param bundleGeneration  the bundle that provides this package
+     */
+    Wire(String packageName, ExportDescription exportDescription, BundleGeneration bundleGeneration)
     {
-        if (packageName == null) throw new IllegalArgumentException("Package name cannot be null");
-        if (exportDescription == null) throw new IllegalArgumentException("Export description cannot be null");
-        if (bundle == null) throw new IllegalArgumentException("Bundle cannot be null");
+        assert packageName != null;
+        assert exportDescription != null;
+        assert bundleGeneration != null;
 
         this.packageName = packageName;
         this.exportDescription = exportDescription;
-        this.bundle = bundle;
+        this.bundleGeneration = bundleGeneration;
     }
 
     public String getPackageName()
@@ -49,14 +57,14 @@ public class Wire
         return exportDescription;
     }
 
-    public BundleImpl getBundle()
+    public BundleGeneration getBundleGeneration()
     {
-        return bundle;
+        return bundleGeneration;
     }
 
     public BundleClassLoader getBundleClassLoader()
     {
-        return bundle.getClassLoader();
+        return bundleGeneration.getClassLoader();
     }
 
     /**
@@ -98,6 +106,6 @@ public class Wire
 
     public String toString()
     {
-        return packageName + " " + exportDescription + " " + bundle.getBundleId();
+        return packageName + " " + exportDescription + " " + bundleGeneration.getBundleId();
     }
 }

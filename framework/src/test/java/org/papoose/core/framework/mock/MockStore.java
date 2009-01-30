@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,13 @@
 package org.papoose.core.framework.mock;
 
 import java.io.InputStream;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 import org.osgi.framework.BundleException;
 
 import org.papoose.core.framework.Papoose;
+import org.papoose.core.framework.PapooseException;
 import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleStore;
 import org.papoose.core.framework.spi.Store;
@@ -32,7 +33,7 @@ import org.papoose.core.framework.spi.Store;
  */
 public class MockStore implements Store
 {
-    public List<BundleStore> loadBundleStores() throws BundleException
+    public List<BundleStore> loadBundleStores() throws PapooseException
     {
         return Collections.EMPTY_LIST;
     }

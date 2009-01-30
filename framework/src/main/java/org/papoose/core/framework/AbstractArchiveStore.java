@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.jar.Attributes;
 
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
-import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.Version;
 import org.papoose.core.framework.spi.ArchiveStore;
@@ -61,8 +58,7 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     private final String bundleName;
     private final List<NativeCodeDescription> bundleNativeCodeList;
     private final boolean bundleNativeCodeListOptional;
-    private final SortedSet<NativeCodeDescription> nativeCodeDescriptions;
-    private final List<String> bundleExecutionEnvironment;
+    private final List<String> bundleRequiredExecutionEnvironment;
     private final String bundleSymbolicName;
     private final URL bundleUpdateLocation;
     private final String bundleVendor;
@@ -94,7 +90,7 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         this.bundleManifestVersion = obtainBundleManifestVersion(this.attributes.getValue(Constants.BUNDLE_MANIFESTVERSION));
         this.bundleName = this.attributes.getValue(Constants.BUNDLE_NAME);
         this.bundleNativeCodeList = obtainBundleNativeCodeList(this.attributes);
-        this.bundleExecutionEnvironment = obtainBundleExecutionEnvironment(this.attributes);
+        this.bundleRequiredExecutionEnvironment = obtainBundleExecutionEnvironment(this.attributes);
         this.bundleSymbolicName = this.attributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
         this.bundleUpdateLocation = obtainBundleUpdateLocation(this.attributes);
         this.bundleVendor = this.attributes.getValue(Constants.BUNDLE_VENDOR);
@@ -109,22 +105,8 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 
         this.bundleNativeCodeListOptional = bundleNativeCodeList.size() > 0 && "*".equals(bundleNativeCodeList.get(bundleNativeCodeList.size() - 1));
 
-        setNativeCodeDescriptions(this.nativeCodeDescriptions = resolveNativeCodeDependencies());
-
         if (bundleManifestVersion != 2) throw new BundleException("Bundle-ManifestVersion must be 2");
-
-        confirmRequiredExecutionEnvironment();
     }
-
-    /**
-     * Set the native code descriptions that the bundle store is to use
-     * when loading native code libraries.
-     *
-     * @param nativeCodeDescriptions the sorted set of native code descriptions
-     * @throws org.osgi.framework.BundleException
-     *          if the set of native code descriptions is empty
-     */
-    protected abstract void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException;
 
     public String getFrameworkName()
     {
@@ -166,6 +148,16 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         return bundleClassPath;
     }
 
+    public List<NativeCodeDescription> getBundleNativeCodeList()
+    {
+        return bundleNativeCodeList;
+    }
+
+    public List<String> getBundleRequiredExecutionEnvironment()
+    {
+        return bundleRequiredExecutionEnvironment;
+    }
+
     public String getBundleLocalization()
     {
         return bundleLocalization;
@@ -191,6 +183,11 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         return bundleDynamicImportSet;
     }
 
+    public FragmentDescription getBundleFragmentHost()
+    {
+        return bundleFragmentHost;
+    }
+
     public int compareTo(Object o)
     {
         if (!(o instanceof AbstractArchiveStore)) return 1;
@@ -205,88 +202,6 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     public boolean equals(Object obj)
     {
         return Long.valueOf(bundleId).equals(obj);
-    }
-
-    /**
-     * Make sure that at least one native code description is valid.
-     * <p/>
-     * This could be done during the <code>BundleImpl</code> constructor but
-     * it seems to be more transparent to have the bundle manager call this
-     * method.
-     *
-     * @return a list of resolvable native code descriptions
-     * @throws BundleException if the method is unable to find at least one valid native code description
-     */
-    private SortedSet<NativeCodeDescription> resolveNativeCodeDependencies() throws BundleException
-    {
-        SortedSet<NativeCodeDescription> set = new TreeSet<NativeCodeDescription>();
-
-        if (!bundleNativeCodeList.isEmpty())
-        {
-            VersionRange osVersionRange = VersionRange.parseVersionRange((String) framework.getProperty(Constants.FRAMEWORK_OS_VERSION));
-
-            nextDescription:
-            for (NativeCodeDescription description : bundleNativeCodeList)
-            {
-                Map<String, Object> parameters = description.getParameters();
-                for (String key : parameters.keySet())
-                {
-                    if ("osname".equals(key) && !framework.getProperty(Constants.FRAMEWORK_OS_NAME).equals(parameters.get(key)))
-                    {
-                        continue nextDescription;
-                    }
-                    else if ("processor".equals(key) && !framework.getProperty(Constants.FRAMEWORK_PROCESSOR).equals(parameters.get(key)))
-                    {
-                        continue nextDescription;
-                    }
-                    else if ("osversion".equals(key))
-                    {
-                        if (!osVersionRange.includes(description.getOsVersion())) continue nextDescription;
-                    }
-                    else if ("language".equals(key) && !framework.getProperty(Constants.FRAMEWORK_LANGUAGE).equals(description.getLanguage()))
-                    {
-                        continue nextDescription;
-                    }
-                    else if ("selection-filter".equals(key))
-                    {
-                        try
-                        {
-                            Filter selectionFilter = new FilterImpl(framework.getParser().parse((String) parameters.get(key)));
-                            if (!selectionFilter.match(framework.getProperties())) continue nextDescription;
-                        }
-                        catch (InvalidSyntaxException ise)
-                        {
-                            throw new BundleException("Invalid selection filter", ise);
-                        }
-                    }
-                }
-
-                set.add(description);
-            }
-        }
-
-        return set;
-    }
-
-
-    protected void confirmRequiredExecutionEnvironment() throws BundleException
-    {
-        if (!bundleExecutionEnvironment.isEmpty())
-        {
-            String string = (String) framework.getProperty(Constants.FRAMEWORK_EXECUTIONENVIRONMENT);
-            if (string == null) throw new BundleException(Constants.FRAMEWORK_EXECUTIONENVIRONMENT + " not set");
-            String[] environments = string.split(",");
-
-            nextRequirement:
-            for (String requirement : bundleExecutionEnvironment)
-            {
-                for (String environment : environments)
-                {
-                    if (requirement.equals(environment)) continue nextRequirement;
-                }
-                throw new BundleException("Missing required execution environment: " + requirement);
-            }
-        }
     }
 
     protected static List<String> obtainBundleCategories(Attributes headers)
@@ -368,9 +283,9 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     {
         List<String> result = Collections.emptyList();
 
-        if (headers.containsKey("Bundle-ExecutionEnvironment"))
+        if (headers.containsKey(Constants.BUNDLE_REQUIREDEXECUTIONENVIRONMENT))
         {
-            String[] tokens = headers.getValue("Bundle-ExecutionEnvironment").split(",");
+            String[] tokens = headers.getValue(Constants.BUNDLE_REQUIREDEXECUTIONENVIRONMENT).split(",");
             result = new ArrayList<String>(tokens.length);
 
             for (String token : tokens) result.add(token.trim());
@@ -383,9 +298,9 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     {
         try
         {
-            if (headers.containsKey("Bundle-UpdateLocation"))
+            if (headers.containsKey(Constants.BUNDLE_UPDATELOCATION))
             {
-                return new URL(headers.getValue("Bundle-UpdateLocation"));
+                return new URL(headers.getValue(Constants.BUNDLE_UPDATELOCATION));
             }
             else
             {
@@ -460,11 +375,30 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 
             if (parameters.containsKey("bundle-version"))
             {
-                parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-verison")));
+                try
+                {
+                    fragmentDescription.setVersionRange( VersionRange.parseVersionRange((String) parameters.get("bundle-verison")));
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new BundleException("Illegal value for extension parameter", e);
+                }
             }
             else
             {
-                parameters.put("bundle-version", FragmentDescription.DEFAULT_VERSION_RANGE);
+                fragmentDescription.setVersionRange(FragmentDescription.DEFAULT_VERSION_RANGE);
+            }
+
+            if (parameters.containsKey("extension"))
+            {
+                try
+                {
+                    fragmentDescription.setExtension(Extension.valueOf((String) parameters.get("extension")));
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new BundleException("Illegal value for extension parameter", e);
+                }
             }
         }
 
@@ -619,7 +553,8 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         List<String> values = new ArrayList<String>();
         int pointer = 0;
 
-        expression += ")";
+        if ("*".equals(expression)) return new String[]{ "" };
+        expression += ")"; // TODO: this is stupid
 
         StringBuilder builder = new StringBuilder();
         try

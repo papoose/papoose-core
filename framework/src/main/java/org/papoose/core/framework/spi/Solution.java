@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,10 @@ import java.util.Set;
 
 import net.jcip.annotations.Immutable;
 
-import org.papoose.core.framework.BundleImpl;
-import org.papoose.core.framework.FragmentBundleImpl;
+import org.papoose.core.framework.BundleGeneration;
+import org.papoose.core.framework.FragmentGeneration;
 import org.papoose.core.framework.Wire;
+import org.papoose.core.framework.util.ToStringCreator;
 
 /**
  * A bundle that can be resolved with a particular set of wires and list of
@@ -37,12 +38,12 @@ import org.papoose.core.framework.Wire;
 @Immutable
 public class Solution
 {
-    private final BundleImpl bundle;
-    private final List<FragmentBundleImpl> fragments;
+    private final BundleGeneration bundle;
+    private final List<FragmentGeneration> fragments;
     private final Set<Wire> wires;
     private final List<Wire> requiredBundles;
 
-    public Solution(BundleImpl bundle, List<FragmentBundleImpl> fragments, Set<Wire> wires, List<Wire> requiredBundles)
+    public Solution(BundleGeneration bundle, List<FragmentGeneration> fragments, Set<Wire> wires, List<Wire> requiredBundles)
     {
         if (bundle == null) throw new IllegalArgumentException("Bundle cannot be null");
         if (fragments == null) throw new IllegalArgumentException("Fragments cannot be null");
@@ -50,17 +51,17 @@ public class Solution
         if (requiredBundles == null) throw new IllegalArgumentException("Required bundles cannot be null");
 
         this.bundle = bundle;
-        this.fragments = Collections.unmodifiableList(new ArrayList<FragmentBundleImpl>(fragments));
+        this.fragments = Collections.unmodifiableList(new ArrayList<FragmentGeneration>(fragments));
         this.wires = Collections.unmodifiableSet(new HashSet<Wire>(wires));
         this.requiredBundles = Collections.unmodifiableList(new ArrayList<Wire>(requiredBundles));
     }
 
-    public BundleImpl getBundle()
+    public BundleGeneration getBundle()
     {
         return bundle;
     }
 
-    public List<FragmentBundleImpl> getFragments()
+    public List<FragmentGeneration> getFragments()
     {
         return fragments;
     }
@@ -73,5 +74,18 @@ public class Solution
     public List<Wire> getRequiredBundles()
     {
         return requiredBundles;
+    }
+
+    @Override
+    public String toString()
+    {
+        ToStringCreator creator = new ToStringCreator(this);
+
+        creator.append("bundle", bundle);
+        creator.append("fragments", fragments);
+        creator.append("wires", wires);
+        creator.append("requiredBundles", requiredBundles);
+
+        return creator.toString();
     }
 }

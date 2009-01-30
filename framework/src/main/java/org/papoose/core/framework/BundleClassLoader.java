@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,8 +53,7 @@ public class BundleClassLoader extends NamedClassLoader
         }
     };
     private final static URL[] EMPTY_URLS = new URL[0];
-    private final Papoose framework;
-    private final BundleImpl bundle;
+    private final BundleGeneration bundle;
     private final String[] bootDelegates;
     private final Set<Wire> wires;
     private final List<Wire> requiredBundles;
@@ -66,7 +65,7 @@ public class BundleClassLoader extends NamedClassLoader
 
     BundleClassLoader(String name, ClassLoader parent,
                       Papoose framework,
-                      BundleImpl bundle,
+                      BundleGeneration bundle,
                       Set<Wire> wires,
                       List<Wire> requiredBundles,
                       String[] bootDelegates,
@@ -84,7 +83,6 @@ public class BundleClassLoader extends NamedClassLoader
         assert requiredBundles != null;
         assert boundClassPath != null;
 
-        this.framework = framework;
         this.bundle = bundle;
         this.wires = Collections.unmodifiableSet(wires);
         this.requiredBundles = requiredBundles;
@@ -96,7 +94,7 @@ public class BundleClassLoader extends NamedClassLoader
     }
 
 
-    BundleImpl getBundle()
+    BundleGeneration getBundle()
     {
         return bundle;
     }
@@ -212,7 +210,7 @@ public class BundleClassLoader extends NamedClassLoader
             {
                 for (DynamicDescription dynamicDescription : dynamicImports)
                 {
-                    Wire wire = framework.getBundleManager().resolve(dynamicDescription);
+                    Wire wire = bundle.getBundleController().getFramework().getBundleManager().resolve(dynamicDescription);
                     if (wire != null)
                     {
                         dynamicImports.remove(dynamicDescription);
@@ -288,7 +286,7 @@ public class BundleClassLoader extends NamedClassLoader
                     // load the class into the vm
                     return defineClass(className, bytes, 0, bytes.length, codeSource);
                 }
-            }, bundle.getFramework().getAcc());
+            }, bundle.getBundleController().getFramework().getAcc());
         }
         catch (PrivilegedActionException e)
         {

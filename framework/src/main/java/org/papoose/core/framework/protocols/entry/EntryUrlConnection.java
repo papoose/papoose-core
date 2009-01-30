@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.framework.protocols.bundle;
+package org.papoose.core.framework.protocols.entry;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,14 +27,14 @@ import org.papoose.core.framework.BundleManager;
 /**
  * @version $Revision$ $Date$
  */
-public class BundleUrlConnection extends URLConnection
+public class EntryUrlConnection extends URLConnection
 {
     private final BundleManager bundleManager;
-    private final int bundleId;
+    private final long bundleId;
     private final int generation;
     private InputStream inputStream;
 
-    public BundleUrlConnection(URL url, BundleManager bundleManager, int bundleId, int generation)
+    public EntryUrlConnection(URL url, BundleManager bundleManager, long bundleId, int generation)
     {
         super(url);
 
@@ -52,7 +52,7 @@ public class BundleUrlConnection extends URLConnection
     {
         if (connected) return;
 
-        inputStream = bundleManager.getInputStream(bundleId, generation);
+        inputStream = bundleManager.getInputStreamForCodesource(bundleId, generation);
 
         connected = true;
     }

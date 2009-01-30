@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
+
 import org.papoose.core.framework.FatalError;
 import org.papoose.core.framework.Papoose;
+import org.papoose.core.framework.PapooseException;
 import org.papoose.core.framework.Util;
 import org.papoose.core.framework.spi.ArchiveStore;
 import org.papoose.core.framework.spi.BundleStore;
@@ -49,6 +51,7 @@ public class NonCachingFileStore implements Store
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final static String PROPERTIES_FILE = "store.properties";
     private final static String GENERATION_KEY = "generation.";
+    private final static String SYSTEM_DIR = "system";
     private final static String BUNDLES_DIR = "bundles";
     private final static String GENERATIONS_DIR = "generations";
     private final Properties properties = new Properties();
@@ -85,7 +88,7 @@ public class NonCachingFileStore implements Store
         return root;
     }
 
-    public synchronized List<BundleStore> loadBundleStores() throws BundleException
+    public synchronized List<BundleStore> loadBundleStores() throws PapooseException
     {
         LOGGER.entering(CLASS_NAME, "loadBundleStores");
 
@@ -114,30 +117,36 @@ public class NonCachingFileStore implements Store
         LOGGER.exiting(CLASS_NAME, "loadBundleStores", result);
 
         return result;
-
     }
 
     public synchronized BundleStore allocateBundleStore(long bundleId, String location) throws BundleException
     {
-        LOGGER.entering(CLASS_NAME, "allocateBundleStore", new Object[]{bundleId, location});
+        LOGGER.entering(CLASS_NAME, "allocateBundleStore", new Object[]{ bundleId, location });
 
         assert location != null;
 
-        File bundleRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId);
+        File bundleRoot;
+        if (bundleId == 0)
+        {
+            bundleRoot = new File(root, SYSTEM_DIR);
+        }
+        else
+        {
+            bundleRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId);
+
+            properties.setProperty(GENERATION_KEY + bundleId, "-1");
+
+            save();
+        }
 
         if (bundleRoot.exists()) throw new BundleException("Bundle store location " + bundleRoot + " already exists");
         if (!bundleRoot.mkdirs()) throw new FatalError("Unable to create bundle store location: " + bundleRoot);
 
-        properties.setProperty(GENERATION_KEY + bundleId, "-1");
-
         NonCachingBundleFileStore result = new NonCachingBundleFileStore(bundleRoot, bundleId, location);
-
-        save();
 
         LOGGER.exiting(CLASS_NAME, "allocateBundleStore", result);
 
         return result;
-
     }
 
     public synchronized void removeBundleStore(long bundleId) throws BundleException
@@ -164,7 +173,7 @@ public class NonCachingFileStore implements Store
 
     public synchronized ArchiveStore allocateArchiveStore(Papoose framework, long bundleId, InputStream inputStream) throws BundleException
     {
-        LOGGER.entering(CLASS_NAME, "allocateArchiveStore", new Object[]{framework, bundleId, inputStream});
+        LOGGER.entering(CLASS_NAME, "allocateArchiveStore", new Object[]{ framework, bundleId, inputStream });
 
         NonCachingArchiveStore result;
         try
@@ -195,7 +204,7 @@ public class NonCachingFileStore implements Store
 
     public synchronized ArchiveStore loadArchiveStore(Papoose framework, long bundleId) throws BundleException
     {
-        LOGGER.entering(CLASS_NAME, "loadArchiveStore", new Object[]{framework, bundleId});
+        LOGGER.entering(CLASS_NAME, "loadArchiveStore", new Object[]{ framework, bundleId });
 
         File archivesRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId, GENERATIONS_DIR);
 

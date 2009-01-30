@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package org.papoose.core.framework.spi;
 import java.util.Set;
 
 import org.osgi.framework.BundleException;
-
-import org.papoose.core.framework.AbstractBundle;
+import org.papoose.core.framework.Generation;
 import org.papoose.core.framework.Papoose;
 import org.papoose.core.framework.PapooseException;
+
 
 /**
  * Interface for resolvers.
@@ -43,8 +43,8 @@ public interface Resolver
      * will shutdown and throw an exception for its start method.
      *
      * @param framework the owning framework
-     * @throws BundleException if an error occurs that prevents the resolver
-     *                         from functioning correctly.
+     * @throws PapooseException if an error occurs that prevents the resolver
+     *                          from functioning correctly.
      */
     public void start(Papoose framework) throws PapooseException;
 
@@ -61,7 +61,7 @@ public interface Resolver
      *
      * @param bundle the bundle that was added.
      */
-    public void added(AbstractBundle bundle);
+    public void added(Generation bundle);
 
     /**
      * Notify the resolver that a bundle has been removed.
@@ -70,7 +70,7 @@ public interface Resolver
      *
      * @param bundle the bundle that was removed.
      */
-    public void removed(AbstractBundle bundle);
+    public void removed(Generation bundle);
 
     /**
      * Resolve a bundle to obtain a solution set of bundles that can be
@@ -81,5 +81,5 @@ public interface Resolver
      * @return a set of solutions that is consistent with the bundle's requirements
      * @throws BundleException if no consistent set of wires can be found
      */
-    public Set<Solution> resolve(AbstractBundle bundle) throws BundleException;
+    public Set<Solution> resolve(Generation bundle) throws BundleException;
 }

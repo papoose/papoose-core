@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,12 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.Collections;
+import java.util.ResourceBundle;
+import java.util.MissingResourceException;
+import java.util.jar.Attributes;
 
 import org.papoose.core.framework.ExportDescription;
 import org.papoose.core.framework.Util;
@@ -35,6 +41,67 @@ import org.osgi.framework.Constants;
  */
 public class AttributeUtils
 {
+    public static Dictionary allocateReadOnlyDictionary(final Attributes attributes)
+    {
+        return new Dictionary()
+        {
+            public int size() { return attributes.size(); }
+
+            public boolean isEmpty() { return attributes.isEmpty(); }
+
+            public Enumeration keys() { return Collections.enumeration(attributes.keySet()); }
+
+            public Enumeration elements() { return Collections.enumeration(attributes.values()); }
+
+            public Object get(Object key) { return attributes.getValue((String) key); }
+
+            public Object put(Object key, Object value) { throw new UnsupportedOperationException("Read-only dictionary"); }
+
+            public Object remove(Object key) { throw new UnsupportedOperationException("Read-only dictionary"); }
+        };
+    }
+
+    public static Dictionary allocateReadOnlyI18nDictionary(final Attributes attributes, final ResourceBundle resourceBundle)
+    {
+        return new Dictionary()
+        {
+            public int size() { return attributes.size(); }
+
+            public boolean isEmpty() { return attributes.isEmpty(); }
+
+            public Enumeration keys() { return Collections.enumeration(attributes.keySet()); }
+
+            public Enumeration elements()
+            {
+                return new Enumeration()
+                {
+                    final Enumeration enumeration = Collections.enumeration(attributes.values());
+
+                    public boolean hasMoreElements() { return enumeration.hasMoreElements(); }
+
+                    public Object nextElement() { return localize(enumeration.nextElement().toString()); }
+                };
+            }
+
+            public Object get(Object key) { return localize(attributes.getValue((String) key)); }
+
+            protected Object localize(String result)
+            {
+                if (result != null && result.length() > 0 && result.charAt(0) == '%')
+                {
+                    result = result.substring(1);
+
+                    if (resourceBundle != null) try { result = resourceBundle.getString(result); } catch (MissingResourceException ignore) { }
+                }
+                return result;
+            }
+
+            public Object put(Object key, Object value) { throw new UnsupportedOperationException("Read-only dictionary"); }
+
+            public Object remove(Object key) { throw new UnsupportedOperationException("Read-only dictionary"); }
+        };
+    }
+
     public static List<ExportDescription> parseBundleExportList(String value, String bundleSymbolicName, Version bundleVersion) throws BundleException
     {
         String[] exportDescriptions = Util.split(value, ",");
@@ -48,29 +115,29 @@ public class AttributeUtils
 
             Util.parseParameters(exportDescription, description, parameters, true, paths);
 
-            if (parameters.containsKey("specification-version")) parameters.put("specification-version", Version.parseVersion((String) parameters.get("specification-version")));
+            if (parameters.containsKey(Constants.PACKAGE_SPECIFICATION_VERSION)) parameters.put(Constants.PACKAGE_SPECIFICATION_VERSION, Version.parseVersion((String) parameters.get(Constants.PACKAGE_SPECIFICATION_VERSION)));
 
-            if (!parameters.containsKey("version"))
+            if (!parameters.containsKey(Constants.VERSION_ATTRIBUTE))
             {
-                if (parameters.containsKey("specification-version"))
+                if (parameters.containsKey(Constants.PACKAGE_SPECIFICATION_VERSION))
                 {
-                    parameters.put("version", parameters.get("specification-version"));
+                    parameters.put(Constants.VERSION_ATTRIBUTE, parameters.get(Constants.PACKAGE_SPECIFICATION_VERSION));
                 }
                 else
                 {
-                    parameters.put("version", ExportDescription.DEFAULT_VERSION);
+                    parameters.put(Constants.VERSION_ATTRIBUTE, ExportDescription.DEFAULT_VERSION);
                 }
             }
             else
             {
-                parameters.put("version", Version.parseVersion((String) parameters.get("version")));
+                parameters.put(Constants.VERSION_ATTRIBUTE, Version.parseVersion((String) parameters.get("version")));
             }
 
-            if (parameters.containsKey("specification-version") && !parameters.get("specification-version").equals(parameters.get("version"))) throw new BundleException("version and specification-version do not match");
+            if (parameters.containsKey(Constants.PACKAGE_SPECIFICATION_VERSION) && !parameters.get(Constants.PACKAGE_SPECIFICATION_VERSION).equals(parameters.get(Constants.VERSION_ATTRIBUTE))) throw new BundleException("version and specification-version do not match");
 
-            if (parameters.containsKey("bundle-symbolic-name")) throw new BundleException("Attempted to set bundle-symbolic-name in Export-Package");
+            if (parameters.containsKey(Constants.BUNDLE_SYMBOLICNAME_ATTRIBUTE)) throw new BundleException("Attempted to set bundle-symbolic-name in Export-Package");
 
-            if (parameters.containsKey("bundle-version")) throw new BundleException("Attempted to set bundle-version in Export-Package");
+            if (parameters.containsKey(Constants.BUNDLE_VERSION_ATTRIBUTE)) throw new BundleException("Attempted to set bundle-version in Export-Package");
 
             parameters.put(Constants.BUNDLE_SYMBOLICNAME_ATTRIBUTE, bundleSymbolicName);
             parameters.put(Constants.BUNDLE_VERSION_ATTRIBUTE, bundleVersion);

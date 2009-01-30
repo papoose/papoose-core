@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.framework.protocols.bundle;
+package org.papoose.core.framework;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
-
-import org.papoose.core.framework.UrlUtils;
+import org.papoose.core.framework.spi.ArchiveStore;
 
 
 /**
- * This URLStreamHandler will be used if our URLStreamHandlerFactory has not
- * been registered w/ URL.
- *
  * @version $Revision$ $Date$
- * @see org.papoose.core.framework.ServiceURLStreamHandlerFactory
  */
-public class Handler extends URLStreamHandler
+public class BootClassExtensionGeneration extends ExtensionGeneration
 {
-    protected URLConnection openConnection(URL url) throws IOException
+    public BootClassExtensionGeneration(BundleController bundleController, ArchiveStore archiveStore)
     {
-        return UrlUtils.allocateBundleConnection(url);
+        super(bundleController, archiveStore);
     }
 }

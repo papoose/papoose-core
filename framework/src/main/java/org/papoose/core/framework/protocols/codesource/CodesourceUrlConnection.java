@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,26 +30,29 @@ import org.papoose.core.framework.BundleManager;
 public class CodesourceUrlConnection extends URLConnection
 {
     private final BundleManager bundleManager;
-    private final int bundleId;
+    private final long bundleId;
+    private final int generation;
     private InputStream inputStream;
 
-    public CodesourceUrlConnection(URL url, BundleManager bundleManager, int bundleId)
+    public CodesourceUrlConnection(URL url, BundleManager bundleManager, long bundleId, int generation)
     {
         super(url);
 
         assert url != null;
         assert bundleManager != null;
         assert bundleId >= 0;
+        assert generation >= 0;
 
         this.bundleManager = bundleManager;
         this.bundleId = bundleId;
+        this.generation = generation;
     }
 
     public synchronized void connect() throws IOException
     {
         if (connected) return;
 
-        inputStream = bundleManager.getInputStream(bundleId);
+        inputStream = bundleManager.getInputStreamForCodesource(bundleId, generation);
 
         connected = true;
     }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import java.net.URLConnection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.papoose.core.framework.protocols.bundle.BundleUrlConnection;
 import org.papoose.core.framework.protocols.codesource.CodesourceUrlConnection;
+import org.papoose.core.framework.protocols.entry.EntryUrlConnection;
 import org.papoose.core.framework.protocols.resource.ResourceUrlConnection;
 
 
@@ -60,7 +60,7 @@ public class UrlUtils
         URL result = null;
         try
         {
-            result = new URL("codesource://" + Long.toString(bundleId) + "@" + frameworkName);
+            result = new URL("codesource://" + bundleId + "@" + frameworkName);
         }
         catch (MalformedURLException mue)
         {
@@ -72,7 +72,7 @@ public class UrlUtils
     /**
      * Generate a URL that references a resource within a ResourceHandle inside a Bundle.
      * <p/>
-     * <code>bundle://bundle:generation@framework/file</code>
+     * <code>entry://bundle:generation@framework/file</code>
      *
      * @param frameworkName the name of the particular framework instance
      * @param bundleId      the id of the Bundle
@@ -81,14 +81,14 @@ public class UrlUtils
      * @return a URL that can be used to reference within a resource inside a particular Bundle
      * @see org.apache.xbean.classloader.ResourceHandle
      */
-    public static URL generateEntryUrl(String frameworkName, long bundleId, String path, int generation, int location)
+    public static URL generateEntryUrl(String frameworkName, long bundleId, String path, int generation)
     {
         if (path.length() == 0 || path.charAt(0) != '/') path = "/" + path;
 
         URL result = null;
         try
         {
-            result = new URL("bundle://" + Long.toString(bundleId) + ":" + location + "@" + frameworkName + path);
+            result = new URL("entry://" + bundleId + ":" + generation + "@" + frameworkName + path);
         }
         catch (MalformedURLException mue)
         {
@@ -117,7 +117,7 @@ public class UrlUtils
         URL result = null;
         try
         {
-            result = new URL("resource://" + Long.toString(bundleId) + "@" + frameworkName + ":" + location + path);
+            result = new URL("resource://" + bundleId + ":" + generation + "@" + frameworkName + ":" + location + path);
         }
         catch (MalformedURLException mue)
         {
@@ -134,11 +134,23 @@ public class UrlUtils
 
             if (framework == null) throw new MalformedURLException("Invalid format");
 
-            int bundleId = Integer.parseInt(url.getUserInfo());
+            String userInfo = url.getUserInfo();
+
+            if (userInfo == null) throw new MalformedURLException("Invalid format");
+
+            String[] parts = userInfo.trim().split(":");
+
+            if (parts.length != 2) throw new MalformedURLException("Invalid format");
+
+            long bundleId = Long.parseLong(parts[0]);
 
             if (bundleId < 0) throw new MalformedURLException("Invalid format");
 
-            return new CodesourceUrlConnection(url, framework.getBundleManager(), bundleId);
+            int generation = Integer.parseInt(parts[1]);
+
+            if (generation < 0) throw new MalformedURLException("Invalid format");
+
+            return new CodesourceUrlConnection(url, framework.getBundleManager(), bundleId, generation);
         }
         catch (NumberFormatException nfe)
         {
@@ -148,7 +160,7 @@ public class UrlUtils
         throw new MalformedURLException("Invalid format");
     }
 
-    public static URLConnection allocateBundleConnection(URL url) throws IOException
+    public static URLConnection allocatEntryConnection(URL url) throws IOException
     {
         try
         {
@@ -160,13 +172,19 @@ public class UrlUtils
 
             if (userInfo == null) throw new MalformedURLException("Invalid format");
 
-            int bundleId = Integer.parseInt(userInfo);
+            String[] parts = userInfo.trim().split(":");
+
+            if (parts.length != 2) throw new MalformedURLException("Invalid format");
+
+            long bundleId = Long.parseLong(parts[0]);
 
             if (bundleId < 0) throw new MalformedURLException("Invalid format");
 
-            int generation = url.getPort();
+            int generation = Integer.parseInt(parts[1]);
 
-            return new BundleUrlConnection(url, framework.getBundleManager(), bundleId, generation);
+            if (generation < 0) throw new MalformedURLException("Invalid format");
+
+            return new EntryUrlConnection(url, framework.getBundleManager(), bundleId, generation);
         }
         catch (NumberFormatException nfe)
         {
@@ -192,15 +210,15 @@ public class UrlUtils
 
             if (parts.length != 2) throw new MalformedURLException("Invalid format");
 
-            int bundleId = Integer.parseInt(parts[0]);
+            long bundleId = Long.parseLong(parts[0]);
 
             if (bundleId < 0) throw new MalformedURLException("Invalid format");
 
-            int location = Integer.parseInt(parts[1]);
+            int generation = Integer.parseInt(parts[1]);
 
-            if (location < 0) throw new MalformedURLException("Invalid format");
+            if (generation < 0) throw new MalformedURLException("Invalid format");
 
-            int generation = url.getPort();
+            int location = url.getPort();
 
             return new ResourceUrlConnection(url, framework.getBundleManager(), bundleId, generation, location);
         }

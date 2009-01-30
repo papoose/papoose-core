@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,9 +61,8 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
     private final static String ARCHIVE_JAR_NAME = "archive.jar";
     private final static String ARCHIVE_NAME = "archive";
     private final static String TEMP_NAME = "tmp";
-    private final ResourceLocation fileLocation = new BundleDirectoryResourceLocation("", -1);
     private final List<ResourceLocation> resourceLocations = new ArrayList<ResourceLocation>();
-    private final File bundleRoot;
+    private final File archiveRoot;
     private final File tmp;
     private final JarFile archive;
     private final URL codeSource;
@@ -77,11 +76,15 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
     public NonCachingArchiveStore(Papoose framework, long bundleId, int generaton, File archiveRoot, InputStream inputStream) throws BundleException
     {
         super(framework, bundleId, generaton, loadAndProvideAttributes(archiveRoot, inputStream));
-        this.bundleRoot = archiveRoot;
+
+        this.archiveRoot = archiveRoot;
+
         try
         {
             this.archive = new JarFile(new File(archiveRoot, ARCHIVE_JAR_NAME));
             this.codeSource = UrlUtils.generateCodeSourceUrl(getFrameworkName(), getBundleId());
+
+            assert this.codeSource != null;
 
             this.tmp = new File(archiveRoot, TEMP_NAME);
 
@@ -93,11 +96,11 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         }
     }
 
-    public void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException
+    public void assignNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException
     {
         this.nativeCodeDescriptions = nativeCodeDescriptions;
 
-        File archiveDir = new File(bundleRoot, ARCHIVE_NAME);
+        File archiveDir = new File(archiveRoot, ARCHIVE_NAME);
         for (NativeCodeDescription description : nativeCodeDescriptions)
         {
             for (String path : description.getPaths())
@@ -153,39 +156,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         return null;
     }
 
-    public ResourceHandle getEntry(String name)
-    {
-        return fileLocation.getResourceHandle(name);
-    }
-
-    public Enumeration getEntryPaths(String path)
-    {
-        if (path.startsWith("/")) path = path.substring(1);
-        if (!path.endsWith("/") && path.length() > 1) path += "/";
-
-        Set<String> result = new HashSet<String>();
-        Enumeration entries = archive.entries();
-        while (entries.hasMoreElements())
-        {
-            ZipEntry entry = (ZipEntry) entries.nextElement();
-            String name = entry.getName();
-            if (name.startsWith(path))
-            {
-                String s = name.substring(path.length());
-                int count = 0;
-                for (int i = 0; i < s.length(); i++) if (s.charAt(i) == '/') count++;
-                if (entry.isDirectory())
-                {
-                    if (count == 1) result.add(name);
-                }
-                else if (count == 0) result.add(name);
-            }
-        }
-
-        return result.isEmpty() ? null : Collections.enumeration(result);
-    }
-
-    public Enumeration findEntries(String path, String filePattern, boolean recurse)
+    public Enumeration<URL> findEntries(String path, String filePattern, boolean includeDirectory, boolean recurse)
     {
         if (path.startsWith("/")) path = path.substring(1);
         if (!path.endsWith("/") && path.length() > 1) path += "/";
@@ -209,55 +180,29 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             String name = entry.getName();
             if (name.startsWith(path))
             {
-                String s = name.substring(path.length());
                 int count = 0;
-                for (int i = 0; i < s.length(); i++) if (s.charAt(i) == '/') count++;
+                name = name.substring(path.length());
+                for (int i = 0; i < name.length(); i++) if (name.charAt(i) == '/') count++;
+
                 if (!entry.isDirectory())
                 {
-                    if (count == 0 && Util.match(targets, s))
+                    if (count == 0 && Util.match(targets, name))
                     {
-                        result.add(fileLocation.getResourceHandle(name).getUrl());
+                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), entry.getName(), getGeneration()));
                     }
-                    else if (recurse && Util.match(targets, s.substring(s.lastIndexOf('/') + 1)))
+                    else if (recurse && Util.match(targets, name.substring(name.lastIndexOf('/') + 1)))
                     {
-                        result.add(fileLocation.getResourceHandle(name).getUrl());
+                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), entry.getName(), getGeneration()));
                     }
+                }
+                else if (includeDirectory && count < 2)
+                {
+                    result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), entry.getName(), getGeneration()));
                 }
             }
         }
 
         return result.isEmpty() ? null : Collections.enumeration(result);
-    }
-
-    public ResourceHandle getResource(String resourceName)
-    {
-        ResourceHandle handle;
-
-        for (ResourceLocation location : resourceLocations)
-        {
-            if ((handle = location.getResourceHandle(resourceName)) != null) return handle;
-        }
-
-        return null;
-    }
-
-
-    public ResourceHandle getResource(String resourceName, int location)
-    {
-        return resourceLocations.get(location).getResourceHandle(resourceName);
-    }
-
-    public List<ResourceHandle> findResources(String resourceName)
-    {
-        List<ResourceHandle> result = new ArrayList<ResourceHandle>();
-        ResourceHandle handle;
-
-        for (ResourceLocation location : resourceLocations)
-        {
-            if ((handle = location.getResourceHandle(resourceName)) != null) result.add(handle);
-        }
-
-        return result;
     }
 
     @SuppressWarnings({"EmptyCatchBlock"})
@@ -275,6 +220,21 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         {
         }
         return null;
+    }
+
+    public InputStream getInputStreamForCodeSource() throws IOException
+    {
+        return new FileInputStream(new File(archiveRoot, ARCHIVE_JAR_NAME));
+    }
+
+    public InputStream getInputStreamForEntry(String path) throws IOException
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public InputStream getInputStreamForResource(int location, String path) throws IOException
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @SuppressWarnings({"EmptyCatchBlock"})
@@ -312,7 +272,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             if (entry != null)
             {
                 NonCachingArchiveStore archiveStore = NonCachingArchiveStore.this;
-                return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), path + "/" + entry.getName(), location));
+                return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), path + "/" + entry.getName(), getGeneration(), location));
             }
             return null;
         }
@@ -380,7 +340,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             JarEntry entry = jarFile.getJarEntry(resourceName);
             if (entry != null)
             {
-                return new BundleJarResourceHandle(entry, UrlUtils.generateResourceUrl(getFrameworkName(), getBundleId(), "/" + path + "!/" + resourceName, location));
+                return new BundleJarResourceHandle(entry, UrlUtils.generateResourceUrl(getFrameworkName(), getBundleId(), "/" + path + "!/" + resourceName, getGeneration(), location));
             }
             return null;
         }

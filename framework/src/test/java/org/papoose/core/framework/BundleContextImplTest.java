@@ -1,5 +1,5 @@
 /**
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,13 @@
  */
 package org.papoose.core.framework;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.InputStream;
-import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Dictionary;
-import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -34,6 +31,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
 
 import org.papoose.core.framework.mock.MockStore;
 import org.papoose.core.framework.spi.Store;
@@ -51,114 +49,57 @@ public class BundleContextImplTest
     @Test
     public void test() throws Exception
     {
-        File fileStoreRoot = new File("./target/store");
-        try
-        {
-            final long earlyTimestamp = System.currentTimeMillis();
-            Store fileStore = new MockStore();
-            Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new ScheduledThreadPoolExecutor(10), new Properties());
+        final long earlyTimestamp = System.currentTimeMillis();
+        Store fileStore = new MockStore();
+        Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new ScheduledThreadPoolExecutor(10), new Properties());
 
-            papoose.start();
+        papoose.start();
 
-            File testBundle = new File("./target/bundle.jar");
-            String location = testBundle.toURI().normalize().toString();
+        File testBundle = new File("./target/bundle.jar");
+        String location = testBundle.toURI().normalize().toString();
 
-            BundleContextImpl context = new BundleContextImpl((BundleImpl) papoose.getBundleManager().getBundle(0));
+        BundleContext context = papoose.getSystemBundleContext();
 
-            Bundle bundle = context.installBundle(location);
+        Bundle bundle = context.installBundle(location);
 
-            Assert.assertEquals(1, bundle.getBundleId());
+        Assert.assertEquals(1, bundle.getBundleId());
 
-            Assert.assertEquals(location, bundle.getLocation());
+        Assert.assertEquals(location, bundle.getLocation());
 
-            Assert.assertTrue(earlyTimestamp < bundle.getLastModified());
+        Assert.assertTrue(earlyTimestamp < bundle.getLastModified());
 
-            Dictionary headers = bundle.getHeaders("en");
-            Assert.assertEquals("org.papoose.test.papoose-test-bundle", headers.get("Bundle-SymbOLicName"));
+        Dictionary headers = bundle.getHeaders("en");
+        Assert.assertEquals("org.papoose.test.papoose-test-bundle", headers.get("Bundle-SymbOLicName"));
 
-            headers = bundle.getHeaders("en");
-            Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
+        headers = bundle.getHeaders("en");
+        Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
 
-            headers = bundle.getHeaders();
-            Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
+        headers = bundle.getHeaders();
+        Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
 
-            headers = bundle.getHeaders(null);
-            Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
+        headers = bundle.getHeaders(null);
+        Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
 
-            headers = bundle.getHeaders("en_US");
-            Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
+        headers = bundle.getHeaders("en_US");
+        Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));
 
-            headers = bundle.getHeaders("fr");
-            Assert.assertEquals("bundle_fr", headers.get("L10N-Bundle"));
+        headers = bundle.getHeaders("fr");
+        Assert.assertEquals("bundle_fr", headers.get("L10N-Bundle"));
 
-            headers = bundle.getHeaders("fr_FR");
-            Assert.assertEquals("bundle_fr_FR", headers.get("L10N-Bundle"));
+        headers = bundle.getHeaders("fr_FR");
+        Assert.assertEquals("bundle_fr_FR", headers.get("L10N-Bundle"));
 
-            headers = bundle.getHeaders("");
-            Assert.assertEquals("%bundle", headers.get("L10N-Bundle"));
+        headers = bundle.getHeaders("");
+        Assert.assertEquals("%bundle", headers.get("L10N-Bundle"));
 
-            headers = bundle.getHeaders("en");
-            Assert.assertEquals("no translation for this entry", headers.get("L10N-NoTranslation"));
+        headers = bundle.getHeaders("en");
+        Assert.assertEquals("no translation for this entry", headers.get("L10N-NoTranslation"));
 
-            papoose.getBundleManager().resolve(bundle);
+        papoose.getBundleManager().resolve(bundle);
 
-            URL url = bundle.getEntry("com/acme/resource/camera.xml");
+        papoose.stop();
 
-            Assert.assertNotNull(url);
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
-            String line = in.readLine();
-
-            Assert.assertEquals("<status>good</status>", line);
-
-            int count = 0;
-            Enumeration enumeration = bundle.getEntryPaths("com/acme");
-            while (enumeration.hasMoreElements())
-            {
-                enumeration.nextElement();
-                count++;
-            }
-
-            Assert.assertEquals(6, count);
-
-            count = 0;
-            enumeration = bundle.getEntryPaths("");
-            while (enumeration.hasMoreElements())
-            {
-                enumeration.nextElement();
-                count++;
-            }
-
-            Assert.assertEquals(4, count);
-
-            count = 0;
-            enumeration = bundle.findEntries("com/acme", "*.xml", false);
-            while (enumeration.hasMoreElements())
-            {
-                enumeration.nextElement();
-                count++;
-            }
-
-            Assert.assertEquals(1, count);
-
-            count = 0;
-            enumeration = bundle.findEntries("", "*.class", true);
-            while (enumeration.hasMoreElements())
-            {
-                enumeration.nextElement();
-                count++;
-            }
-
-            Assert.assertEquals(5, count);
-
-            papoose.stop();
-
-            fileStore.removeBundleStore(1);
-        }
-        finally
-        {
-            Util.delete(fileStoreRoot);
-        }
+        fileStore.removeBundleStore(1);
     }
 
     @Before

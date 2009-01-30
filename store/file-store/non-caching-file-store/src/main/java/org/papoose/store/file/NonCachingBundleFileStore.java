@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
+
 import org.papoose.core.framework.spi.BundleStore;
 
 
@@ -40,6 +41,7 @@ public class NonCachingBundleFileStore implements BundleStore
     private final File dataRoot;
     private final long bundleId;
     private final String location;
+    private long lastModified;
 
     public NonCachingBundleFileStore(File bundleRoot, long bundleId, String location) throws BundleException
     {
@@ -113,6 +115,16 @@ public class NonCachingBundleFileStore implements BundleStore
     public File getDataRoot()
     {
         return dataRoot;
+    }
+
+    public long getLastModified()
+    {
+        return lastModified;
+    }
+
+    public void markModified()
+    {
+        lastModified = System.currentTimeMillis();
     }
 
     public String getLocation()

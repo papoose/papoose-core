@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,13 @@ import org.osgi.framework.Version;
 /**
  * @version $Revision$ $Date$
  */
-class FragmentDescription
+public class FragmentDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
     private final String symbolName;
     private final Map<String, Object> parameters;
     private Extension extension;
+    private VersionRange versionRange;
 
     public FragmentDescription(String symbolName, Map<String, Object> parameters)
     {
@@ -56,5 +57,15 @@ class FragmentDescription
     void setExtension(Extension extension)
     {
         this.extension = extension;
+    }
+
+    public VersionRange getVersionRange()
+    {
+        return versionRange;
+    }
+
+    public void setVersionRange(VersionRange versionRange)
+    {
+        this.versionRange = versionRange;
     }
 }

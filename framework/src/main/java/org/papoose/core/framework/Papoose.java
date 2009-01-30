@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import java.net.URL;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.HashMap;
@@ -37,7 +36,9 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 import org.papoose.core.framework.filter.Parser;
+import org.papoose.core.framework.spi.LocationMapper;
 import org.papoose.core.framework.spi.Resolver;
+import org.papoose.core.framework.spi.SecurityAdmin;
 import org.papoose.core.framework.spi.Store;
 import org.papoose.core.framework.util.ToStringCreator;
 
@@ -74,6 +75,7 @@ public final class Papoose
     private volatile Parser parser = new Parser();
     @GuardedBy("lock")
     private volatile Resolver resolver = new DefaultResolver();
+    private volatile SecurityAdmin securityAdmin;
 
     static
     {
@@ -91,6 +93,8 @@ public final class Papoose
         DEFAULTS.setProperty(Constants.SUPPORTS_BOOTCLASSPATH_EXTENSION, Boolean.TRUE.toString());
         DEFAULTS.setProperty(Constants.SUPPORTS_FRAMEWORK_FRAGMENT, Boolean.TRUE.toString());
         DEFAULTS.setProperty(Constants.SUPPORTS_FRAMEWORK_REQUIREBUNDLE, Boolean.TRUE.toString());
+
+        DEFAULTS.put(LocationMapper.LOCATION_MANAGER, new DefaultLocationMapper());
     }
 
 
@@ -299,6 +303,16 @@ public final class Papoose
         }
     }
 
+    SecurityAdmin getSecurityAdmin()
+    {
+        return securityAdmin;
+    }
+
+    void setSecurityAdmin(SecurityAdmin securityAdmin)
+    {
+        this.securityAdmin = securityAdmin;
+    }
+
     public BundleContext getSystemBundleContext()
     {
         LOGGER.entering(CLASS_NAME, "getSystemBundleContext");
@@ -338,9 +352,9 @@ public final class Papoose
             {
                 resolver.start(this);
 
-                manager.installSystemBundle(new Version(properties.getProperty(PAPOOSE_VERSION)));
+                SystemBundleController systemBundleController = (SystemBundleController) manager.installSystemBundle(new Version(properties.getProperty(PAPOOSE_VERSION)));
 
-                ((SystemBundleImpl) manager.getBundle(0)).performStart(0);
+                systemBundleController.performStart(0);
 
                 running = true;
             }
@@ -378,7 +392,7 @@ public final class Papoose
 
             try
             {
-                SystemBundleImpl system = (SystemBundleImpl) manager.getBundle(0);
+                SystemBundleController system = (SystemBundleController) manager.getBundle(0);
 
                 system.performStop(0);
             }
@@ -426,7 +440,9 @@ public final class Papoose
 
     private Properties assembleProperties(Properties properties)
     {
-        Properties result = DEFAULTS;
+        Properties result = new Properties();
+
+        result.putAll(DEFAULTS);
 
         InputStream inputStream = null;
         try
@@ -434,7 +450,6 @@ public final class Papoose
             inputStream = Papoose.class.getClassLoader().getResourceAsStream("papoose.properties");
             if (inputStream != null)
             {
-                result = new Properties(result);
                 result.load(inputStream);
             }
         }
@@ -454,20 +469,17 @@ public final class Papoose
             }
         }
 
-        result = new Properties(result);
         result.putAll(System.getProperties());
 
         if (properties != null)
         {
-            result = new Properties(result);
             result.putAll(properties);
         }
 
-        result = new Properties(result);
         result.setProperty("org.papoose.framework.name", this.frameworkName);
         result.setProperty("org.papoose.framework.id", Integer.toString(this.frameworkId));
 
-        return new Properties(result);
+        return result;
     }
 
     /**

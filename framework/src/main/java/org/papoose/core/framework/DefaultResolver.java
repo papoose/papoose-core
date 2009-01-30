@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007-2008 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.papoose.core.framework;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,9 +35,9 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
-
 import org.papoose.core.framework.spi.Resolver;
 import org.papoose.core.framework.spi.Solution;
+import org.papoose.core.framework.util.ToStringCreator;
 
 
 /**
@@ -48,9 +49,12 @@ class DefaultResolver implements Resolver
     private final static String CLASS_NAME = DefaultResolver.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final Object lock = new Object();
-    @GuardedBy("lock") private final Set<AbstractBundle> bundles = new HashSet<AbstractBundle>();
-    @GuardedBy("lock") private final Map<String, List<BundleImpl>> indexByPackage = new HashMap<String, List<BundleImpl>>();
-    @GuardedBy("lock") private Papoose framework;
+    @GuardedBy("lock")
+    private final Set<Generation> bundles = new HashSet<Generation>();
+    @GuardedBy("lock")
+    private final Map<String, List<BundleGeneration>> indexByPackage = new HashMap<String, List<BundleGeneration>>();
+    @GuardedBy("lock")
+    private Papoose framework;
 
     /**
      * {@inheritDoc}
@@ -105,9 +109,9 @@ class DefaultResolver implements Resolver
     /**
      * {@inheritDoc}
      */
-    public void added(AbstractBundle abstractBundle)
+    public void added(Generation generation)
     {
-        LOGGER.entering(CLASS_NAME, "added", abstractBundle);
+        LOGGER.entering(CLASS_NAME, "added", generation);
 
         synchronized (lock)
         {
@@ -119,22 +123,22 @@ class DefaultResolver implements Resolver
                 throw ise;
             }
 
-            bundles.add(abstractBundle);
+            bundles.add(generation);
 
-            if (abstractBundle instanceof BundleImpl)
+            if (generation instanceof BundleGeneration)
             {
-                LOGGER.finest("Bundle is an regular bundle");
+                LOGGER.finest("Bundle is an regular bundleGeneration");
 
-                for (ExportDescription exportDescription : abstractBundle.getCurrentStore().getBundleExportList())
+                for (ExportDescription exportDescription : generation.getArchiveStore().getBundleExportList())
                 {
                     LOGGER.log(Level.FINEST, "Indexing", exportDescription);
 
                     for (String packageName : exportDescription.getPackages())
                     {
-                        List<BundleImpl> bundleList = indexByPackage.get(packageName);
-                        if (bundleList == null) indexByPackage.put(packageName, bundleList = new ArrayList<BundleImpl>());
+                        List<BundleGeneration> bundleList = indexByPackage.get(packageName);
+                        if (bundleList == null) indexByPackage.put(packageName, bundleList = new ArrayList<BundleGeneration>());
 
-                        bundleList.add((BundleImpl) abstractBundle);
+                        bundleList.add((BundleGeneration) generation);
                     }
                 }
             }
@@ -146,9 +150,9 @@ class DefaultResolver implements Resolver
     /**
      * {@inheritDoc}
      */
-    public void removed(AbstractBundle abstractBundle)
+    public void removed(Generation generation)
     {
-        LOGGER.entering(CLASS_NAME, "removed", abstractBundle);
+        LOGGER.entering(CLASS_NAME, "removed", generation);
 
         synchronized (lock)
         {
@@ -160,18 +164,18 @@ class DefaultResolver implements Resolver
                 throw ise;
             }
 
-            bundles.remove(abstractBundle);
+            bundles.remove(generation);
 
-            if (abstractBundle instanceof BundleImpl)
+            if (generation instanceof BundleGeneration)
             {
-                LOGGER.finest("Bundle is an regular bundle");
+                LOGGER.finest("Bundle is an regular bundleGeneration");
 
-                BundleImpl bundle = (BundleImpl) abstractBundle;
-                for (ExportDescription exportDescription : bundle.getCurrentStore().getBundleExportList())
+                BundleGeneration bundle = (BundleGeneration) generation;
+                for (ExportDescription exportDescription : bundle.getArchiveStore().getBundleExportList())
                 {
                     for (String packageName : exportDescription.getPackages())
                     {
-                        List<BundleImpl> bundleList = indexByPackage.get(packageName);
+                        List<BundleGeneration> bundleList = indexByPackage.get(packageName);
                         if (bundleList == null) continue;
 
                         bundleList.remove(bundle);
@@ -188,49 +192,49 @@ class DefaultResolver implements Resolver
     /**
      * {@inheritDoc}
      */
-    public Set<Solution> resolve(AbstractBundle bundle) throws BundleException
+    public Set<Solution> resolve(Generation bundle) throws BundleException
     {
         LOGGER.entering(CLASS_NAME, "resolve", bundle);
 
         if (bundle == null) throw new IllegalArgumentException("Bundle cannot be null");
         if (bundle.getState() != Bundle.INSTALLED) throw new BundleException("Bundle not in INSTALLED STATE");
+        if (framework == null) throw new IllegalStateException("Framework has not started");
 
         synchronized (lock)
         {
-            if (framework == null) throw new IllegalStateException("Framework has not started");
-            if (framework != bundle.getFramework()) throw new IllegalArgumentException("Bundle does not belong to the same framework instance");
-
             CheckPoint result = null;
 
-            if (bundle instanceof BundleImpl)
+            if (bundle instanceof BundleGeneration)
             {
-                List<FragmentBundleImpl> availableFragments = collectAvailableFragments((BundleImpl) bundle);
+                List<FragmentGeneration> availableFragments = collectAvailableFragments((BundleGeneration) bundle);
 
-                for (List<FragmentBundleImpl> fragments : Util.combinations(availableFragments))
+                for (List<FragmentGeneration> fragments : Util.combinations(availableFragments))
                 {
-                    CandidateBundle candidate = new CandidateBundle(bundle, (BundleImpl) bundle, fragments);
+                    CandidateBundle candidate = new CandidateBundle(bundle, (BundleGeneration) bundle, fragments);
 
-                    CheckPoint checkPoint = new CheckPoint(candidate, generateBundleSet(bundles));
+                    CheckPoint checkPoint = new CheckPoint(candidate, generateBundleSet(bundle, bundles));
 
-                    result = resolveBundle(checkPoint);
+                    result = doResolveBundle(checkPoint);
+
+                    if (result != null) break;
                 }
             }
-            else if (bundle instanceof FragmentBundleImpl)
+            else if (bundle instanceof FragmentGeneration)
             {
-                BundleImpl host = collectAvailableHost((FragmentBundleImpl) bundle);
+                BundleGeneration host = collectAvailableHost((FragmentGeneration) bundle);
 
                 if (host == null) throw new BundleException("No consistent solution set found");
 
-                List<FragmentBundleImpl> fragments = new ArrayList<FragmentBundleImpl>(host.getFragments());
-                fragments.add((FragmentBundleImpl) bundle);
+                List<FragmentGeneration> fragments = new ArrayList<FragmentGeneration>(host.getFragments());
+                fragments.add((FragmentGeneration) bundle);
 
                 CandidateBundle candidate = new CandidateBundle(bundle, host, fragments);
 
-                CheckPoint checkPoint = new CheckPoint(candidate, generateBundleSet(bundles));
+                CheckPoint checkPoint = new CheckPoint(candidate, generateBundleSet(bundle, bundles));
 
-                result = resolveBundle(checkPoint);
+                result = doResolveBundle(checkPoint);
             }
-            else if (bundle instanceof ExtensionBundleImpl)
+            else if (bundle instanceof FrameworkExtensionGeneration)
             {
             }
 
@@ -242,36 +246,83 @@ class DefaultResolver implements Resolver
 
     private Set<Solution> extractSolutions(CheckPoint result)
     {
-        return null;  //To change body of created methods use File | Settings | File Templates.
+        Set<Solution> solutions = new HashSet<Solution>();
+
+        for (CandidateBundle candidateBundle : result.resolved)
+        {
+            Set<Wire> wires = new HashSet<Wire>();
+
+            for (CandidateWiring candidateWiring : candidateBundle.getCandidateWirings())
+            {
+                Wire wire = new Wire(candidateWiring.getPackageName(), candidateWiring.getExportDescription(), candidateWiring.getBundleGeneration());
+                wires.add(wire);
+            }
+
+            Solution solution = new Solution(candidateBundle.getBundleGeneration(), candidateBundle.getFragments(), wires, Collections.<Wire>emptyList());
+            solutions.add(solution);
+        }
+
+        return solutions;  //Todo change body of created methods use File | Settings | File Templates.
     }
 
-    private Set<AbstractBundle> generateBundleSet(Set<AbstractBundle> bundles)
-    {
-        return null;  //To change body of created methods use File | Settings | File Templates.
-    }
-
-
-    private List<FragmentBundleImpl> collectAvailableFragments(BundleImpl bundle)
+    private Set<Generation> generateBundleSet(Generation removeGeneration, Set<Generation> bundles)
     {
         assert Thread.holdsLock(lock);
 
-        List<FragmentBundleImpl> result = new ArrayList<FragmentBundleImpl>();
+        Set<Generation> result = new HashSet<Generation>();
 
-        return result;  //todo: consider this autogenerated code
+        for (Generation generation : bundles)
+        {
+            if (generation.getState() != Bundle.UNINSTALLED)
+            {
+                result.add(generation);
+            }
+        }
+
+        result.remove(removeGeneration);
+
+        return result;
     }
 
-    private BundleImpl collectAvailableHost(FragmentBundleImpl fragmentBundle)
+
+    private List<FragmentGeneration> collectAvailableFragments(BundleGeneration bundle)
+    {
+        assert Thread.holdsLock(lock);
+
+        List<FragmentGeneration> result = new ArrayList<FragmentGeneration>();
+
+        String hostSymbolName = bundle.getSymbolicName();
+        Version hostVersion = bundle.getVersion();
+        for (Generation generation : bundles)
+        {
+            if (generation instanceof FragmentGeneration)
+            {
+                FragmentGeneration fragmentGeneration = (FragmentGeneration) generation;
+                FragmentDescription description = fragmentGeneration.getArchiveStore().getBundleFragmentHost();
+
+                if (fragmentGeneration.getState() == Bundle.INSTALLED
+                    && description.getSymbolName().equals(hostSymbolName)
+                    && description.getVersionRange().includes(hostVersion))
+                {
+                    result.add(fragmentGeneration);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private BundleGeneration collectAvailableHost(FragmentGeneration fragmentBundle)
     {
         assert Thread.holdsLock(lock);
 
         return null;  //todo: consider this autogenerated code
     }
 
-    private CheckPoint resolveBundle(CheckPoint checkPoint)
+    private CheckPoint doResolveBundle(CheckPoint checkPoint)
     {
         assert Thread.holdsLock(lock);
         assert checkPoint != null;
-        assert !checkPoint.isDone();
         assert checkPoint.resolving != null;
 
         while ((checkPoint = resolveWires(checkPoint)) != null && !checkPoint.isDone())
@@ -294,15 +345,15 @@ class DefaultResolver implements Resolver
         {
             ImportDescriptionWrapper targetImport = imports.remove(0);
 
-            for (ExportDescriptionWrapper candidateExport : collectEligibleExports(targetImport, checkPoint.used))
+            for (ExportDescriptionWrapper candidateExport : collectEligibleExportsFromUsed(targetImport, checkPoint.used))
             {
                 if (matches(targetImport, candidateExport))
                 {
-                    Set<CandidateWiring> impliedCandidateWirings = collectImpliedConstraints(candidateExport);
+                    Set<Wire> impliedCandidateWirings = collectImpliedConstraints(candidateExport.getExportDescription(), candidateExport.getBundleGeneration());
 
-                    if (isConsistent(impliedCandidateWirings, checkPoint.used))
+                    if (isConsistent(checkPoint.used, impliedCandidateWirings))
                     {
-                        CandidateWiring newWiring = new CandidateWiring(targetImport.getPackageName(), candidateExport.getExportDescription(), candidateExport.getBundle());
+                        CandidateWiring newWiring = new CandidateWiring(targetImport.getPackageName(), candidateExport.getExportDescription(), candidateExport.getBundleGeneration());
 
                         CheckPoint result = resolveWires(checkPoint.newCheckPoint(newWiring));
                         if (result != null) return result;
@@ -310,16 +361,16 @@ class DefaultResolver implements Resolver
                 }
             }
 
-            for (ExportDescriptionWrapper candidateExport : collectEligibleExports(checkPoint.unused))
+            for (ExportDescriptionWrapper candidateExport : collectEligibleExportsFromUnused(targetImport, checkPoint.unused))
             {
                 if (matches(targetImport, candidateExport))
                 {
-                    Set<CandidateWiring> impliedCandidateWirings = collectImpliedConstraints(targetImport, candidateExport);
+                    Set<Wire> impliedCandidateWirings = collectImpliedConstraints(candidateExport.getExportDescription(), candidateExport.getBundleGeneration());
 
-                    if (isConsistent(impliedCandidateWirings, checkPoint.used))
+                    if (isConsistent(checkPoint.used, impliedCandidateWirings))
                     {
                         CandidateBundle newBundle = generateCandidatePairing(candidateExport);
-                        CandidateWiring newWiring = new CandidateWiring(targetImport.getPackageName(), candidateExport.getExportDescription(), candidateExport.getBundle());
+                        CandidateWiring newWiring = new CandidateWiring(targetImport.getPackageName(), candidateExport.getExportDescription(), candidateExport.getBundleGeneration());
 
                         CheckPoint result = resolveWires(checkPoint.newCheckPoint(newBundle, newWiring));
                         if (result != null) return result;
@@ -329,43 +380,197 @@ class DefaultResolver implements Resolver
 
             if (targetImport.isMandatory()) return null;
         }
+        else if (!checkPoint.isDone())
+        {
+            return doResolveBundle(checkPoint);
+        }
+        else
+        {
+            checkPoint.resolveCompleted();
+        }
 
         return checkPoint;
     }
 
     private CandidateBundle generateCandidatePairing(ExportDescriptionWrapper candidateExport)
     {
-        return null;  //To change body of created methods use File | Settings | File Templates.
+        CandidateBundle candidateBundle = new CandidateBundle(candidateExport.getBundleGeneration(), candidateExport.getBundleGeneration(), Collections.<FragmentGeneration>emptyList());
+        return candidateBundle;  //Todo change body of created methods use File | Settings | File Templates.
     }
 
-    private Set<CandidateWiring> collectImpliedConstraints(ImportDescriptionWrapper targetImport, ExportDescriptionWrapper candidateExport)
+
+    static final Set<BundleGeneration> BUNDLES_SCANNED = new HashSet<BundleGeneration>();
+
+    /**
+     * Collect the implied constraints for a particular export for a particular
+     * bundle.  The implied constraints are obtained by following the "uses"
+     * directive.
+     *
+     * @param exportDescription
+     * @param bundleGeneration
+     * @return
+     */
+    private Set<Wire> collectImpliedConstraints(ExportDescription exportDescription, BundleGeneration bundleGeneration)
     {
-        return null;  //To change body of created methods use File | Settings | File Templates.
+        assert Thread.holdsLock(lock);
+
+        try
+        {
+            return doCollectImpliedConstraints(exportDescription, bundleGeneration);
+        }
+        finally
+        {
+            BUNDLES_SCANNED.clear();
+        }
     }
 
-    private ExportDescriptionWrapper[] collectEligibleExports(Set<AbstractBundle> unused)
+    private Set<Wire> doCollectImpliedConstraints(ExportDescription exportDescription, BundleGeneration bundleGeneration)
     {
-        return new ExportDescriptionWrapper[0];  //To change body of created methods use File | Settings | File Templates.
+        assert Thread.holdsLock(lock);
+
+        Set<Wire> result = new HashSet<Wire>();
+
+        if (BUNDLES_SCANNED.contains(bundleGeneration))
+        {
+            return result;
+        }
+        else
+        {
+            BUNDLES_SCANNED.add(bundleGeneration);
+        }
+
+        for (String packageName : exportDescription.getUses())
+        {
+            for (Wire wire : bundleGeneration.getClassLoader().getWires())
+            {
+                if (packageName.equals(wire.getPackageName()))
+                {
+                    result.add(wire);
+
+                    result.addAll(doCollectImpliedConstraints(wire.getExportDescription(), wire.getBundleGeneration()));
+                }
+            }
+        }
+        return result;
     }
 
-    private boolean isConsistent(Set<CandidateWiring> impliedCandidateWirings, Set<CandidateBundle> used)
+    private boolean isConsistent(Set<CandidateBundle> used, Set<Wire> impliedCandidateWirings)
     {
-        return false;  //To change body of created methods use File | Settings | File Templates.
-    }
+        Map<String, Wire> implied = new HashMap<String, Wire>(impliedCandidateWirings.size());
 
-    private Set<CandidateWiring> collectImpliedConstraints(ExportDescriptionWrapper candidateExport)
-    {
-        return null;  //To change body of created methods use File | Settings | File Templates.
+        for (Wire wire : impliedCandidateWirings) implied.put(wire.getPackageName(), wire);
+
+        for (CandidateBundle candidateBundle : used)
+        {
+            for (CandidateWiring candidateWiring : candidateBundle.getCandidateWirings())
+            {
+                String packageName = candidateWiring.getPackageName();
+                if (implied.containsKey(packageName) && candidateBundle.getBundleGeneration() != implied.get(packageName).getBundleGeneration()) return false;
+            }
+        }
+        return true;
     }
 
     private boolean matches(ImportDescriptionWrapper targetImport, ExportDescriptionWrapper candidateExport)
     {
-        return false;  //To change body of created methods use File | Settings | File Templates.
+        String importPackage = targetImport.getPackageName();
+        Map<String, Object> importParameters = targetImport.getImportDescription().getParameters();
+        ExportDescription exportDescription = candidateExport.getExportDescription();
+        Map<String, Object> exportParameters = exportDescription.getParameters();
+
+        for (String exportPackage : candidateExport.getExportDescription().getPackages())
+        {
+            if (importPackage.equals(exportPackage))
+            {
+                if (importParameters.containsKey(Constants.VERSION_ATTRIBUTE))
+                {
+                    VersionRange range = (VersionRange) importParameters.get(Constants.VERSION_ATTRIBUTE);
+                    if (!range.includes((Version) exportParameters.get(Constants.VERSION_ATTRIBUTE))) return false;
+                }
+                if (importParameters.containsKey(Constants.PACKAGE_SPECIFICATION_VERSION))
+                {
+                    VersionRange range = (VersionRange) importParameters.get(Constants.PACKAGE_SPECIFICATION_VERSION);
+                    if (!range.includes((Version) exportParameters.get(Constants.VERSION_ATTRIBUTE))) return false;
+                }
+                if (importParameters.containsKey(Constants.BUNDLE_SYMBOLICNAME_ATTRIBUTE))
+                {
+                    String symbolicName = (String) importParameters.get(Constants.BUNDLE_SYMBOLICNAME_ATTRIBUTE);
+                    if (!symbolicName.equals(candidateExport.getBundleGeneration().getSymbolicName())) return false;
+                }
+                if (importParameters.containsKey(Constants.BUNDLE_VERSION_ATTRIBUTE))
+                {
+                    VersionRange range = (VersionRange) importParameters.get(Constants.BUNDLE_VERSION_ATTRIBUTE);
+                    if (!range.includes(candidateExport.getBundleGeneration().getVersion())) return false;
+                }
+
+                Set<String> importKeys = new HashSet<String>(importParameters.keySet());
+                importKeys.removeAll(Arrays.asList(Constants.VERSION_ATTRIBUTE, Constants.PACKAGE_SPECIFICATION_VERSION, Constants.BUNDLE_SYMBOLICNAME_ATTRIBUTE, Constants.BUNDLE_VERSION_ATTRIBUTE, Constants.MANDATORY_DIRECTIVE));
+                importKeys.removeAll(exportDescription.getMandatory());
+
+                for (String importKey : importKeys)
+                {
+                    if (exportParameters.containsKey(importKey) && !importParameters.get(importKey).equals(exportParameters.get(importKey))) return false;
+                }
+
+                for (String mandatoryExportKey : exportDescription.getMandatory())
+                {
+                    if (!importParameters.containsKey(mandatoryExportKey)) return false;
+
+                    if (!exportParameters.get(mandatoryExportKey).equals(importParameters.get(mandatoryExportKey))) return false;
+                }
+
+                return true;
+            }
+
+        }
+        return false;
     }
 
-    private ExportDescriptionWrapper[] collectEligibleExports(ImportDescriptionWrapper targetImport, Set<CandidateBundle> used)
+    private List<ExportDescriptionWrapper> collectEligibleExportsFromUsed(ImportDescriptionWrapper targetImport, Set<CandidateBundle> used)
     {
-        return new ExportDescriptionWrapper[0];  //To change body of created methods use File | Settings | File Templates.
+        String importPackage = targetImport.getPackageName();
+        List<ExportDescriptionWrapper> results = new ArrayList<ExportDescriptionWrapper>();
+
+        for (CandidateBundle candidateBundle : used)
+        {
+            for (ExportDescriptionWrapper exportDescriptionWrapper : candidateBundle.getExports())
+            {
+                for (String exportPackage : exportDescriptionWrapper.exportDescription.getPackages())
+                {
+                    if (importPackage.equals(exportPackage))
+                    {
+                        results.add(exportDescriptionWrapper);
+                        break;
+                    }
+                }
+            }
+        }
+        return results;
+    }
+
+    private List<ExportDescriptionWrapper> collectEligibleExportsFromUnused(ImportDescriptionWrapper targetImport, Set<Generation> unused)
+    {
+        String importPackage = targetImport.getPackageName();
+        List<ExportDescriptionWrapper> results = new ArrayList<ExportDescriptionWrapper>();
+
+        for (Generation generation : unused)
+        {
+            if (generation instanceof BundleGeneration)
+            {
+                for (ExportDescription exportDescription : generation.getArchiveStore().getBundleExportList())
+                {
+                    for (String exportPackage : exportDescription.getPackages())
+                    {
+                        if (importPackage.equals(exportPackage))
+                        {
+                            results.add(new ExportDescriptionWrapper(exportDescription, (BundleGeneration) generation));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return results;
     }
 
     /**
@@ -378,9 +583,9 @@ class DefaultResolver implements Resolver
     private SortedSet<ExportDescriptionWrapper> collectEligibleExports(ImportDescriptionWrapper importWrapper)
     {
         SortedSet<ExportDescriptionWrapper> sorted = new TreeSet<ExportDescriptionWrapper>();
-        for (BundleImpl bundle : indexByPackage.get(importWrapper.getPackageName()))
+        for (BundleGeneration bundle : indexByPackage.get(importWrapper.getPackageName()))
         {
-            for (ExportDescription exportDescription : bundle.getCurrentStore().getBundleExportList())
+            for (ExportDescription exportDescription : bundle.getArchiveStore().getBundleExportList())
             {
                 sorted.add(new ExportDescriptionWrapper(exportDescription, bundle));
             }
@@ -389,7 +594,7 @@ class DefaultResolver implements Resolver
         return sorted;
     }
 
-    protected static Set<CandidateWiring> collectImpliedConstraints(Set<String> uses, BundleImpl bundle)
+    protected static Set<CandidateWiring> collectImpliedConstraints(Set<String> uses, BundleGeneration bundle)
     {
         Set<CandidateWiring> result = new HashSet<CandidateWiring>();
 
@@ -402,8 +607,8 @@ class DefaultResolver implements Resolver
                 {
                     ExportDescription exportDescription = wire.getExportDescription();
 
-                    result.addAll(collectImpliedConstraints(exportDescription.getUses(), wire.getBundle()));
-                    result.add(new CandidateWiring(packageName, exportDescription, wire.getBundle()));
+                    result.addAll(collectImpliedConstraints(exportDescription.getUses(), wire.getBundleGeneration()));
+                    result.add(new CandidateWiring(packageName, exportDescription, wire.getBundleGeneration()));
 
                     continue nextPackage;
                 }
@@ -418,37 +623,10 @@ class DefaultResolver implements Resolver
 
         for (CandidateWiring candidateWiring : candidateWirings)
         {
-            wires.add(new Wire(candidateWiring.getPackageName(), candidateWiring.getExportDescription(), candidateWiring.getBundle()));
+            wires.add(new Wire(candidateWiring.getPackageName(), candidateWiring.getExportDescription(), candidateWiring.getBundleGeneration()));
         }
 
         return wires;
-    }
-
-    /**
-     * TODO: Make sure the bundle symbolic name and bundle version make it into the import and export descriptions
-     * TODO: Properly alias SYSTEM_BUNDLE_SYMBOLICNAME
-     */
-    private static boolean match(ImportDescription importDescription, ExportDescription exportDescription)
-    {
-        VersionRange bundleVersionRange = (VersionRange) importDescription.getParameters().get(Constants.BUNDLE_VERSION_ATTRIBUTE);
-        boolean versionMatch = bundleVersionRange == null || bundleVersionRange.includes((Version) exportDescription.getParameters().get(Constants.BUNDLE_VERSION));
-        if (versionMatch) return false;
-
-        VersionRange importVersionRange = (VersionRange) importDescription.getParameters().get("version");
-        if (!importVersionRange.includes((Version) exportDescription.getParameters().get("version"))) return false;
-
-        for (String key : exportDescription.getMandatory())
-        {
-            if (!exportDescription.getParameters().get(key).equals(importDescription.getParameters().get(key))) return false;
-        }
-
-        for (String key : importDescription.getParameters().keySet())
-        {
-            if ("version".equals(key) || "bundle-version".equals(key)) continue;
-            if (!importDescription.getParameters().get(key).equals(exportDescription.getParameters().get(key))) return false;
-        }
-
-        return true;
     }
 
     /**
@@ -463,7 +641,7 @@ class DefaultResolver implements Resolver
 
         for (ImportDescription importDescription : importDescriptions)
         {
-            for (String packageName : importDescription.getPackageNames())
+            for (String packageName : importDescription.getPackages())
             {
                 work.add(new ImportDescriptionWrapper(packageName, importDescription));
             }
@@ -522,15 +700,15 @@ class DefaultResolver implements Resolver
     private static class ExportDescriptionWrapper implements Comparable<ExportDescriptionWrapper>
     {
         private final ExportDescription exportDescription;
-        private final BundleImpl bundle;
+        private final BundleGeneration bundleGeneration;
         private final long bundleId;
         private final Version version;
 
-        public ExportDescriptionWrapper(ExportDescription exportDescription, BundleImpl bundle)
+        public ExportDescriptionWrapper(ExportDescription exportDescription, BundleGeneration bundleGeneration)
         {
             this.exportDescription = exportDescription;
-            this.bundle = bundle;
-            this.bundleId = bundle.getBundleId();
+            this.bundleGeneration = bundleGeneration;
+            this.bundleId = bundleGeneration.getBundleId();
             this.version = (Version) exportDescription.getParameters().get("version");
         }
 
@@ -539,9 +717,9 @@ class DefaultResolver implements Resolver
             return exportDescription;
         }
 
-        public BundleImpl getBundle()
+        public BundleGeneration getBundleGeneration()
         {
-            return bundle;
+            return bundleGeneration;
         }
 
         public int compareTo(ExportDescriptionWrapper o)
@@ -556,17 +734,17 @@ class DefaultResolver implements Resolver
     {
         private final String packageName;
         private final ExportDescription exportDescription;
-        private final BundleImpl bundle;
+        private final BundleGeneration bundleGeneration;
 
-        public CandidateWiring(String packageName, ExportDescription exportDescription, BundleImpl bundle)
+        public CandidateWiring(String packageName, ExportDescription exportDescription, BundleGeneration bundleGeneration)
         {
             assert packageName != null;
             assert exportDescription != null;
-            assert bundle != null;
+            assert bundleGeneration != null;
 
             this.packageName = packageName;
             this.exportDescription = exportDescription;
-            this.bundle = bundle;
+            this.bundleGeneration = bundleGeneration;
         }
 
         public String getPackageName()
@@ -579,9 +757,9 @@ class DefaultResolver implements Resolver
             return exportDescription;
         }
 
-        public BundleImpl getBundle()
+        public BundleGeneration getBundleGeneration()
         {
-            return bundle;
+            return bundleGeneration;
         }
 
         @Override
@@ -602,85 +780,122 @@ class DefaultResolver implements Resolver
         }
     }
 
-    private static class BundleWrapper
-    {
-        private final AbstractBundle bundle;
-
-        BundleWrapper(AbstractBundle bundle)
-        {
-            this.bundle = bundle;
-        }
-    }
-
     private static class CheckPoint
     {
-        CandidateBundle resolving;
-        List<CandidateBundle> toBeResolved = new ArrayList<CandidateBundle>();
-        Set<CandidateBundle> used = new HashSet<CandidateBundle>();
-        Set<AbstractBundle> unused = new HashSet<AbstractBundle>();
+        private CandidateBundle resolving;
+        private final List<CandidateBundle> resolved = new ArrayList<CandidateBundle>();
+        private final List<CandidateBundle> unResolved = new ArrayList<CandidateBundle>();
+        private final Set<CandidateBundle> used = new HashSet<CandidateBundle>();
+        private final Set<Generation> unused = new HashSet<Generation>();
 
 
-        CheckPoint(CandidateBundle resolving, Set<AbstractBundle> unused)
+        CheckPoint(CandidateBundle resolving, Set<Generation> unused)
         {
             this.resolving = resolving;
+            this.used.add(resolving);
             this.unused.addAll(unused);
+        }
+
+        CheckPoint(CheckPoint checkPoint)
+        {
+            resolving = new CandidateBundle(checkPoint.resolving);
+            unResolved.addAll(checkPoint.unResolved);
+            used.addAll(checkPoint.used);
+            unused.addAll(checkPoint.unused);
         }
 
         public boolean isDone()
         {
-            return toBeResolved.isEmpty();
+            return unResolved.isEmpty();
+        }
+
+        public void resolveCompleted()
+        {
+            resolved.add(resolving);
+            resolving = null;
         }
 
         public CheckPoint nextBundle()
         {
-            resolving = toBeResolved.get(0);
+            resolving = unResolved.get(0);
             return this;
         }
 
         public CheckPoint newCheckPoint(CandidateWiring newWiring)
         {
-            return null;  //To change body of created methods use File | Settings | File Templates.
+            CheckPoint checkPoint = new CheckPoint(this);
+
+            checkPoint.resolving.getCandidateWirings().add(newWiring);
+
+            return checkPoint;
         }
 
         public CheckPoint newCheckPoint(CandidateBundle newBundle, CandidateWiring newWiring)
         {
-            return null;  //To change body of created methods use File | Settings | File Templates.
+            CheckPoint checkPoint = new CheckPoint(this);
+
+            checkPoint.resolving.getCandidateWirings().add(newWiring);
+            checkPoint.used.add(newBundle);
+            checkPoint.unused.remove(newBundle.getBundleGeneration());
+
+            return checkPoint;
+        }
+
+        @Override
+        public String toString()
+        {
+            ToStringCreator creator = new ToStringCreator(this);
+
+            creator.append("resolving", resolving);
+            creator.append("resolved", resolved);
+            creator.append("unResolved", unResolved);
+            creator.append("used", used);
+            creator.append("unused", unused);
+
+            return creator.toString();
         }
     }
 
     private static class CandidateBundle
     {
-        private final AbstractBundle toBeResolved;
-        private final BundleImpl bundle;
-        private final List<FragmentBundleImpl> fragments;
+        private final Generation toBeResolved;
+        private final BundleGeneration bundleGeneration;
+        private final List<FragmentGeneration> fragments;
+        private final List<ImportDescriptionWrapper> imports = new ArrayList<ImportDescriptionWrapper>();
         private final Set<CandidateWiring> candidateWirings = new HashSet<CandidateWiring>();
 
-        private CandidateBundle(AbstractBundle toBeResolved, BundleImpl bundle, List<FragmentBundleImpl> fragments)
+        private CandidateBundle(Generation toBeResolved, BundleGeneration bundleGeneration, List<FragmentGeneration> fragments)
         {
             this.toBeResolved = toBeResolved;
-            this.bundle = bundle;
+            this.bundleGeneration = bundleGeneration;
             this.fragments = Collections.unmodifiableList(fragments);
+
+            for (ImportDescription description : bundleGeneration.getArchiveStore().getBundleImportList())
+            {
+                for (String packageName : description.getPackages()) this.imports.add(new ImportDescriptionWrapper(packageName, description));
+            }
         }
 
-        public CandidateBundle(CandidateBundle resolving)
+        public CandidateBundle(CandidateBundle candidateBundle)
         {
-            this.toBeResolved = resolving.toBeResolved;
-            this.bundle = resolving.bundle;
-            this.fragments = Collections.unmodifiableList(new ArrayList<FragmentBundleImpl>(resolving.fragments));
-            //Todo change body of created methods use File | Settings | File Templates.
+            this.toBeResolved = candidateBundle.toBeResolved;
+            this.bundleGeneration = candidateBundle.bundleGeneration;
+            this.fragments = Collections.unmodifiableList(new ArrayList<FragmentGeneration>(candidateBundle.fragments));
+            this.imports.addAll(candidateBundle.imports);
+            this.candidateWirings.addAll(candidateBundle.candidateWirings);
         }
 
-        public AbstractBundle getToBeResolved()
+        public Generation getToBeResolved()
         {
             return toBeResolved;
         }
 
-        public BundleImpl getBundle()
+        public BundleGeneration getBundleGeneration()
         {
-            return bundle;
+            return bundleGeneration;
         }
 
-        public List<FragmentBundleImpl> getFragments()
+        public List<FragmentGeneration> getFragments()
         {
             return fragments;
         }
@@ -692,12 +907,30 @@ class DefaultResolver implements Resolver
 
         public List<ImportDescriptionWrapper> getImports()
         {
-            List<ImportDescriptionWrapper> result = new ArrayList<ImportDescriptionWrapper>();
-            for (ImportDescription description : bundle.getCurrentStore().getBundleImportList())
+            return imports;
+        }
+
+        public List<ExportDescriptionWrapper> getExports()
+        {
+            List<ExportDescriptionWrapper> result = new ArrayList<ExportDescriptionWrapper>();
+            for (ExportDescription description : bundleGeneration.getArchiveStore().getBundleExportList())
             {
-                for (String packageName : description.getPackageNames()) result.add(new ImportDescriptionWrapper(packageName, description));
+                for (String packageName : description.getPackages()) result.add(new ExportDescriptionWrapper(description, bundleGeneration));
             }
             return result;
+        }
+
+        @Override
+        public String toString()
+        {
+            ToStringCreator creator = new ToStringCreator(this);
+
+            creator.append("unResolved", toBeResolved);
+            creator.append("bundleGeneration", bundleGeneration);
+            creator.append("fragments", fragments);
+            creator.append("candidateWirings", candidateWirings);
+
+            return creator.toString();
         }
     }
 }

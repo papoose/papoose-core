@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,22 +29,22 @@ import org.osgi.framework.Version;
 public class ImportDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
-    private final Set<String> packageNames;
+    private final Set<String> packages;
     private final Map<String, Object> parameters;
     private Resolution resolution = Resolution.MANDATORY;
 
-    public ImportDescription(Set<String> packageNames, Map<String, Object> parameters)
+    public ImportDescription(Set<String> packages, Map<String, Object> parameters)
     {
-        assert packageNames != null;
+        assert packages != null;
         assert parameters != null;
 
-        this.packageNames = Collections.unmodifiableSet(packageNames);
+        this.packages = Collections.unmodifiableSet(packages);
         this.parameters = Collections.unmodifiableMap(parameters);
     }
 
-    public Set<String> getPackageNames()
+    public Set<String> getPackages()
     {
-        return packageNames;
+        return packages;
     }
 
     public Map<String, Object> getParameters()
@@ -67,7 +67,7 @@ public class ImportDescription
     {
         StringBuilder builder = new StringBuilder();
 
-        for (String pkg : packageNames)
+        for (String pkg : packages)
         {
             if (builder.length() > 0) builder.append(";");
             builder.append(pkg);

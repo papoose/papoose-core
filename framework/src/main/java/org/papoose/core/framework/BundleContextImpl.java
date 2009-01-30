@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@
 package org.papoose.core.framework;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.Dictionary;
 
 import org.osgi.framework.Bundle;
@@ -32,7 +30,7 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
-
+import org.papoose.core.framework.spi.LocationMapper;
 import org.papoose.core.framework.util.ToStringCreator;
 
 
@@ -41,9 +39,9 @@ import org.papoose.core.framework.util.ToStringCreator;
  */
 class BundleContextImpl implements BundleContext
 {
-    private volatile BundleImpl bundle;
+    private volatile BundleController bundle;
 
-    public BundleContextImpl(BundleImpl bundle)
+    public BundleContextImpl(BundleController bundle)
     {
         assert bundle != null;
 
@@ -62,12 +60,13 @@ class BundleContextImpl implements BundleContext
 
     public String getProperty(String key)
     {
-        return (String) getFramework().getProperty(key);
+        Object result = getFramework().getProperty(key);
+        if (result instanceof String) return (String) result;
+        return null;
     }
 
-    public BundleImpl getBundle()
+    public BundleController getBundle()
     {
-        BundleImpl bundle = this.bundle;
         if (bundle == null) throw new IllegalStateException("This bundle is no longer valid");
         return bundle;
     }
@@ -76,11 +75,12 @@ class BundleContextImpl implements BundleContext
     {
         try
         {
-            return installBundle(location, new URL(location).openStream());
+            LocationMapper mapper = (LocationMapper) getFramework().getProperty(LocationMapper.LOCATION_MANAGER);
+            return installBundle(location, mapper.mapLocationString(location));
         }
-        catch (IOException ioe)
+        catch (PapooseException e)
         {
-            throw new BundleException("Unable to open a stream for location: " + location, ioe);
+            throw new BundleException("Unable to open a stream for location: " + location, e);
         }
     }
 
@@ -141,7 +141,7 @@ class BundleContextImpl implements BundleContext
 
     public ServiceRegistration registerService(String clazz, Object service, Dictionary properties)
     {
-        return registerService(new String[]{ clazz }, service, properties);
+        return registerService(new String[]{clazz}, service, properties);
     }
 
     public ServiceReference[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException

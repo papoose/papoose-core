@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,11 @@ import java.io.InputStream;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
+
 /**
+ * An extension to <code>PropertyResourceBundle</code> to expose the
+ * <code>setParent</code> method.
+ *
  * @version $Revision$ $Date$
  */
 public class L18nResourceBundle extends PropertyResourceBundle
