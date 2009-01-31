@@ -53,7 +53,7 @@ import org.papoose.core.util.AttributeUtils;
 import org.papoose.core.util.I18nUtils;
 import org.papoose.core.util.SerialExecutor;
 import org.papoose.core.util.ToStringCreator;
-import org.papoose.core.util.Security;
+import org.papoose.core.util.SecurityUtils;
 
 
 /**
@@ -153,7 +153,7 @@ public class BundleController implements Bundle
      */
     public void start(int options) throws BundleException
     {
-        Security.checkAdminPermission(this, AdminPermission.EXECUTE);
+        SecurityUtils.checkAdminPermission(this, AdminPermission.EXECUTE);
 
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
@@ -173,7 +173,7 @@ public class BundleController implements Bundle
      */
     public void stop(int options) throws BundleException
     {
-        Security.checkAdminPermission(this, AdminPermission.EXECUTE);
+        SecurityUtils.checkAdminPermission(this, AdminPermission.EXECUTE);
 
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
@@ -201,7 +201,7 @@ public class BundleController implements Bundle
      */
     public void update(InputStream inputStream) throws BundleException
     {
-        Security.checkAdminPermission(this, AdminPermission.LIFECYCLE);
+        SecurityUtils.checkAdminPermission(this, AdminPermission.LIFECYCLE);
 
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
@@ -213,7 +213,7 @@ public class BundleController implements Bundle
      */
     public void uninstall() throws BundleException
     {
-        Security.checkAdminPermission(this, AdminPermission.LIFECYCLE);
+        SecurityUtils.checkAdminPermission(this, AdminPermission.LIFECYCLE);
 
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
@@ -242,7 +242,7 @@ public class BundleController implements Bundle
      */
     public String getLocation()
     {
-        Security.checkAdminPermission(this, AdminPermission.METADATA);
+        SecurityUtils.checkAdminPermission(this, AdminPermission.METADATA);
 
         return bundleStore.getLocation();
     }
@@ -343,7 +343,7 @@ public class BundleController implements Bundle
     {
         try
         {
-            Security.checkAdminPermission(this, AdminPermission.CLASS);
+            SecurityUtils.checkAdminPermission(this, AdminPermission.CLASS);
 
             if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
@@ -364,7 +364,7 @@ public class BundleController implements Bundle
     {
         try
         {
-            Security.checkAdminPermission(this, AdminPermission.RESOURCE);
+            SecurityUtils.checkAdminPermission(this, AdminPermission.RESOURCE);
 
             if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
@@ -386,7 +386,7 @@ public class BundleController implements Bundle
     {
         try
         {
-            Security.checkAdminPermission(this, AdminPermission.RESOURCE);
+            SecurityUtils.checkAdminPermission(this, AdminPermission.RESOURCE);
 
             if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
@@ -419,7 +419,7 @@ public class BundleController implements Bundle
     {
         try
         {
-            Security.checkAdminPermission(this, AdminPermission.RESOURCE);
+            SecurityUtils.checkAdminPermission(this, AdminPermission.RESOURCE);
 
             if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
@@ -467,7 +467,7 @@ public class BundleController implements Bundle
     {
         try
         {
-            Security.checkAdminPermission(this, AdminPermission.RESOURCE);
+            SecurityUtils.checkAdminPermission(this, AdminPermission.RESOURCE);
 
             return getCurrentGeneration().getArchiveStore().findEntries(path, filePattern, false, recurse);
         }
@@ -483,7 +483,7 @@ public class BundleController implements Bundle
      */
     public BundleContext getBundleContext()
     {
-        Security.checkAdminPermission(this, AdminPermission.CONTEXT);
+        SecurityUtils.checkAdminPermission(this, AdminPermission.CONTEXT);
 
         if (bundleContext == null) bundleContext = new BundleContextImpl(this);
 

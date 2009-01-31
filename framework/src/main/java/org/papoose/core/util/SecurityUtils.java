@@ -17,6 +17,7 @@
 package org.papoose.core.util;
 
 import java.security.Permission;
+import java.util.logging.Logger;
 
 import org.osgi.framework.AdminPermission;
 import org.osgi.framework.Bundle;
@@ -25,19 +26,28 @@ import org.osgi.framework.Bundle;
 /**
  * @version $Revision$ $Date$
  */
-public class Security
+public class SecurityUtils
 {
+    private final static String CLASS_NAME = SecurityUtils.class.getName();
+    private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
+
     public static void checkAdminPermission(Bundle bundle, String action) throws SecurityException
     {
+        LOGGER.entering(CLASS_NAME, "checkAdminPermission", new Object[]{ bundle, action });
+
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
         {
+            LOGGER.finest("Found security manager");
+
             Permission perm = new AdminPermission(bundle, action);
             sm.checkPermission(perm);
         }
+
+        LOGGER.exiting(CLASS_NAME, "checkAdminPermission");
     }
 
-    private Security()
+    private SecurityUtils()
     {
     }
 }
