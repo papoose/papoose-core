@@ -44,13 +44,14 @@ import org.apache.xbean.classloader.ResourceHandle;
 import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.InvalidSyntaxException;
-import org.papoose.core.framework.AbstractArchiveStore;
-import org.papoose.core.framework.L18nResourceBundle;
-import org.papoose.core.framework.NativeCodeDescription;
-import org.papoose.core.framework.Papoose;
-import org.papoose.core.framework.UrlUtils;
-import org.papoose.core.framework.Util;
-import org.papoose.core.framework.util.FileUtils;
+
+import org.papoose.core.AbstractArchiveStore;
+import org.papoose.core.L18nResourceBundle;
+import org.papoose.core.NativeCodeDescription;
+import org.papoose.core.Papoose;
+import org.papoose.core.UrlUtils;
+import org.papoose.core.Util;
+import org.papoose.core.util.FileUtils;
 
 
 /**
@@ -205,7 +206,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         return result.isEmpty() ? null : Collections.enumeration(result);
     }
 
-    @SuppressWarnings({"EmptyCatchBlock"})
+    @SuppressWarnings({ "EmptyCatchBlock" })
     public L18nResourceBundle getResourceBundle(Locale locale)
     {
         try
@@ -237,7 +238,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    @SuppressWarnings({"EmptyCatchBlock"})
+    @SuppressWarnings({ "EmptyCatchBlock" })
     public void close()
     {
         try

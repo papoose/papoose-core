@@ -16,8 +16,8 @@
  */
 package org.osgi.framework;
 
-import org.papoose.core.framework.FilterImpl;
-import org.papoose.core.framework.filter.Parser;
+import org.papoose.core.FilterImpl;
+import org.papoose.core.filter.Parser;
 
 
 /**

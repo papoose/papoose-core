@@ -17,28 +17,18 @@
 package org.papoose.store.file;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Enumeration;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.papoose.core.framework.Papoose;
-import org.papoose.core.framework.UrlUtils;
-import org.papoose.core.framework.Util;
-import org.papoose.core.framework.spi.ArchiveStore;
-import org.papoose.core.framework.spi.BundleStore;
-import org.papoose.core.framework.spi.Store;
+import org.papoose.core.UrlUtils;
+import org.papoose.core.Util;
 import org.papoose.framework.mock.MockURLStreamHandlerFactory;
 import org.papoose.framework.mock.MockURLStreamHandlerProvider;
 

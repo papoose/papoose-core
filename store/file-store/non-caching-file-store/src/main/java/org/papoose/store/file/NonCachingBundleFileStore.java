@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
 
-import org.papoose.core.framework.spi.BundleStore;
+import org.papoose.core.spi.BundleStore;
 
 
 /**

@@ -34,10 +34,10 @@
                         <Bundle-SymbolicName>${groupId}.${artifactId}</Bundle-SymbolicName>
                         <Bundle-Vendor>Papoose</Bundle-Vendor>
                         <Bundle-Copyright>Copyright 2008 (C) The original author or authors</Bundle-Copyright>
-                        <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.packageadmin;version=1.2,org.papoose.core.framework.spi;version=${project.version},net.jcip.annotations;version=1.0;resolution=optional</Import-Package>
+                        <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.packageadmin;version=1.2,org.papoose.core.spi;version=${project.version},net.jcip.annotations;version=1.0;resolution=optional</Import-Package>
                         <Export-Service>org.osgi.service.packageadmin.PackageAdmin</Export-Service>
-                        <Bundle-Activator>org.papoose.core.framework.PackageAdminActivator</Bundle-Activator>
-                        <Private-Package>org.papoose.core.framework.*</Private-Package>
+                        <Bundle-Activator>org.papoose.core.PackageAdminActivator</Bundle-Activator>
+                        <Private-Package>org.papoose.core.*</Private-Package>
                         <Implementation-Title>${name}</Implementation-Title>
                         <Implementation-Version>${project.version}</Implementation-Version>
                     </instructions>

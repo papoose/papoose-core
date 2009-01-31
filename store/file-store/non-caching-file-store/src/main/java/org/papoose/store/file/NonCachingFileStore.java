@@ -31,15 +31,15 @@ import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
 
-import org.papoose.core.framework.FatalError;
-import org.papoose.core.framework.Papoose;
-import org.papoose.core.framework.PapooseException;
-import org.papoose.core.framework.Util;
-import org.papoose.core.framework.spi.ArchiveStore;
-import org.papoose.core.framework.spi.BundleStore;
-import org.papoose.core.framework.spi.Store;
-import org.papoose.core.framework.util.FileUtils;
-import org.papoose.core.framework.util.ToStringCreator;
+import org.papoose.core.FatalError;
+import org.papoose.core.Papoose;
+import org.papoose.core.PapooseException;
+import org.papoose.core.Util;
+import org.papoose.core.spi.ArchiveStore;
+import org.papoose.core.spi.BundleStore;
+import org.papoose.core.spi.Store;
+import org.papoose.core.util.FileUtils;
+import org.papoose.core.util.ToStringCreator;
 
 
 /**
