@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core;
+package org.papoose.core.util;
 
 import java.security.Permission;
 
@@ -25,13 +25,9 @@ import org.osgi.framework.Bundle;
 /**
  * @version $Revision$ $Date$
  */
-class Security
+public class Security
 {
-    private Security()
-    {
-    }
-
-    static void checkAdminPermission(Bundle bundle, String action) throws SecurityException
+    public static void checkAdminPermission(Bundle bundle, String action) throws SecurityException
     {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
@@ -39,5 +35,9 @@ class Security
             Permission perm = new AdminPermission(bundle, action);
             sm.checkPermission(perm);
         }
+    }
+
+    private Security()
+    {
     }
 }

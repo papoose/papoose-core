@@ -61,7 +61,7 @@ public class NonCachingFileStore implements Store
     {
         LOGGER.entering(CLASS_NAME, "NonCachingFileStore");
 
-        assert root != null;
+        if (root == null) throw new IllegalArgumentException("Root file for file store cannot be null");
 
         this.root = root;
 

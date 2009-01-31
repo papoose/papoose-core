@@ -36,7 +36,7 @@ public class Wire
      * @param exportDescription the export description used for this wire
      * @param bundleGeneration  the bundle that provides this package
      */
-    Wire(String packageName, ExportDescription exportDescription, BundleGeneration bundleGeneration)
+    public Wire(String packageName, ExportDescription exportDescription, BundleGeneration bundleGeneration)
     {
         assert packageName != null;
         assert exportDescription != null;

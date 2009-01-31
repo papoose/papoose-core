@@ -79,10 +79,6 @@ public class SystemBundleController extends BundleController
                         StartManager service = (StartManager) getBundleContext().getService(event.getServiceReference());
                         bundleManager.setStartManager(service);
                     }
-                    else
-                    {
-                        bundleManager.setStartManager(new DefaultStartManager(bundleManager));
-                    }
                 }
             },
                                new FilterImpl(getFramework().getParser().parse("(objectclass=org.papoose.framework.spi.StartManager)")));

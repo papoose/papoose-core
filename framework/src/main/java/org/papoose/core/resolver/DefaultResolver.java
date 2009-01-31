@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core;
+package org.papoose.core.resolver;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,26 +36,34 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 
+import org.papoose.core.BundleGeneration;
+import org.papoose.core.ExportDescription;
+import org.papoose.core.FragmentDescription;
+import org.papoose.core.FragmentGeneration;
+import org.papoose.core.FrameworkExtensionGeneration;
+import org.papoose.core.Generation;
+import org.papoose.core.ImportDescription;
+import org.papoose.core.Papoose;
+import org.papoose.core.PapooseException;
+import org.papoose.core.Util;
+import org.papoose.core.VersionRange;
+import org.papoose.core.Wire;
 import org.papoose.core.spi.Resolver;
 import org.papoose.core.spi.Solution;
-import org.papoose.core.util.ToStringCreator;
 
 
 /**
  * @version $Revision$ $Date$
  */
 @ThreadSafe
-class DefaultResolver implements Resolver
+public class DefaultResolver implements Resolver
 {
     private final static String CLASS_NAME = DefaultResolver.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final Object lock = new Object();
-    @GuardedBy("lock")
-    private final Set<Generation> bundles = new HashSet<Generation>();
-    @GuardedBy("lock")
-    private final Map<String, List<BundleGeneration>> indexByPackage = new HashMap<String, List<BundleGeneration>>();
-    @GuardedBy("lock")
-    private Papoose framework;
+    @GuardedBy("lock") private final Set<Generation> bundles = new HashSet<Generation>();
+    @GuardedBy("lock") private final Map<String, List<BundleGeneration>> indexByPackage = new HashMap<String, List<BundleGeneration>>();
+    @GuardedBy("lock") private Papoose framework;
 
     /**
      * {@inheritDoc}
@@ -249,7 +257,7 @@ class DefaultResolver implements Resolver
     {
         Set<Solution> solutions = new HashSet<Solution>();
 
-        for (CandidateBundle candidateBundle : result.resolved)
+        for (CandidateBundle candidateBundle : result.getResolved())
         {
             Set<Wire> wires = new HashSet<Wire>();
 
@@ -324,7 +332,7 @@ class DefaultResolver implements Resolver
     {
         assert Thread.holdsLock(lock);
         assert checkPoint != null;
-        assert checkPoint.resolving != null;
+        assert checkPoint.getResolving() != null;
 
         while ((checkPoint = resolveWires(checkPoint)) != null && !checkPoint.isDone())
         {
@@ -338,21 +346,21 @@ class DefaultResolver implements Resolver
     {
         assert Thread.holdsLock(lock);
         assert checkPoint != null;
-        assert checkPoint.resolving != null;
+        assert checkPoint.getResolving() != null;
 
-        List<ImportDescriptionWrapper> imports = checkPoint.resolving.getImports();
+        List<ImportDescriptionWrapper> imports = checkPoint.getResolving().getImports();
 
         if (!imports.isEmpty())
         {
             ImportDescriptionWrapper targetImport = imports.remove(0);
 
-            for (ExportDescriptionWrapper candidateExport : collectEligibleExportsFromUsed(targetImport, checkPoint.used))
+            for (ExportDescriptionWrapper candidateExport : collectEligibleExportsFromUsed(targetImport, checkPoint.getUsed()))
             {
                 if (matches(targetImport, candidateExport))
                 {
                     Set<Wire> impliedCandidateWirings = collectImpliedConstraints(candidateExport.getExportDescription(), candidateExport.getBundleGeneration());
 
-                    if (isConsistent(checkPoint.used, impliedCandidateWirings))
+                    if (isConsistent(checkPoint.getUsed(), impliedCandidateWirings))
                     {
                         CandidateWiring newWiring = new CandidateWiring(targetImport.getPackageName(), candidateExport.getExportDescription(), candidateExport.getBundleGeneration());
 
@@ -362,13 +370,13 @@ class DefaultResolver implements Resolver
                 }
             }
 
-            for (ExportDescriptionWrapper candidateExport : collectEligibleExportsFromUnused(targetImport, checkPoint.unused))
+            for (ExportDescriptionWrapper candidateExport : collectEligibleExportsFromUnused(targetImport, checkPoint.getUnused()))
             {
                 if (matches(targetImport, candidateExport))
                 {
                     Set<Wire> impliedCandidateWirings = collectImpliedConstraints(candidateExport.getExportDescription(), candidateExport.getBundleGeneration());
 
-                    if (isConsistent(checkPoint.used, impliedCandidateWirings))
+                    if (isConsistent(checkPoint.getUsed(), impliedCandidateWirings))
                     {
                         CandidateBundle newBundle = generateCandidatePairing(candidateExport);
                         CandidateWiring newWiring = new CandidateWiring(targetImport.getPackageName(), candidateExport.getExportDescription(), candidateExport.getBundleGeneration());
@@ -536,7 +544,7 @@ class DefaultResolver implements Resolver
         {
             for (ExportDescriptionWrapper exportDescriptionWrapper : candidateBundle.getExports())
             {
-                for (String exportPackage : exportDescriptionWrapper.exportDescription.getPackages())
+                for (String exportPackage : exportDescriptionWrapper.getExportDescription().getPackages())
                 {
                     if (importPackage.equals(exportPackage))
                     {
@@ -651,287 +659,4 @@ class DefaultResolver implements Resolver
         return work;
     }
 
-    private static class ImportDescriptionWrapper
-    {
-        private final String packageName;
-        private final ImportDescription importDescription;
-        private final boolean mandatory;
-
-        public ImportDescriptionWrapper(String packageName, ImportDescription importDescription)
-        {
-            this.packageName = packageName;
-            this.importDescription = importDescription;
-            this.mandatory = importDescription.getParameters().containsKey(Constants.MANDATORY_DIRECTIVE) && (Boolean) importDescription.getParameters().get(Constants.MANDATORY_DIRECTIVE);
-        }
-
-        public String getPackageName()
-        {
-            return packageName;
-        }
-
-        public Map<String, Object> getParameters()
-        {
-            return importDescription.getParameters();
-        }
-
-        public ImportDescription getImportDescription()
-        {
-            return importDescription;
-        }
-
-        public String toString()
-        {
-            return packageName;
-        }
-
-        public boolean isMandatory()
-        {
-            return mandatory;
-        }
-    }
-
-    /**
-     * A simple wrapper to make sure that export descriptions are searched in
-     * the proper order.  This wrapper assumes that <code>BundleImpl</code>
-     * classes initially sort by their resolution status, i.e. resolved bundles
-     * appear before un-resolved bundles.
-     * <p/>
-     * TODO: So why don't we include status in compareTo()?
-     */
-    private static class ExportDescriptionWrapper implements Comparable<ExportDescriptionWrapper>
-    {
-        private final ExportDescription exportDescription;
-        private final BundleGeneration bundleGeneration;
-        private final long bundleId;
-        private final Version version;
-
-        public ExportDescriptionWrapper(ExportDescription exportDescription, BundleGeneration bundleGeneration)
-        {
-            this.exportDescription = exportDescription;
-            this.bundleGeneration = bundleGeneration;
-            this.bundleId = bundleGeneration.getBundleId();
-            this.version = (Version) exportDescription.getParameters().get("version");
-        }
-
-        public ExportDescription getExportDescription()
-        {
-            return exportDescription;
-        }
-
-        public BundleGeneration getBundleGeneration()
-        {
-            return bundleGeneration;
-        }
-
-        public int compareTo(ExportDescriptionWrapper o)
-        {
-            int result = version.compareTo(o.version);
-            if (result == 0) result = (int) (bundleId - o.bundleId);
-            return result;
-        }
-    }
-
-    protected static class CandidateWiring
-    {
-        private final String packageName;
-        private final ExportDescription exportDescription;
-        private final BundleGeneration bundleGeneration;
-
-        public CandidateWiring(String packageName, ExportDescription exportDescription, BundleGeneration bundleGeneration)
-        {
-            assert packageName != null;
-            assert exportDescription != null;
-            assert bundleGeneration != null;
-
-            this.packageName = packageName;
-            this.exportDescription = exportDescription;
-            this.bundleGeneration = bundleGeneration;
-        }
-
-        public String getPackageName()
-        {
-            return packageName;
-        }
-
-        public ExportDescription getExportDescription()
-        {
-            return exportDescription;
-        }
-
-        public BundleGeneration getBundleGeneration()
-        {
-            return bundleGeneration;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            CandidateWiring candidateWiring = (CandidateWiring) o;
-
-            return packageName.equals(candidateWiring.packageName);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return packageName.hashCode();
-        }
-    }
-
-    private static class CheckPoint
-    {
-        private CandidateBundle resolving;
-        private final List<CandidateBundle> resolved = new ArrayList<CandidateBundle>();
-        private final List<CandidateBundle> unResolved = new ArrayList<CandidateBundle>();
-        private final Set<CandidateBundle> used = new HashSet<CandidateBundle>();
-        private final Set<Generation> unused = new HashSet<Generation>();
-
-
-        CheckPoint(CandidateBundle resolving, Set<Generation> unused)
-        {
-            this.resolving = resolving;
-            this.used.add(resolving);
-            this.unused.addAll(unused);
-        }
-
-        CheckPoint(CheckPoint checkPoint)
-        {
-            resolving = new CandidateBundle(checkPoint.resolving);
-            unResolved.addAll(checkPoint.unResolved);
-            used.addAll(checkPoint.used);
-            unused.addAll(checkPoint.unused);
-        }
-
-        public boolean isDone()
-        {
-            return unResolved.isEmpty();
-        }
-
-        public void resolveCompleted()
-        {
-            resolved.add(resolving);
-            resolving = null;
-        }
-
-        public CheckPoint nextBundle()
-        {
-            resolving = unResolved.get(0);
-            return this;
-        }
-
-        public CheckPoint newCheckPoint(CandidateWiring newWiring)
-        {
-            CheckPoint checkPoint = new CheckPoint(this);
-
-            checkPoint.resolving.getCandidateWirings().add(newWiring);
-
-            return checkPoint;
-        }
-
-        public CheckPoint newCheckPoint(CandidateBundle newBundle, CandidateWiring newWiring)
-        {
-            CheckPoint checkPoint = new CheckPoint(this);
-
-            checkPoint.resolving.getCandidateWirings().add(newWiring);
-            checkPoint.used.add(newBundle);
-            checkPoint.unused.remove(newBundle.getBundleGeneration());
-
-            return checkPoint;
-        }
-
-        @Override
-        public String toString()
-        {
-            ToStringCreator creator = new ToStringCreator(this);
-
-            creator.append("resolving", resolving);
-            creator.append("resolved", resolved);
-            creator.append("unResolved", unResolved);
-            creator.append("used", used);
-            creator.append("unused", unused);
-
-            return creator.toString();
-        }
-    }
-
-    private static class CandidateBundle
-    {
-        private final Generation toBeResolved;
-        private final BundleGeneration bundleGeneration;
-        private final List<FragmentGeneration> fragments;
-        private final List<ImportDescriptionWrapper> imports = new ArrayList<ImportDescriptionWrapper>();
-        private final Set<CandidateWiring> candidateWirings = new HashSet<CandidateWiring>();
-
-        private CandidateBundle(Generation toBeResolved, BundleGeneration bundleGeneration, List<FragmentGeneration> fragments)
-        {
-            this.toBeResolved = toBeResolved;
-            this.bundleGeneration = bundleGeneration;
-            this.fragments = Collections.unmodifiableList(fragments);
-
-            for (ImportDescription description : bundleGeneration.getArchiveStore().getBundleImportList())
-            {
-                for (String packageName : description.getPackages()) this.imports.add(new ImportDescriptionWrapper(packageName, description));
-            }
-        }
-
-        public CandidateBundle(CandidateBundle candidateBundle)
-        {
-            this.toBeResolved = candidateBundle.toBeResolved;
-            this.bundleGeneration = candidateBundle.bundleGeneration;
-            this.fragments = Collections.unmodifiableList(new ArrayList<FragmentGeneration>(candidateBundle.fragments));
-            this.imports.addAll(candidateBundle.imports);
-            this.candidateWirings.addAll(candidateBundle.candidateWirings);
-        }
-
-        public Generation getToBeResolved()
-        {
-            return toBeResolved;
-        }
-
-        public BundleGeneration getBundleGeneration()
-        {
-            return bundleGeneration;
-        }
-
-        public List<FragmentGeneration> getFragments()
-        {
-            return fragments;
-        }
-
-        public Set<CandidateWiring> getCandidateWirings()
-        {
-            return candidateWirings;
-        }
-
-        public List<ImportDescriptionWrapper> getImports()
-        {
-            return imports;
-        }
-
-        public List<ExportDescriptionWrapper> getExports()
-        {
-            List<ExportDescriptionWrapper> result = new ArrayList<ExportDescriptionWrapper>();
-            for (ExportDescription description : bundleGeneration.getArchiveStore().getBundleExportList())
-            {
-                for (String packageName : description.getPackages()) result.add(new ExportDescriptionWrapper(description, bundleGeneration));
-            }
-            return result;
-        }
-
-        @Override
-        public String toString()
-        {
-            ToStringCreator creator = new ToStringCreator(this);
-
-            creator.append("unResolved", toBeResolved);
-            creator.append("bundleGeneration", bundleGeneration);
-            creator.append("fragments", fragments);
-            creator.append("candidateWirings", candidateWirings);
-
-            return creator.toString();
-        }
-    }
 }

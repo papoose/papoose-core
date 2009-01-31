@@ -42,6 +42,7 @@ import org.papoose.core.spi.Resolver;
 import org.papoose.core.spi.SecurityAdmin;
 import org.papoose.core.spi.Store;
 import org.papoose.core.util.ToStringCreator;
+import org.papoose.core.resolver.DefaultResolver;
 
 
 /**
