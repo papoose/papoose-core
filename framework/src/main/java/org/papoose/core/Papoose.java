@@ -326,7 +326,14 @@ public final class Papoose
 
             BundleManager manager = getBundleManager();
 
-            systemBundleContext = manager.getBundle(0).getBundleContext();
+            /**
+             * Keep this redundant cast in place.  It's a kludgy workaround due
+             * to the fact that Equinox bundles v4.0 OSGi R4 spec classes in
+             * with its framework.  This breaks the Spring OSGi integration
+             * tests.
+             */
+            //noinspection RedundantCast
+            systemBundleContext = ((BundleController) manager.getBundle(0)).getBundleContext();
         }
 
         LOGGER.exiting(CLASS_NAME, "getSystemBundleContext", systemBundleContext);
