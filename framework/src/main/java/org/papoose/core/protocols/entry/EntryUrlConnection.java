@@ -52,7 +52,7 @@ public class EntryUrlConnection extends URLConnection
     {
         if (connected) return;
 
-        inputStream = bundleManager.getInputStreamForCodesource(bundleId, generation);
+        inputStream = bundleManager.getInputStreamForEntry(bundleId, generation, url.getPath().substring(1));
 
         connected = true;
     }

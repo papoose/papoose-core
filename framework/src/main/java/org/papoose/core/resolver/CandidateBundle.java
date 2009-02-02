@@ -27,6 +27,7 @@ import org.papoose.core.ExportDescription;
 import org.papoose.core.FragmentGeneration;
 import org.papoose.core.Generation;
 import org.papoose.core.ImportDescription;
+import org.papoose.core.RequireDescription;
 import org.papoose.core.util.ToStringCreator;
 
 /**
@@ -38,7 +39,10 @@ class CandidateBundle
     private final BundleGeneration bundleGeneration;
     private final List<FragmentGeneration> fragments;
     private final List<ImportDescriptionWrapper> imports = new ArrayList<ImportDescriptionWrapper>();
+    private final Set<ExportDescriptionWrapper> exports = new HashSet<ExportDescriptionWrapper>();
+    private final List<RequireDescription> requiredBundles = new ArrayList<RequireDescription>();
     private final Set<CandidateWiring> candidateWirings = new HashSet<CandidateWiring>();
+    private final Set<CandidateRequiredBundle> candidateRequiredBundles = new HashSet<CandidateRequiredBundle>();
 
     public CandidateBundle(Generation toBeResolved, BundleGeneration bundleGeneration, List<FragmentGeneration> fragments)
     {
@@ -50,6 +54,9 @@ class CandidateBundle
         {
             for (String packageName : description.getPackages()) this.imports.add(new ImportDescriptionWrapper(packageName, description));
         }
+        this.requiredBundles.addAll(bundleGeneration.getArchiveStore().getBundleRequireBundle());
+
+        initializeExports();
     }
 
     public CandidateBundle(CandidateBundle candidateBundle)
@@ -58,7 +65,10 @@ class CandidateBundle
         this.bundleGeneration = candidateBundle.bundleGeneration;
         this.fragments = Collections.unmodifiableList(new ArrayList<FragmentGeneration>(candidateBundle.fragments));
         this.imports.addAll(candidateBundle.imports);
+        this.exports.addAll(candidateBundle.exports);
+        this.requiredBundles.addAll(candidateBundle.requiredBundles);
         this.candidateWirings.addAll(candidateBundle.candidateWirings);
+        this.candidateRequiredBundles.addAll(candidateBundle.candidateRequiredBundles);
     }
 
     public Generation getToBeResolved()
@@ -76,36 +86,81 @@ class CandidateBundle
         return fragments;
     }
 
-    public Set<CandidateWiring> getCandidateWirings()
-    {
-        return candidateWirings;
-    }
-
     public List<ImportDescriptionWrapper> getImports()
     {
         return imports;
     }
 
-    public List<ExportDescriptionWrapper> getExports()
+    public Set<ExportDescriptionWrapper> getExports()
     {
-        List<ExportDescriptionWrapper> result = new ArrayList<ExportDescriptionWrapper>();
-        for (ExportDescription description : bundleGeneration.getArchiveStore().getBundleExportList())
-        {
-            for (String packageName : description.getPackages()) result.add(new ExportDescriptionWrapper(description, bundleGeneration));
-        }
-        return result;
+        return Collections.unmodifiableSet(exports);
+    }
+
+    public List<RequireDescription> getRequiredBundles()
+    {
+        return requiredBundles;
+    }
+
+    public void addCandidateRequiredBundle(CandidateRequiredBundle candidate)
+    {
+        candidateRequiredBundles.add(candidate);
+        initializeExports();
+    }
+
+    public Set<CandidateWiring> getCandidateWirings()
+    {
+        return candidateWirings;
+    }
+
+    public Set<CandidateRequiredBundle> getCandidateRequiredBundles()
+    {
+        return Collections.unmodifiableSet(candidateRequiredBundles);
     }
 
     @Override
     public String toString()
     {
-        ToStringCreator creator = new ToStringCreator(null);
+        ToStringCreator creator = new ToStringCreator(this);
 
-        creator.append("unResolved", toBeResolved);
+        creator.append("toBeResolved", toBeResolved);
         creator.append("bundleGeneration", bundleGeneration);
         creator.append("fragments", fragments);
+        creator.append("imports", imports);
+        creator.append("exports", exports);
+        creator.append("requiredBundles", requiredBundles);
         creator.append("candidateWirings", candidateWirings);
+        creator.append("candidateRequiredBundles", candidateRequiredBundles);
 
         return creator.toString();
+    }
+
+    private void initializeExports()
+    {
+        exports.clear();
+
+        for (ExportDescription description : bundleGeneration.getArchiveStore().getBundleExportList())
+        {
+            for (String packageName : description.getPackageNames())
+            {
+                exports.add(new ExportDescriptionWrapper(description, bundleGeneration));
+            }
+        }
+
+        for (CandidateRequiredBundle candidate : candidateRequiredBundles)
+        {
+            BundleGeneration requiredBundle = candidate.getBundleGeneration();
+            for (ExportDescription description : requiredBundle.getArchiveStore().getBundleExportList())
+            {
+                exports.add(new ExportDescriptionWrapper(description, requiredBundle));
+            }
+        }
+
+        for (Generation fragment : fragments)
+        {
+            for (ExportDescription description : fragment.getArchiveStore().getBundleExportList())
+            {
+                exports.add(new ExportDescriptionWrapper(description, bundleGeneration));
+            }
+        }
     }
 }

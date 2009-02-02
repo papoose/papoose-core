@@ -230,7 +230,16 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
 
     public InputStream getInputStreamForEntry(String path) throws IOException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        ZipEntry zipEntry = archive.getEntry(path);
+
+        if (zipEntry == null)
+        {
+            throw new IOException("Path does not exist: " + path);
+        }
+        else
+        {
+            return archive.getInputStream(archive.getEntry(path));
+        }
     }
 
     public InputStream getInputStreamForResource(int location, String path) throws IOException

@@ -180,7 +180,7 @@ public class SystemBundleController extends BundleController
             {
                 exportDescriptions.addAll(AttributeUtils.parseBundleExportList(packages, getBundleSymbolicName(), getBundleVersion()));
             }
-            exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.framework", getBundleSymbolicName(), getBundleVersion()));
+            exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.framework;version=1.4", getBundleSymbolicName(), getBundleVersion()));
 
             Properties p = framework.getProperties();
             Attributes a = new Attributes();

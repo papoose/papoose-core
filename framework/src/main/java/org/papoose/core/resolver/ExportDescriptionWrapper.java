@@ -21,6 +21,8 @@ import org.osgi.framework.Version;
 import org.papoose.core.BundleGeneration;
 import org.papoose.core.ExportDescription;
 
+import net.jcip.annotations.Immutable;
+
 /**
  * A simple wrapper to make sure that export descriptions are searched in
  * the proper order.  This wrapper assumes that <code>BundleImpl</code>
@@ -31,6 +33,7 @@ import org.papoose.core.ExportDescription;
  *
  * @version $Revision$ $Date$
  */
+@Immutable
 class ExportDescriptionWrapper implements Comparable<ExportDescriptionWrapper>
 {
     private final ExportDescription exportDescription;

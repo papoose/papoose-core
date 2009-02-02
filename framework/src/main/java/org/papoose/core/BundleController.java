@@ -19,9 +19,12 @@ package org.papoose.core;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -51,9 +54,9 @@ import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.spi.BundleStore;
 import org.papoose.core.util.AttributeUtils;
 import org.papoose.core.util.I18nUtils;
+import org.papoose.core.util.SecurityUtils;
 import org.papoose.core.util.SerialExecutor;
 import org.papoose.core.util.ToStringCreator;
-import org.papoose.core.util.SecurityUtils;
 
 
 /**
@@ -469,7 +472,45 @@ public class BundleController implements Bundle
         {
             SecurityUtils.checkAdminPermission(this, AdminPermission.RESOURCE);
 
-            return getCurrentGeneration().getArchiveStore().findEntries(path, filePattern, false, recurse);
+            try
+            {
+                getFramework().getBundleManager().readLock();
+
+                if (getState() == Bundle.INSTALLED)
+                {
+                    getFramework().getBundleManager().resolve(this);
+                }
+
+                Generation currentGeneration = getCurrentGeneration();
+                List<URL> entries = new ArrayList<URL>();
+
+                Enumeration<URL> enumeration = currentGeneration.getArchiveStore().findEntries(path, filePattern, false, recurse);
+
+                if (enumeration != null) while (enumeration.hasMoreElements()) entries.add(enumeration.nextElement());
+
+                if (currentGeneration instanceof BundleGeneration)
+                {
+                    BundleGeneration bundleGeneration = (BundleGeneration) currentGeneration;
+
+                    for (FragmentGeneration fragment : bundleGeneration.getFragments())
+                    {
+                        enumeration = fragment.getArchiveStore().findEntries(path, filePattern, false, recurse);
+                        if (enumeration != null) while (enumeration.hasMoreElements()) entries.add(enumeration.nextElement());
+                    }
+                }
+
+                return entries.isEmpty() ? null : Collections.enumeration(entries);
+            }
+            catch (InterruptedException ie)
+            {
+                LOGGER.log(Level.WARNING, "Aquisition of a read lock interrupted", ie);
+                Thread.currentThread().interrupt();
+                return null;
+            }
+            finally
+            {
+                getFramework().getBundleManager().readUnlock();
+            }
         }
         catch (SecurityException se)
         {

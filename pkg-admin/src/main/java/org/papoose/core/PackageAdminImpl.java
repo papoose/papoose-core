@@ -182,7 +182,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
                             for (ExportDescription export : bundleGeneration.getArchiveStore().getBundleExportList())
                             {
                                 Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
-                                for (String packageName : export.getPackages())
+                                for (String packageName : export.getPackageNames())
                                 {
                                     Set<BundleController> importers = new HashSet<BundleController>();
 
@@ -260,7 +260,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
                             for (ExportDescription export : bundleGeneration.getArchiveStore().getBundleExportList())
                             {
                                 Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
-                                for (String packageName : export.getPackages())
+                                for (String packageName : export.getPackageNames())
                                 {
                                     if (targetPackageName.equals(packageName))
                                     {
@@ -333,7 +333,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
                             for (ExportDescription export : bundleGeneration.getArchiveStore().getBundleExportList())
                             {
                                 Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
-                                for (String packageName : export.getPackages())
+                                for (String packageName : export.getPackageNames())
                                 {
                                     if (targetPackageName.equals(packageName))
                                     {

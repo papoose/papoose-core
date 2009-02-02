@@ -19,7 +19,7 @@ package org.papoose.core;
 /**
  * @version $Revision$ $Date$
  */
-enum Resolution
+public enum Resolution
 {
     MANDATORY, OPTIONAL
 }

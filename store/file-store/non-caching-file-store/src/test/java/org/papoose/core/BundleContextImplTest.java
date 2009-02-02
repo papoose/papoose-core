@@ -17,28 +17,20 @@
 package org.papoose.core;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import org.papoose.core.spi.Store;
-import org.papoose.framework.mock.MockURLStreamHandlerFactory;
-import org.papoose.framework.mock.MockURLStreamHandlerProvider;
 import org.papoose.store.file.NonCachingFileStore;
 
 
@@ -47,8 +39,6 @@ import org.papoose.store.file.NonCachingFileStore;
  */
 public class BundleContextImplTest
 {
-    private MockURLStreamHandlerProvider provider;
-
     @Test
     public void test() throws Exception
     {
@@ -113,7 +103,7 @@ public class BundleContextImplTest
             BufferedReader in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
             String line = in.readLine();
 
-            Assert.assertEquals("<status>good</status>", line);
+            Assert.assertEquals("<status>Canon</status>", line);
 
             int count = 0;
             Enumeration enumeration = bundle.getEntryPaths("com/acme");
@@ -163,55 +153,5 @@ public class BundleContextImplTest
         {
             Util.delete(fileStoreRoot);
         }
-    }
-
-    @Before
-    @SuppressWarnings({ "EmptyCatchBlock" })
-    public void setUp() throws Exception
-    {
-        try
-        {
-            URL.setURLStreamHandlerFactory(new MockURLStreamHandlerFactory());
-            MockURLStreamHandlerFactory.addProvider(provider = new MockURLStreamHandlerProvider()
-            {
-                public URLConnection openConnection(URL url) throws IOException
-                {
-                    return new URLConnection(url)
-                    {
-                        private final byte[] bytes;
-
-                        {
-                            if ("/com/acme/resource/camera.xml".equals(url.getFile()))
-                            {
-                                bytes = "<status>good</status>".getBytes();
-                            }
-                            else
-                            {
-                                bytes = new byte[0];
-                            }
-                        }
-
-                        public void connect() throws IOException
-                        {
-                        }
-
-                        public InputStream getInputStream() throws IOException
-                        {
-                            return new ByteArrayInputStream(bytes);
-                        }
-                    };
-                }
-            });
-        }
-        catch (Throwable t)
-        {
-        }
-    }
-
-    @After
-    public void tearDown() throws Exception
-    {
-        MockURLStreamHandlerFactory.removeProvider(provider);
-        provider = null;
     }
 }

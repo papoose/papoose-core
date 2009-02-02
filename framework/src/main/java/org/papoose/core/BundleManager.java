@@ -68,7 +68,7 @@ public class BundleManager
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     private final Map<String, BundleController> locations = new HashMap<String, BundleController>();
     private final Map<NameVersionKey, BundleController> nameVersions = new HashMap<NameVersionKey, BundleController>();
-    private final Map<Long, BundleController> installedbundles = new HashMap<Long, BundleController>();
+    private final Map<Long, BundleController> installedbundles = new HashMap<Long, BundleController>();  // todo: handy but not sure it's consistently maintained
     private final Map<Long, BundleController> bundles = new HashMap<Long, BundleController>();
     private final Papoose framework;
     private final Store store;
@@ -352,7 +352,7 @@ public class BundleManager
 
                 for (ExportDescription desc : currentStore.getBundleExportList())
                 {
-                    exportedPackages.addAll(desc.getPackages());
+                    exportedPackages.addAll(desc.getPackageNames());
                 }
 
                 for (Wire wire : requiredBundles)
@@ -377,7 +377,9 @@ public class BundleManager
 
                 bundle.setClassLoader(classLoader);
 
-                //todo:        bundle.setResolvedState();
+                bundle.setState(Bundle.RESOLVED);
+
+                fireBundleEvent(new BundleEvent(BundleEvent.RESOLVED, target));
             }
         }
         catch (BundleException e)

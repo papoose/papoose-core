@@ -18,6 +18,7 @@ package org.papoose.core.resolver;
 
 import java.util.Map;
 
+import net.jcip.annotations.Immutable;
 import org.osgi.framework.Constants;
 
 import org.papoose.core.ImportDescription;
@@ -25,6 +26,7 @@ import org.papoose.core.ImportDescription;
 /**
  * @version $Revision$ $Date$
  */
+@Immutable
 class ImportDescriptionWrapper
 {
     private final String packageName;

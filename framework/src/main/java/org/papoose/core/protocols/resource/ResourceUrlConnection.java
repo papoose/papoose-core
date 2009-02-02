@@ -55,7 +55,7 @@ public class ResourceUrlConnection extends URLConnection
     {
         if (connected) return;
 
-        inputStream = bundleManager.getInputStreamForResource(bundleId, generation, location, url.getPath());
+        inputStream = bundleManager.getInputStreamForResource(bundleId, generation, location, url.getPath().substring(1));
 
         connected = true;
     }

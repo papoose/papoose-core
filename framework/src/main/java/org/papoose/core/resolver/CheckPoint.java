@@ -88,6 +88,15 @@ class CheckPoint
         return this;
     }
 
+    public CheckPoint newCheckPoint(CandidateRequiredBundle candidate)
+    {
+        CheckPoint checkPoint = new CheckPoint(this);
+
+        checkPoint.resolving.getCandidateRequiredBundles().add(candidate);
+
+        return checkPoint;
+    }
+
     public CheckPoint newCheckPoint(CandidateWiring newWiring)
     {
         CheckPoint checkPoint = new CheckPoint(this);

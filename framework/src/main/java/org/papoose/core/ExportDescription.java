@@ -31,25 +31,25 @@ import org.osgi.framework.Version;
 public class ExportDescription
 {
     public static final Version DEFAULT_VERSION = new Version(0, 0, 0);
-    private final Set<String> packages;
+    private final Set<String> packageNames;
     private final Map<String, Object> parameters;
     private Set<String> uses = Collections.emptySet();
     private List<String> mandatory = Collections.emptyList();
     private List<String[]> include = Collections.emptyList();
     private List<String[]> exclude = Collections.emptyList();
 
-    public ExportDescription(Set<String> packages, Map<String, Object> parameters)
+    public ExportDescription(Set<String> packageNames, Map<String, Object> parameters)
     {
-        if (packages == null) throw new IllegalArgumentException("Packags cannot be null");
+        if (packageNames == null) throw new IllegalArgumentException("Package names cannot be null");
         if (parameters == null) throw new IllegalArgumentException("Parameters cannot be null");
 
-        this.packages = Collections.unmodifiableSet(packages);
+        this.packageNames = Collections.unmodifiableSet(packageNames);
         this.parameters = Collections.unmodifiableMap(parameters);
     }
 
-    public Set<String> getPackages()
+    public Set<String> getPackageNames()
     {
-        return packages;
+        return packageNames;
     }
 
     public Map<String, Object> getParameters()
@@ -102,7 +102,7 @@ public class ExportDescription
     {
         StringBuilder builder = new StringBuilder();
 
-        for (String pkg : packages)
+        for (String pkg : packageNames)
         {
             if (builder.length() > 0) builder.append(";");
             builder.append(pkg);
