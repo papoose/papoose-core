@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.HashMap;
@@ -37,12 +39,12 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 
 import org.papoose.core.filter.Parser;
+import org.papoose.core.resolver.DefaultResolver;
 import org.papoose.core.spi.LocationMapper;
 import org.papoose.core.spi.Resolver;
 import org.papoose.core.spi.SecurityAdmin;
 import org.papoose.core.spi.Store;
 import org.papoose.core.util.ToStringCreator;
-import org.papoose.core.resolver.DefaultResolver;
 
 
 /**
@@ -129,7 +131,6 @@ public final class Papoose
         this(null, store, executorService, properties);
     }
 
-
     /**
      * Install the store, thread pool and setup a hierarchy of properties.
      * <p/>
@@ -146,7 +147,6 @@ public final class Papoose
     public Papoose(String frameworkName, Store store, ExecutorService executorService)
     {
         this(frameworkName, store, executorService, null);
-
     }
 
     /**
@@ -167,6 +167,8 @@ public final class Papoose
     {
         if (store == null) throw new IllegalArgumentException("store is null");
         if (executorService == null) throw new IllegalArgumentException("threadPool is null");
+
+        ensureUrlHandling();
 
         this.frameworkId = FRAMEWORK_COUNTER++;
 
@@ -445,6 +447,35 @@ public final class Papoose
         if (result == null) FRAMEWORKS_BY_NAME.remove(name);
 
         return result;
+    }
+
+    private static void ensureUrlHandling()
+    {
+        LOGGER.entering(CLASS_NAME, "ensureUrlHandling");
+
+        try
+        {
+            URL url = new URL("codesource://1:0@org.papoose.framework.0");
+        }
+        catch (MalformedURLException e)
+        {
+            LOGGER.finest("Handler for codesource protocol not found");
+
+            String prefixes = System.getProperty("java.protocol.handler.pkgs");
+
+            if (prefixes == null)
+            {
+                prefixes = "org.papoose.core.protocols";
+            }
+            else
+            {
+                prefixes = prefixes + "|org.papoose.core.protocols";
+            }
+
+            System.setProperty("java.protocol.handler.pkgs", prefixes);
+        }
+
+        LOGGER.exiting(CLASS_NAME, "ensureUrlHandling");
     }
 
     private Properties assembleProperties(Properties properties)
