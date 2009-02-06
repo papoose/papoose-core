@@ -19,7 +19,7 @@ package org.papoose.core;
 /**
  * @version $Revision$ $Date$
  */
-enum Visibility
+public enum Visibility
 {
     PRIVATE, REEXPORT
 }

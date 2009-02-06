@@ -49,6 +49,7 @@ import org.papoose.core.RequireDescription;
 import org.papoose.core.Resolution;
 import org.papoose.core.Util;
 import org.papoose.core.VersionRange;
+import org.papoose.core.Visibility;
 import org.papoose.core.Wire;
 import org.papoose.core.spi.Resolver;
 import org.papoose.core.spi.Solution;
@@ -271,17 +272,19 @@ public class DefaultResolver implements Resolver
                 wires.add(wire);
             }
 
-            List<Wire> requiredBundles = new ArrayList<Wire>();
+            List<Solution.RequiredBundleWrapper> requiredBundles = new ArrayList<Solution.RequiredBundleWrapper>();
 
             for (CandidateRequiredBundle candidateRequiredBundle : candidateBundle.getCandidateRequiredBundles())
             {
                 BundleGeneration bundleGeneration = candidateRequiredBundle.getBundleGeneration();
+                RequireDescription requireDescription = candidateRequiredBundle.getRequireDescription();
+
                 for (ExportDescription description : bundleGeneration.getArchiveStore().getBundleExportList())
                 {
                     for (String packageName : description.getPackageNames())
                     {
                         Wire wire = new Wire(packageName, description, bundleGeneration);
-                        requiredBundles.add(wire);
+                        requiredBundles.add(new Solution.RequiredBundleWrapper(wire, requireDescription.getVisibility() == Visibility.REEXPORT));
                     }
                 }
             }

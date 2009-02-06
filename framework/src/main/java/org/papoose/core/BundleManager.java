@@ -341,28 +341,23 @@ public class BundleManager
                 BundleGeneration bundle = solution.getBundle();
                 ArchiveStore currentStore = bundle.getArchiveStore();
                 Set<Wire> wires = solution.getWires();
-                List<Wire> requiredBundles = solution.getRequiredBundles();
+                List<Wire> requiredBundles = new ArrayList<Wire>();
 
                 Set<String> exportedPackages = new HashSet<String>();
-
-                for (ImportDescription desc : currentStore.getBundleImportList())  // todo: not sure what this is about
-                {
-                    exportedPackages.addAll(desc.getPackages());
-                }
 
                 for (ExportDescription desc : currentStore.getBundleExportList())
                 {
                     exportedPackages.addAll(desc.getPackageNames());
                 }
 
-                for (int i = 0; i < requiredBundles.size(); i++)
+                for (Solution.RequiredBundleWrapper wrapper : solution.getRequiredBundles())
                 {
-                    Wire wire = requiredBundles.get(i);
-                    RequireDescription requireDescription = currentStore.getBundleRequireBundle().get(i);
+                    Wire wire = wrapper.getWire();
 
+                    requiredBundles.add(wire);
                     bundle.getRequiredBundles().add(wire.getBundleGeneration());
 
-                    if (requireDescription.getVisibility() == Visibility.REEXPORT)
+                    if (wrapper.isReExport())
                     {
                         exportedPackages.add(wire.getPackageName());
                     }

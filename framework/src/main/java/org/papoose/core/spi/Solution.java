@@ -41,9 +41,9 @@ public class Solution
     private final BundleGeneration bundle;
     private final List<FragmentGeneration> fragments;
     private final Set<Wire> wires;
-    private final List<Wire> requiredBundles;
+    private final List<RequiredBundleWrapper> requiredBundles;
 
-    public Solution(BundleGeneration bundle, List<FragmentGeneration> fragments, Set<Wire> wires, List<Wire> requiredBundles)
+    public Solution(BundleGeneration bundle, List<FragmentGeneration> fragments, Set<Wire> wires, List<RequiredBundleWrapper> requiredBundles)
     {
         if (bundle == null) throw new IllegalArgumentException("Bundle cannot be null");
         if (fragments == null) throw new IllegalArgumentException("Fragments cannot be null");
@@ -53,7 +53,7 @@ public class Solution
         this.bundle = bundle;
         this.fragments = Collections.unmodifiableList(new ArrayList<FragmentGeneration>(fragments));
         this.wires = Collections.unmodifiableSet(new HashSet<Wire>(wires));
-        this.requiredBundles = Collections.unmodifiableList(new ArrayList<Wire>(requiredBundles));
+        this.requiredBundles = Collections.unmodifiableList(new ArrayList<RequiredBundleWrapper>(requiredBundles));
     }
 
     public BundleGeneration getBundle()
@@ -71,7 +71,7 @@ public class Solution
         return wires;
     }
 
-    public List<Wire> getRequiredBundles()
+    public List<RequiredBundleWrapper> getRequiredBundles()
     {
         return requiredBundles;
     }
@@ -87,5 +87,29 @@ public class Solution
         creator.append("requiredBundles", requiredBundles);
 
         return creator.toString();
+    }
+
+    public static class RequiredBundleWrapper
+    {
+        private final Wire wire;
+        private final boolean reExport;
+
+        public RequiredBundleWrapper(Wire wire, boolean reExport)
+        {
+            assert wire != null;
+
+            this.wire = wire;
+            this.reExport = reExport;
+        }
+
+        public Wire getWire()
+        {
+            return wire;
+        }
+
+        public boolean isReExport()
+        {
+            return reExport;
+        }
     }
 }
