@@ -188,6 +188,5 @@ class BundleContextImpl implements BundleContext
         creator.append("bundle", bundle);
 
         return creator.toString();
-
     }
 }

@@ -16,11 +16,19 @@
  */
 package org.papoose.core.util;
 
+import java.security.AccessController;
 import java.security.Permission;
+import java.security.PrivilegedAction;
 import java.util.logging.Logger;
 
 import org.osgi.framework.AdminPermission;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleEvent;
+import org.osgi.framework.BundleListener;
+import org.osgi.framework.FrameworkEvent;
+import org.osgi.framework.FrameworkListener;
+import org.osgi.framework.ServiceListener;
+import org.osgi.framework.ServiceEvent;
 
 
 /**
@@ -45,6 +53,63 @@ public class SecurityUtils
         }
 
         LOGGER.exiting(CLASS_NAME, "checkAdminPermission");
+    }
+
+    public static void bundleChanged(final BundleListener listener, final BundleEvent event)
+    {
+        if (System.getSecurityManager() == null)
+        {
+            listener.bundleChanged(event);
+        }
+        else
+        {
+            AccessController.doPrivileged(new PrivilegedAction<Void>()
+            {
+                public Void run()
+                {
+                    listener.bundleChanged(event);
+                    return null;
+                }
+            });
+        }
+    }
+
+    public static void frameworkEvent(final FrameworkListener listener, final FrameworkEvent event)
+    {
+        if (System.getSecurityManager() == null)
+        {
+            listener.frameworkEvent(event);
+        }
+        else
+        {
+            AccessController.doPrivileged(new PrivilegedAction<Void>()
+            {
+                public Void run()
+                {
+                    listener.frameworkEvent(event);
+                    return null;
+                }
+            });
+        }
+    }
+
+    public static void serviceEvent(final ServiceListener listener, final ServiceEvent event)
+    {
+        if (System.getSecurityManager() == null)
+        {
+            listener.serviceChanged(event);
+        }
+        else
+        {
+            AccessController.doPrivileged(new PrivilegedAction<Void>()
+            {
+                public Void run()
+                {
+                    listener.serviceChanged(event);
+                    return null;
+                }
+            });
+        }
     }
 
     private SecurityUtils()
