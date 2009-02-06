@@ -37,6 +37,7 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.Version;
+import org.apache.xbean.classloader.ResourceLocation;
 
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.spi.BundleStore;
@@ -273,8 +274,9 @@ public class SystemBundleController extends BundleController
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        public void refreshClassPath(List<String> classPath) throws BundleException
+        public ResourceLocation registerClassPathElement(String classPathElement) throws BundleException
         {
+            return null; // todo:
         }
 
         public String loadLibrary(String libname)

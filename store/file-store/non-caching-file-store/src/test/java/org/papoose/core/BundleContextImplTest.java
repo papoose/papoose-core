@@ -144,6 +144,24 @@ public class BundleContextImplTest
             }
 
             Assert.assertEquals(5, count);
+            
+            url = bundle.getResource("com/acme/fuse/dynamite.xml");
+
+            Assert.assertNotNull(url);
+
+            in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
+            line = in.readLine();
+
+            Assert.assertEquals("<box>BANG</box>", line);
+
+            url = bundle.getEntry("com/acme/anvil.xml");
+
+            Assert.assertNotNull(url);
+
+            in = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream()));
+            line = in.readLine();
+
+            Assert.assertEquals("<anvil>How now brown cow.</anvil>", line);
 
             papoose.stop();
 

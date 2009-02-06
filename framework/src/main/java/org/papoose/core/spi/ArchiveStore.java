@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
 
+import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 
@@ -73,7 +74,7 @@ public interface ArchiveStore extends Comparable
 
     FragmentDescription getBundleFragmentHost();
 
-    void refreshClassPath(List<String> classPath) throws BundleException;
+    ResourceLocation registerClassPathElement(String classPathElement) throws BundleException;
 
     String loadLibrary(String libname);
 

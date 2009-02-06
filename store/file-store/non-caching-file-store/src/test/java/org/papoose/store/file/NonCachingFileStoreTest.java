@@ -54,7 +54,7 @@ public class NonCachingFileStoreTest
 //
 //            ArchiveStore archiveStore = fileStore.allocateArchiveStore(papoose, 1, testBundle.toURL().openStream());
 //
-//            archiveStore.refreshClassPath(archiveStore.getBundleClassPath());
+//            archiveStore.registerClassPathElement(archiveStore.getBundleClassPath());
 //
 //            Assert.assertEquals("org.papoose.test.papoose-test-bundle", archiveStore.getBundleSymbolicName());
 //            Assert.assertEquals("com.acme.impl.Activator", archiveStore.getBundleActivatorClass());

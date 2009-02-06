@@ -29,7 +29,7 @@ import org.papoose.core.UrlUtils;
  * been registered w/ URL.
  *
  * @version $Revision$ $Date$
- * @see org.papoose.core.framework.ServiceURLStreamHandlerFactory
+ * @see org.papoose.core.ServiceURLStreamHandlerFactory
  */
 public class Handler extends URLStreamHandler
 {

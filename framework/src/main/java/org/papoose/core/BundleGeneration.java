@@ -67,7 +67,7 @@ public class BundleGeneration extends Generation
         return null;  //To change body of created methods use File | Settings | File Templates.
     }
 
-    public Enumeration getResources(String name)
+    public Enumeration<URL> getResources(String name)
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }

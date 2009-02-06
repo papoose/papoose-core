@@ -26,9 +26,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
@@ -63,6 +65,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
     private final static String ARCHIVE_NAME = "archive";
     private final static String TEMP_NAME = "tmp";
     private final List<ResourceLocation> resourceLocations = new ArrayList<ResourceLocation>();
+    private final Map<String, ResourceLocation> path2locations = new HashMap<String, ResourceLocation>();
     private final File archiveRoot;
     private final File tmp;
     private final JarFile archive;
@@ -90,6 +93,10 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             this.tmp = new File(archiveRoot, TEMP_NAME);
 
             if (!tmp.exists() && !tmp.mkdirs()) throw new BundleException("Unable to create temp directory: " + tmp);
+
+            Util.delete(tmp);
+
+            for (String element : getBundleClassPath()) registerClassPathElement(element);
         }
         catch (IOException ioe)
         {
@@ -111,36 +118,37 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         }
     }
 
-    public void refreshClassPath(List<String> classPath) throws BundleException
+    public ResourceLocation registerClassPathElement(String path) throws BundleException
     {
-        Util.delete(tmp);
-        resourceLocations.clear();
+        if (path2locations.containsKey(path)) return path2locations.get(path);
 
-        if (!tmp.exists() && !tmp.mkdirs()) throw new BundleException("Unable to create temp directory: " + tmp);
-
-        for (String path : classPath)
+        ResourceLocation result = null;
+        if (".".equals(path.trim()))
         {
-            if (".".equals(path.trim()))
+            result = new BundleDirectoryResourceLocation("", resourceLocations.size());
+            resourceLocations.add(result);
+            path2locations.put(path, result);
+        }
+        else
+        {
+            JarEntry entry = archive.getJarEntry(path);
+            if (entry == null) entry = archive.getJarEntry(path + "/");
+            if (entry != null)
             {
-                resourceLocations.add(new BundleDirectoryResourceLocation("", resourceLocations.size()));
-            }
-            else
-            {
-                JarEntry entry = archive.getJarEntry(path);
-                if (entry == null) entry = archive.getJarEntry(path + "/");
-                if (entry != null)
+                if (entry.isDirectory())
                 {
-                    if (entry.isDirectory())
-                    {
-                        resourceLocations.add(new BundleDirectoryResourceLocation(path, resourceLocations.size()));
-                    }
-                    else
-                    {
-                        resourceLocations.add(new BundleJarResourceLocation(entry, resourceLocations.size()));
-                    }
+                    result = new BundleDirectoryResourceLocation(path, resourceLocations.size());
                 }
+                else
+                {
+                    result = new BundleJarResourceLocation(entry, resourceLocations.size());
+                }
+                resourceLocations.add(result);
+                path2locations.put(path, result);
             }
         }
+
+        return result;
     }
 
     public String loadLibrary(String libname)
@@ -244,7 +252,14 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
 
     public InputStream getInputStreamForResource(int location, String path) throws IOException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (location < 0 || location >= resourceLocations.size()) throw new IOException("Resource location index is out of bounds");
+
+        ResourceLocation resourceLocation = resourceLocations.get(location);
+        ResourceHandle handle = resourceLocation.getResourceHandle(path);
+
+        if (handle == null) throw new IOException("Path  does not correspond to a resource");
+
+        return handle.getInputStream();
     }
 
     @SuppressWarnings({ "EmptyCatchBlock" })
@@ -350,7 +365,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             JarEntry entry = jarFile.getJarEntry(resourceName);
             if (entry != null)
             {
-                return new BundleJarResourceHandle(entry, UrlUtils.generateResourceUrl(getFrameworkName(), getBundleId(), "/" + path + "!/" + resourceName, getGeneration(), location));
+                return new BundleJarResourceHandle(entry, UrlUtils.generateResourceUrl(getFrameworkName(), getBundleId(), "/" + resourceName, getGeneration(), location));
             }
             return null;
         }

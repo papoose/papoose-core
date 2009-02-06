@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
@@ -42,6 +40,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.BundleListener;
 import org.osgi.framework.Filter;
+import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
@@ -277,9 +276,7 @@ public class BundleController implements Bundle
     {
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
-        Generation bundleGeneration = obtainLatestResolvedBundle();
-
-        return bundleGeneration.hasPermission(object);
+        return getCurrentGeneration().hasPermission(object);
     }
 
     /**
@@ -288,13 +285,61 @@ public class BundleController implements Bundle
     public URL getResource(String name)
     {
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null) sm.checkPermission(new AdminPermission(this, AdminPermission.RESOURCE));
+        try
+        {
+            SecurityUtils.checkAdminPermission(this, AdminPermission.RESOURCE);
 
-        if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
+            try
+            {
+                getFramework().getBundleManager().readLock();
 
-        Generation bundleGeneration = obtainLatestResolvedBundle();
+                if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
-        return bundleGeneration.getResource(name);
+                Generation currentGeneration = getCurrentGeneration();
+
+                if (currentGeneration instanceof FragmentGeneration) return null;
+
+                if (getState() == Bundle.INSTALLED)
+                {
+                    getFramework().getBundleManager().resolve(this);
+                }
+
+                if (getState() == Bundle.INSTALLED)
+                {
+                    return currentGeneration.getResource(name);
+                }
+                else
+                {
+                    BundleGeneration bundleGeneration;
+
+                    if (currentGeneration instanceof BundleGeneration)
+                    {
+                        bundleGeneration = (BundleGeneration) currentGeneration;
+                    }
+                    else
+                    {
+                        bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
+                    }
+
+                    return bundleGeneration.getClassLoader().getResource(name);
+                }
+            }
+            catch (InterruptedException ie)
+            {
+                LOGGER.log(Level.WARNING, "Aquisition of a read lock interrupted", ie);
+                Thread.currentThread().interrupt();
+                return null;
+            }
+            finally
+            {
+                getFramework().getBundleManager().readUnlock();
+            }
+        }
+        catch (SecurityException se)
+        {
+            LOGGER.log(Level.WARNING, "Insufficient permission", se);
+            return null;
+        }
     }
 
     /**
@@ -346,17 +391,62 @@ public class BundleController implements Bundle
     {
         try
         {
-            SecurityUtils.checkAdminPermission(this, AdminPermission.CLASS);
+            SecurityUtils.checkAdminPermission(this, AdminPermission.RESOURCE);
 
-            if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
+            try
+            {
+                getFramework().getBundleManager().readLock();
 
-            Generation bundleGeneration = obtainLatestResolvedBundle();
+                if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
-            return bundleGeneration.loadClass(name);
+                if (getState() == Bundle.INSTALLED)
+                {
+                    getFramework().getBundleManager().resolve(this);
+                }
+
+                Generation currentGeneration = getCurrentGeneration();
+
+                if (getState() == Bundle.INSTALLED)
+                {
+                    getFramework().getBundleManager().fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, this, new BundleException("Unable to resolve bundle")));
+                    throw new ClassNotFoundException("Unable to resolve bundle");
+                }
+                else
+                {
+                    BundleGeneration bundleGeneration;
+
+                    if (currentGeneration instanceof BundleGeneration)
+                    {
+                        bundleGeneration = (BundleGeneration) currentGeneration;
+                    }
+                    else if (currentGeneration instanceof FragmentGeneration)
+                    {
+                        FragmentGeneration fragmentGeneration = (FragmentGeneration) currentGeneration;
+                        bundleGeneration = fragmentGeneration.getHost();
+                    }
+                    else
+                    {
+                        bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
+                    }
+
+                    return bundleGeneration.getClassLoader().loadClass(name);
+                }
+            }
+            catch (InterruptedException ie)
+            {
+                LOGGER.log(Level.WARNING, "Aquisition of a read lock interrupted", ie);
+                Thread.currentThread().interrupt();
+                throw new ClassNotFoundException("Aquisition of a read lock interrupted", ie);
+            }
+            finally
+            {
+                getFramework().getBundleManager().readUnlock();
+            }
         }
         catch (SecurityException se)
         {
-            throw new ClassNotFoundException("Caller does not have permission to load class", se);
+            LOGGER.log(Level.WARNING, "Insufficient permission", se);
+            throw new ClassNotFoundException("Insufficient permission", se);
         }
     }
 
@@ -369,11 +459,51 @@ public class BundleController implements Bundle
         {
             SecurityUtils.checkAdminPermission(this, AdminPermission.RESOURCE);
 
-            if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
+            try
+            {
+                getFramework().getBundleManager().readLock();
 
-            Generation bundleGeneration = obtainLatestResolvedBundle();
+                if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
-            return bundleGeneration.getResources(name);
+                Generation currentGeneration = getCurrentGeneration();
+
+                if (currentGeneration instanceof FragmentGeneration) return null;
+
+                if (getState() == Bundle.INSTALLED)
+                {
+                    getFramework().getBundleManager().resolve(this);
+                }
+
+                if (getState() == Bundle.INSTALLED)
+                {
+                    return currentGeneration.getResources(name);
+                }
+                else
+                {
+                    BundleGeneration bundleGeneration;
+
+                    if (currentGeneration instanceof BundleGeneration)
+                    {
+                        bundleGeneration = (BundleGeneration) currentGeneration;
+                    }
+                    else
+                    {
+                        bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
+                    }
+
+                    return bundleGeneration.getClassLoader().findResources(name);
+                }
+            }
+            catch (InterruptedException ie)
+            {
+                LOGGER.log(Level.WARNING, "Aquisition of a read lock interrupted", ie);
+                Thread.currentThread().interrupt();
+                return null;
+            }
+            finally
+            {
+                getFramework().getBundleManager().readUnlock();
+            }
         }
         catch (SecurityException se)
         {
@@ -495,6 +625,7 @@ public class BundleController implements Bundle
                     for (FragmentGeneration fragment : bundleGeneration.getFragments())
                     {
                         enumeration = fragment.getArchiveStore().findEntries(path, filePattern, false, recurse);
+
                         if (enumeration != null) while (enumeration.hasMoreElements()) entries.add(enumeration.nextElement());
                     }
                 }
@@ -638,53 +769,6 @@ public class BundleController implements Bundle
             serviceListeners.remove(new ServiceListenerWithFilter(serviceListener));
         }
         serviceListeners.remove(new ServiceListenerWithFilter(serviceListener, FilterImpl.TRUE));
-    }
-
-    /**
-     * Obtain the latest generation of the bundle.  Attempt to resolve the
-     * bundle generation if it is not resolved.  If that generation did not
-     * resolve attempt to obtain an earlier resolved generation.
-     *
-     * @return latest generation of the bundle
-     */
-    private Generation obtainLatestResolvedBundle()
-    {
-        Generation result = generations.get(latestGeneration());
-
-        if ((result.getState() & (STARTING | ACTIVE | STOPPING)) == 0)
-        {
-            // the newest generation is not resolved
-            Papoose framework = getFramework();
-            BundleManager bundleManager = framework.getBundleManager();
-
-            if (!bundleManager.resolve(result))
-            {
-                /*
-                 * We cannot resolve the newest generation so we'll look for a
-                 * resolved older generation if one exists.  If one does not
-                 * exist we return the unresolved generation.
-                 */
-                SortedSet<Integer> keys = new TreeSet<Integer>(generations.keySet());
-                SortedSet<Integer> headSet = keys.headSet(result.getGeneration());
-                if (!headSet.isEmpty()) result = generations.get(headSet.last());
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * Obtain the generation number of the newest generation.
-     * <p/>
-     * We can't be sure of the order of the keys stored in the generations mapping.
-     *
-     * @return the generation number of the newest generation
-     */
-    private int latestGeneration()
-    {
-        int result = -1;
-        for (Integer generation : generations.keySet()) result = Math.max(result, generation);
-        return result;
     }
 
     public static class ServiceListenerWithFilter implements AllServiceListener

@@ -111,6 +111,8 @@ public class DefaultResolver implements Resolver
                 LOGGER.throwing(CLASS_NAME, "stop", ise);
                 throw ise;
             }
+            bundles.clear();
+            indexByPackage.clear();
             framework = null;
         }
 
@@ -363,7 +365,7 @@ public class DefaultResolver implements Resolver
 
             for (RequiredBundleWrapper candiateBundle : collectEligibleBundlesFromUsed(requiredBundle, checkPoint.getUsed()))
             {
-                CandidateRequiredBundle candidate = new CandidateRequiredBundle(candiateBundle.getRequireDescription(), candiateBundle.getBundleGeneration());
+                CandidateRequiredBundle candidate = new CandidateRequiredBundle(requiredBundle, candiateBundle.getBundleGeneration());
 
                 CheckPoint result = resolveRequiredBundles(checkPoint.newCheckPoint(candidate));
 
@@ -373,7 +375,7 @@ public class DefaultResolver implements Resolver
             for (RequiredBundleWrapper candiateBundle : collectEligibleBundlesFromUnused(requiredBundle, checkPoint.getUnused()))
             {
                 BundleGeneration bundleGeneration = candiateBundle.getBundleGeneration();
-                CandidateRequiredBundle candidate = new CandidateRequiredBundle(candiateBundle.getRequireDescription(), bundleGeneration);
+                CandidateRequiredBundle candidate = new CandidateRequiredBundle(requiredBundle, bundleGeneration);
 
                 List<FragmentGeneration> availableFragments = collectAvailableFragments(bundleGeneration);
 
