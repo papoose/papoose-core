@@ -38,70 +38,70 @@ public class FilterImplTest
     {
         Dictionary<String, Object> dictionary = new Hashtable<String, Object>();
         dictionary.put("c and f", new String[]{ "a", "b", "c" });
-        Filter filter = new FilterImpl(parser.parse("   ( c and f    =c) "));
+        Filter filter = new DefaultFilter(parser.parse("   ( c and f    =c) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
         Assert.assertEquals("(c and f=c)", filter.toString());
 
         dictionary.put("service.pid", "USB-1232312452");
         dictionary.put("vendor", "ibm");
-        filter = new FilterImpl(parser.parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson)( vendor  ~=ibm) ) ) "));
+        filter = new DefaultFilter(parser.parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson)( vendor  ~=ibm) ) ) "));
         Assert.assertEquals("(&(service.pid=USB-1232312452)(|(vendor~=ericsson)(vendor~=ibm)))", filter.toString());
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
         dictionary.put("vendor", "ericssin");
-        filter = new FilterImpl(parser.parse(" ( & (service.pid=USB-1232312452)( | (   vendor   ~=ericsson)(vendor~=ibm) ) ) "));
+        filter = new DefaultFilter(parser.parse(" ( & (service.pid=USB-1232312452)( | (   vendor   ~=ericsson)(vendor~=ibm) ) ) "));
 
         Assert.assertFalse(filter.matchCase(dictionary));
 
         dictionary.put("vendor", "ericssin01");
-        filter = new FilterImpl(parser.parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson01)(vendor~=ibm) ) (!(vendor=ibm))) "));
+        filter = new DefaultFilter(parser.parse(" ( & (service.pid=USB-1232312452)( | (vendor~=ericsson01)(vendor~=ibm) ) (!(vendor=ibm))) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
         dictionary.put("present", "oohrah");
-        filter = new FilterImpl(parser.parse(" ( present =*) "));
+        filter = new DefaultFilter(parser.parse(" ( present =*) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
         dictionary.put("substr", "How now brown cow");
-        filter = new FilterImpl(parser.parse(" ( substr =*no*brown*) "));
+        filter = new DefaultFilter(parser.parse(" ( substr =*no*brown*) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
-        filter = new FilterImpl(parser.parse(" ( substr =*now*) "));
+        filter = new DefaultFilter(parser.parse(" ( substr =*now*) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
-        filter = new FilterImpl(parser.parse(" ( substr =H*no*brown*w) "));
+        filter = new DefaultFilter(parser.parse(" ( substr =H*no*brown*w) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
-        filter = new FilterImpl(parser.parse(" ( substr =How*) "));
+        filter = new DefaultFilter(parser.parse(" ( substr =How*) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
-        filter = new FilterImpl(parser.parse(" ( substr =*cow) "));
+        filter = new DefaultFilter(parser.parse(" ( substr =*cow) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
-        filter = new FilterImpl(parser.parse(" ( substr =How*br*n cow) "));
+        filter = new DefaultFilter(parser.parse(" ( substr =How*br*n cow) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
         dictionary.put("substr", "How now brown cow ");
-        filter = new FilterImpl(parser.parse(" ( substr =How*br*n cow ) "));
+        filter = new DefaultFilter(parser.parse(" ( substr =How*br*n cow ) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
         dictionary.put("substr", "How now* brown cow ");
-        filter = new FilterImpl(parser.parse(" ( substr =How*\\**br*n cow ) "));
+        filter = new DefaultFilter(parser.parse(" ( substr =How*\\**br*n cow ) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
         dictionary.put("substr", "How now* brown (cow) ");
-        filter = new FilterImpl(parser.parse(" ( substr =How*\\**br*n \\(cow\\) ) "));
+        filter = new DefaultFilter(parser.parse(" ( substr =How*\\**br*n \\(cow\\) ) "));
 
         Assert.assertTrue(filter.matchCase(dictionary));
 
@@ -114,7 +114,7 @@ public class FilterImplTest
         dictionary.put("SeRvIcE.pId", "USB-1232312452");
         dictionary.put("VeNdOr", "ericssin01");
 
-        filter = new FilterImpl(parser.parse("(&(service.pid=USB-1232312452)(|(vendor~=ericssin01)(vendor~=ibm))(!(vendor=ibm)))"));
+        filter = new DefaultFilter(parser.parse("(&(service.pid=USB-1232312452)(|(vendor~=ericssin01)(vendor~=ibm))(!(vendor=ibm)))"));
 
         Assert.assertTrue(filter.match(dictionary));
     }

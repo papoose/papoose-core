@@ -33,7 +33,7 @@
                         <Bundle-Name>${name}</Bundle-Name>
                         <Bundle-SymbolicName>${groupId}.${artifactId}</Bundle-SymbolicName>
                         <Bundle-Vendor>Papoose</Bundle-Vendor>
-                        <Bundle-Copyright>Copyright 2008 (C) The original author or authors</Bundle-Copyright>
+                        <Bundle-Copyright>Copyright 2008-2009 (C) The original author or authors</Bundle-Copyright>
                         <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.startlevel;version=1.1,net.jcip.annotations;version=1.0;resolution=optional</Import-Package>
                         <Export-Service>org.osgi.service.startlevel.StartLevel</Export-Service>
                         <Bundle-Activator>org.papoose.core.StartLevelActivator</Bundle-Activator>

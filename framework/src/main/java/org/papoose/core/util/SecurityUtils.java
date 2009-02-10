@@ -16,9 +16,12 @@
  */
 package org.papoose.core.util;
 
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.logging.Logger;
 
 import org.osgi.framework.AdminPermission;
@@ -27,8 +30,8 @@ import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
-import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
 
 
 /**
@@ -55,7 +58,7 @@ public class SecurityUtils
         LOGGER.exiting(CLASS_NAME, "checkAdminPermission");
     }
 
-    public static void bundleChanged(final BundleListener listener, final BundleEvent event)
+    public static void bundleChanged(final BundleListener listener, final BundleEvent event, AccessControlContext context)
     {
         if (System.getSecurityManager() == null)
         {
@@ -70,11 +73,11 @@ public class SecurityUtils
                     listener.bundleChanged(event);
                     return null;
                 }
-            });
+            }, context);
         }
     }
 
-    public static void frameworkEvent(final FrameworkListener listener, final FrameworkEvent event)
+    public static void frameworkEvent(final FrameworkListener listener, final FrameworkEvent event, AccessControlContext context)
     {
         if (System.getSecurityManager() == null)
         {
@@ -89,11 +92,11 @@ public class SecurityUtils
                     listener.frameworkEvent(event);
                     return null;
                 }
-            });
+            }, context);
         }
     }
 
-    public static void serviceEvent(final ServiceListener listener, final ServiceEvent event)
+    public static void serviceEvent(final ServiceListener listener, final ServiceEvent event, AccessControlContext context)
     {
         if (System.getSecurityManager() == null)
         {
@@ -108,7 +111,27 @@ public class SecurityUtils
                     listener.serviceChanged(event);
                     return null;
                 }
-            });
+            }, context);
+        }
+    }
+
+    public static <T> T doPrivilegedExceptionAction(PrivilegedExceptionAction<T> action, AccessControlContext context) throws Exception
+    {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            try
+            {
+                return AccessController.doPrivileged(action, context);
+            }
+            catch (PrivilegedActionException e)
+            {
+                throw e.getException();
+            }
+        }
+        else
+        {
+            return action.run();
         }
     }
 

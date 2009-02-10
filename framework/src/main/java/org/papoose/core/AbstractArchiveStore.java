@@ -33,9 +33,20 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.Version;
 
+import org.papoose.core.descriptions.DynamicDescription;
+import org.papoose.core.descriptions.ExportDescription;
+import org.papoose.core.descriptions.Extension;
+import org.papoose.core.descriptions.FragmentDescription;
+import org.papoose.core.descriptions.ImportDescription;
+import org.papoose.core.descriptions.LazyActivationDescription;
+import org.papoose.core.descriptions.NativeCodeDescription;
+import org.papoose.core.descriptions.RequireDescription;
+import org.papoose.core.descriptions.Resolution;
+import org.papoose.core.descriptions.Visibility;
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.util.AttributeUtils;
 import org.papoose.core.util.AttributesWrapper;
+import org.papoose.core.util.Util;
 
 
 /**
@@ -71,6 +82,7 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     private final List<ImportDescription> bundleImportList;
     private final List<String> bundleImportService;
     private final List<RequireDescription> bundleRequireBundle;
+    private final LazyActivationDescription lazyActivationDescription;
 
     protected AbstractArchiveStore(Papoose framework, long bundleId, int generation, Attributes attributes) throws BundleException
     {
@@ -103,10 +115,13 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         this.bundleImportList = obtainBundleImportList(this.attributes);
         this.bundleImportService = obtainBundleImportService(this.attributes);
         this.bundleRequireBundle = obtainBundleRequireBundle(this.attributes);
+        this.lazyActivationDescription = obtainLazyActivationDescription(this.attributes);
 
         this.bundleNativeCodeListOptional = bundleNativeCodeList.size() > 0 && "*".equals(bundleNativeCodeList.get(bundleNativeCodeList.size() - 1));
 
         if (bundleManifestVersion != 2) throw new BundleException("Bundle-ManifestVersion must be 2");
+
+        assert this.lazyActivationDescription != null;
     }
 
     public String getFrameworkName()
@@ -189,20 +204,40 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         return bundleFragmentHost;
     }
 
+    public LazyActivationDescription getLazyActivationDescription()
+    {
+        return lazyActivationDescription;
+    }
+
+    public boolean isLazyActivationPolicy()
+    {
+        return lazyActivationDescription.isLazyActivation();
+    }
+
     public int compareTo(Object o)
     {
         if (!(o instanceof AbstractArchiveStore)) return 1;
         return Long.valueOf(bundleId).compareTo(((AbstractArchiveStore) o).getBundleId());
     }
 
+    @Override
     public int hashCode()
     {
-        return Long.valueOf(bundleId).hashCode();
+        int result = (int) (bundleId ^ (bundleId >>> 32));
+        result = 31 * result + generation;
+        return result;
     }
 
-    public boolean equals(Object obj)
+    @Override
+    public boolean equals(Object o)
     {
-        return Long.valueOf(bundleId).equals(obj);
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AbstractArchiveStore that = (AbstractArchiveStore) o;
+
+        if (bundleId != that.bundleId) return false;
+        return generation == that.generation;
     }
 
     protected static List<String> obtainBundleCategories(Attributes headers)
@@ -548,6 +583,31 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 
         return result;
     }
+
+    private static LazyActivationDescription obtainLazyActivationDescription(Attributes headers) throws BundleException
+    {
+        LazyActivationDescription lazyActivationDescription;
+
+        if (headers.containsKey(Constants.BUNDLE_ACTIVATIONPOLICY))
+        {
+            lazyActivationDescription = new LazyActivationDescription(true);
+
+            String description = headers.getValue(Constants.BUNDLE_ACTIVATIONPOLICY);
+            int index = description.indexOf(';');
+
+            if (index != -1)
+            {
+                Util.parseLazyActivationDescription(description.substring(index + 1), lazyActivationDescription);
+            }
+        }
+        else
+        {
+            lazyActivationDescription = new LazyActivationDescription(false);
+        }
+
+        return lazyActivationDescription;
+    }
+
 
     protected static Object parseValue(String expression) throws InvalidSyntaxException
     {

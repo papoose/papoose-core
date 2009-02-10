@@ -38,16 +38,8 @@ import org.osgi.framework.Version;
 import org.osgi.service.packageadmin.ExportedPackage;
 import org.osgi.service.packageadmin.PackageAdmin;
 import org.osgi.service.packageadmin.RequiredBundle;
-import org.papoose.core.BundleClassLoader;
-import org.papoose.core.BundleController;
-import org.papoose.core.BundleGeneration;
-import org.papoose.core.BundleManager;
-import org.papoose.core.ExportDescription;
-import org.papoose.core.FragmentGeneration;
-import org.papoose.core.Generation;
-import org.papoose.core.Papoose;
-import org.papoose.core.VersionRange;
-import org.papoose.core.Wire;
+
+import org.papoose.core.descriptions.ExportDescription;
 
 
 /**
@@ -516,7 +508,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public Bundle[] getBundles(String symbolicName, String versionRange)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getBundles", new Object[]{symbolicName, versionRange});
+        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getBundles", new Object[]{ symbolicName, versionRange });
 
         if (symbolicName == null) throw new IllegalArgumentException("symbolicName cannot be null");
 

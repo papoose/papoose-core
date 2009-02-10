@@ -31,6 +31,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import org.papoose.core.spi.Store;
+import org.papoose.core.util.Util;
 import org.papoose.store.file.NonCachingFileStore;
 
 

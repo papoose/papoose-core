@@ -31,7 +31,7 @@ import org.papoose.core.filter.Expr;
 /**
  * @version $Revision$ $Date$
  */
-public class FilterImpl implements Filter
+public class DefaultFilter implements Filter
 {
     public static final Filter TRUE = new Filter()
     {
@@ -52,7 +52,7 @@ public class FilterImpl implements Filter
     };
     private final Expr expr;
 
-    public FilterImpl(Expr expr)
+    public DefaultFilter(Expr expr)
     {
         this.expr = expr;
     }

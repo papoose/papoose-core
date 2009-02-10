@@ -37,22 +37,22 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 
 import org.papoose.core.BundleGeneration;
-import org.papoose.core.ExportDescription;
-import org.papoose.core.FragmentDescription;
 import org.papoose.core.FragmentGeneration;
 import org.papoose.core.FrameworkExtensionGeneration;
 import org.papoose.core.Generation;
-import org.papoose.core.ImportDescription;
 import org.papoose.core.Papoose;
 import org.papoose.core.PapooseException;
-import org.papoose.core.RequireDescription;
-import org.papoose.core.Resolution;
-import org.papoose.core.Util;
 import org.papoose.core.VersionRange;
-import org.papoose.core.Visibility;
 import org.papoose.core.Wire;
+import org.papoose.core.descriptions.ExportDescription;
+import org.papoose.core.descriptions.FragmentDescription;
+import org.papoose.core.descriptions.ImportDescription;
+import org.papoose.core.descriptions.RequireDescription;
+import org.papoose.core.descriptions.Resolution;
+import org.papoose.core.descriptions.Visibility;
 import org.papoose.core.spi.Resolver;
 import org.papoose.core.spi.Solution;
+import org.papoose.core.util.Util;
 
 
 /**

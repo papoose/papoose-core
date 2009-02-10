@@ -28,7 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import org.papoose.core.UrlUtils;
-import org.papoose.core.Util;
+import org.papoose.core.util.Util;
 import org.papoose.framework.mock.MockURLStreamHandlerFactory;
 import org.papoose.framework.mock.MockURLStreamHandlerProvider;
 

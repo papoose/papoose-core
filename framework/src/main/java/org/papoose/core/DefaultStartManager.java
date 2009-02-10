@@ -16,6 +16,8 @@
  */
 package org.papoose.core;
 
+import org.osgi.framework.BundleException;
+
 import org.papoose.core.spi.StartManager;
 
 /**
@@ -30,9 +32,9 @@ public class DefaultStartManager implements StartManager
         this.bundleManager = bundleManager;
     }
 
-    public void start(BundleGeneration bundle)
+    public void start(BundleGeneration bundle, int options) throws BundleException
     {
-        bundleManager.performStart(bundle);
+        bundleManager.beginStart(bundle, options);
     }
 
     public void stop(BundleGeneration bundle)

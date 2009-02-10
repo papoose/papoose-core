@@ -21,7 +21,7 @@ import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.osgi.framework.Constants;
 
-import org.papoose.core.ImportDescription;
+import org.papoose.core.descriptions.ImportDescription;
 
 /**
  * @version $Revision$ $Date$

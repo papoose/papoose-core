@@ -40,7 +40,7 @@ public class FrameworkUtil
 
     public static Filter createFilter(String filter) throws InvalidSyntaxException
     {
-        return new FilterImpl(parser.parse(filter));
+        return new DefaultFilter(parser.parse(filter));
     }
 
     private FrameworkUtil() {}

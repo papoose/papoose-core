@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core;
+package org.papoose.core.util;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,6 +26,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -34,6 +35,10 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.osgi.framework.BundleException;
+
+import org.papoose.core.descriptions.Extension;
+import org.papoose.core.descriptions.Resolution;
+import org.papoose.core.descriptions.Visibility;
 
 
 /**
@@ -390,7 +395,7 @@ public final class Util
                         String[] attributes = ((String) argument).split(",");
                         List<String> list = new ArrayList<String>(attributes.length);
 
-                        for (String attribute : attributes) list.add(attribute);
+                        list.addAll(Arrays.asList(attributes));
 
                         argument = list;
                     }
@@ -438,6 +443,87 @@ public final class Util
             if (state.isComplete()) return;
 
             state.eat(";");
+        }
+    }
+
+    public static void parseLazyActivationDescription(String string, Object pojo) throws BundleException
+    {
+        assert string != null;
+        assert pojo != null;
+
+        Set<String> argumentKeys = new HashSet<String>();
+        State state = new State(string);
+
+        while (true)
+        {
+            state.eatWhitespace();
+
+            String token = state.eatToken();
+
+            state.eatWhitespace();
+
+            if (state.isComplete())
+            {
+                return;
+            }
+
+            switch (state.peek())
+            {
+                case ':':
+                {
+                    state.eat(1);
+                    state.eat("=");
+                    state.eatWhitespace();
+
+                    if (argumentKeys.contains(token))
+                    {
+                        throw new BundleException("Duplicate argument key: " + token);
+                    }
+                    else
+                    {
+                        argumentKeys.add(token);
+                    }
+
+                    Object argument = state.eatArgument();
+
+                    if ("include".equals(token))
+                    {
+                        String[] packageNames = ((String) argument).split(",");
+                        Set<String> set = new HashSet<String>(packageNames.length);
+
+                        for (String packageName : packageNames)
+                        {
+                            if (!isValidPackageName(packageName)) throw new BundleException("Malformed package name: " + packageName);
+                            set.add(packageName);
+                        }
+
+                        argument = set;
+                    }
+                    else if ("exclude".equals(token))
+                    {
+                        String[] packageNames = ((String) argument).split(",");
+                        Set<String> set = new HashSet<String>(packageNames.length);
+
+                        for (String packageName : packageNames)
+                        {
+                            if (!isValidPackageName(packageName)) throw new BundleException("Malformed package name: " + packageName);
+                            set.add(packageName);
+                        }
+
+                        argument = set;
+                    }
+
+                    callSetter(pojo, token, argument);
+
+                    break;
+                }
+                default:
+                    throw new BundleException("misformatted directives");
+            }
+
+            state.eatWhitespace();
+
+            if (state.isComplete()) return;
         }
     }
 

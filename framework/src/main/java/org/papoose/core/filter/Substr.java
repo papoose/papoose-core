@@ -21,7 +21,7 @@ import java.util.Dictionary;
 
 import net.jcip.annotations.Immutable;
 
-import org.papoose.core.Util;
+import org.papoose.core.util.Util;
 
 
 /**

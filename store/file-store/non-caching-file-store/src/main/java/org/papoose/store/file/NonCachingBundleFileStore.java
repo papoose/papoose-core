@@ -26,6 +26,8 @@ import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
 
+import org.papoose.core.AutostartSetting;
+import org.papoose.core.FatalError;
 import org.papoose.core.spi.BundleStore;
 
 
@@ -37,11 +39,14 @@ public class NonCachingBundleFileStore implements BundleStore
     private final static String CLASS_NAME = NonCachingBundleFileStore.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     public final static String LOCATION_KEY = "location";
+    public final static String AUTOSTART_KEY = "autostart";
     public final static String DATA_DIR = "data";
+    private final File bundleRoot;
     private final File dataRoot;
     private final long bundleId;
     private final String location;
     private long lastModified;
+    private AutostartSetting setting;
 
     public NonCachingBundleFileStore(File bundleRoot, long bundleId, String location) throws BundleException
     {
@@ -51,17 +56,18 @@ public class NonCachingBundleFileStore implements BundleStore
 
         if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Creating file store for id " + bundleId + " in " + bundleRoot);
 
+        this.bundleRoot = bundleRoot;
         this.dataRoot = new File(bundleRoot, DATA_DIR);
         this.bundleId = bundleId;
         this.location = location;
+        this.lastModified = System.currentTimeMillis();
+        this.setting = AutostartSetting.STOPPED;
 
         if (!dataRoot.exists() && !dataRoot.mkdirs()) throw new BundleException("Unable to create data directory for bundle id " + bundleId + " in " + bundleRoot);
 
         try
         {
-            Properties properties = new Properties();
-            properties.setProperty(LOCATION_KEY, location);
-            properties.store(new FileOutputStream(new File(bundleRoot, "bundle.properties")), " bundle id: " + bundleId + " location: " + location);
+            save();
         }
         catch (IOException ioe)
         {
@@ -83,6 +89,7 @@ public class NonCachingBundleFileStore implements BundleStore
 
         if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Loading file store for id " + bundleId + " in " + bundleRoot);
 
+        this.bundleRoot = bundleRoot;
         this.dataRoot = new File(bundleRoot, DATA_DIR);
         this.bundleId = bundleId;
 
@@ -93,10 +100,16 @@ public class NonCachingBundleFileStore implements BundleStore
             Properties properties = new Properties();
             properties.load(new FileInputStream(bundleRoot));
             this.location = properties.getProperty(LOCATION_KEY);
+            this.lastModified = System.currentTimeMillis();
+            this.setting = AutostartSetting.valueOf(properties.getProperty(AUTOSTART_KEY));
         }
         catch (IOException ioe)
         {
             throw new BundleException("Unable to load bundle properties", ioe);
+        }
+        catch (IllegalArgumentException iae)
+        {
+            throw new BundleException("Unable to load bundle properties", iae);
         }
 
         if (LOGGER.isLoggable(Level.CONFIG))
@@ -130,5 +143,33 @@ public class NonCachingBundleFileStore implements BundleStore
     public String getLocation()
     {
         return location;
+    }
+
+    public AutostartSetting getAutostart()
+    {
+        return setting;
+    }
+
+    public void setAutoStart(AutostartSetting setting)
+    {
+        this.setting = setting;
+
+        try
+        {
+            save();
+        }
+        catch (IOException ioe)
+        {
+            LOGGER.log(Level.SEVERE, "Unable to save settings", ioe);
+            throw new FatalError("Unable to save settings", ioe);
+        }
+    }
+
+    private void save() throws IOException
+    {
+        Properties properties = new Properties();
+        properties.setProperty(LOCATION_KEY, location);
+        properties.setProperty(AUTOSTART_KEY, setting.toString());
+        properties.store(new FileOutputStream(new File(bundleRoot, "bundle.properties")), " bundle id: " + bundleId + " location: " + location);
     }
 }

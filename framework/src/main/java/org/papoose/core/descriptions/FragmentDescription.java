@@ -14,36 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core;
+package org.papoose.core.descriptions;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 
 import org.osgi.framework.Version;
+
+import org.papoose.core.VersionRange;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public class DynamicDescription
+public class FragmentDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
-    private final Set<String> packages;
+    private final String symbolName;
     private final Map<String, Object> parameters;
-    private VersionRange version;
-    private String bundleSymbolicName;
-    private VersionRange bundleVersion;
+    private Extension extension;
+    private VersionRange versionRange;
 
-    public DynamicDescription(Set<String> packages, Map<String, Object> parameters)
+    public FragmentDescription(String symbolName, Map<String, Object> parameters)
     {
-        this.packages = Collections.unmodifiableSet(packages);
+        this.symbolName = symbolName;
         this.parameters = Collections.unmodifiableMap(parameters);
     }
 
-    public Set<String> getPackages()
+    public String getSymbolName()
     {
-        return packages;
+        return symbolName;
     }
 
     public Map<String, Object> getParameters()
@@ -51,35 +51,23 @@ public class DynamicDescription
         return parameters;
     }
 
-    public VersionRange getVersion()
+    public Extension getExtension()
     {
-        return version;
+        return extension;
     }
 
-    void setVersion(VersionRange version)
+    public void setExtension(Extension extension)
     {
-        this.version = version;
+        this.extension = extension;
     }
 
-
-    public String getBundleSymbolicName()
+    public VersionRange getVersionRange()
     {
-        return bundleSymbolicName;
+        return versionRange;
     }
 
-    void setBundleSymbolicName(String bundleSymbolicName)
+    public void setVersionRange(VersionRange versionRange)
     {
-        this.bundleSymbolicName = bundleSymbolicName;
-    }
-
-
-    public VersionRange getBundleVersion()
-    {
-        return bundleVersion;
-    }
-
-    void setBundleVersion(VersionRange bundleVersion)
-    {
-        this.bundleVersion = bundleVersion;
+        this.versionRange = versionRange;
     }
 }

@@ -102,7 +102,7 @@ class BundleContextImpl implements BundleContext
 
     public void addServiceListener(ServiceListener serviceListener, String filter) throws InvalidSyntaxException
     {
-        getBundle().addServiceListener(serviceListener, new FilterImpl(getFramework().getParser().parse(filter)));
+        getBundle().addServiceListener(serviceListener, new DefaultFilter(getFramework().getParser().parse(filter)));
     }
 
     public void addServiceListener(ServiceListener serviceListener)
@@ -177,7 +177,7 @@ class BundleContextImpl implements BundleContext
 
     public Filter createFilter(String filter) throws InvalidSyntaxException
     {
-        return new FilterImpl(getFramework().getParser().parse(filter));
+        return new DefaultFilter(getFramework().getParser().parse(filter));
     }
 
     @Override

@@ -30,6 +30,7 @@ import java.util.jar.Attributes;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkEvent;
@@ -37,8 +38,14 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.Version;
-import org.apache.xbean.classloader.ResourceLocation;
 
+import org.papoose.core.descriptions.DynamicDescription;
+import org.papoose.core.descriptions.ExportDescription;
+import org.papoose.core.descriptions.FragmentDescription;
+import org.papoose.core.descriptions.ImportDescription;
+import org.papoose.core.descriptions.NativeCodeDescription;
+import org.papoose.core.descriptions.RequireDescription;
+import org.papoose.core.descriptions.LazyActivationDescription;
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.spi.BundleStore;
 import org.papoose.core.spi.StartManager;
@@ -73,16 +80,23 @@ public class SystemBundleController extends BundleController
             {
                 public void serviceChanged(ServiceEvent event)
                 {
-                    BundleManager bundleManager = getFramework().getBundleManager();
-
                     if (event.getType() == ServiceEvent.REGISTERED)
                     {
                         StartManager service = (StartManager) getBundleContext().getService(event.getServiceReference());
-                        bundleManager.setStartManager(service);
+                        getFramework().getBundleManager().setStartManager(service);
+                    }
+                    else if (event.getType() == ServiceEvent.MODIFIED)
+                    {
+                        StartManager service = (StartManager) getBundleContext().getService(event.getServiceReference());
+                        getFramework().getBundleManager().setStartManager(service);
+                    }
+                    else if (event.getType() == ServiceEvent.UNREGISTERING)
+                    {
+                        getFramework().getBundleManager().setStartManager(new DefaultStartManager(getFramework().getBundleManager()));
                     }
                 }
             },
-                               new FilterImpl(getFramework().getParser().parse("(objectclass=org.papoose.framework.spi.StartManager)")));
+                               new DefaultFilter(getFramework().getParser().parse("(objectclass=org.papoose.framework.spi.StartManager)")));
         }
         catch (InvalidSyntaxException ise)
         {
@@ -277,6 +291,16 @@ public class SystemBundleController extends BundleController
         public ResourceLocation registerClassPathElement(String classPathElement) throws BundleException
         {
             return null; // todo:
+        }
+
+        public LazyActivationDescription getLazyActivationDescription()
+        {
+            return null;  //Todo: change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public boolean isLazyActivationPolicy()
+        {
+            return false;  //Todo: change body of implemented methods use File | Settings | File Templates.
         }
 
         public String loadLibrary(String libname)

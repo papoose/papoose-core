@@ -21,9 +21,11 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.concurrent.Semaphore;
 
 import org.osgi.framework.BundleException;
 
+import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.util.ToStringCreator;
 
@@ -36,6 +38,7 @@ public class BundleGeneration extends Generation
     private BundleClassLoader classLoader;
     private final List<FragmentGeneration> fragments = new ArrayList<FragmentGeneration>();
     private final List<BundleGeneration> requiredBundles = new ArrayList<BundleGeneration>();
+    private final Semaphore starting = new Semaphore(1, true);
 
     public BundleGeneration(BundleController bundleController, ArchiveStore archiveStore)
     {
@@ -64,27 +67,32 @@ public class BundleGeneration extends Generation
 
     public URL getResource(String name)
     {
-        return null;  //To change body of created methods use File | Settings | File Templates.
+        return null;  //Todo change body of created methods use File | Settings | File Templates.
+    }
+
+    public Semaphore getStarting()
+    {
+        return starting;
     }
 
     public Enumeration<URL> getResources(String name)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;  //Todo change body of implemented methods use File | Settings | File Templates.
     }
 
     public Class loadClass(String name)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;  //Todo change body of implemented methods use File | Settings | File Templates.
     }
 
     public boolean hasPermission(Object object)
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;  //Todo change body of implemented methods use File | Settings | File Templates.
     }
 
     public void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        //Todo change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override

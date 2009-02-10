@@ -16,12 +16,11 @@
  */
 package org.papoose.core.resolver;
 
+import net.jcip.annotations.Immutable;
 import org.osgi.framework.Version;
 
 import org.papoose.core.BundleGeneration;
-import org.papoose.core.ExportDescription;
-
-import net.jcip.annotations.Immutable;
+import org.papoose.core.descriptions.ExportDescription;
 
 /**
  * A simple wrapper to make sure that export descriptions are searched in

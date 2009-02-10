@@ -26,6 +26,10 @@ import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.osgi.framework.BundleException;
+
+import org.papoose.core.descriptions.LazyActivationDescription;
+import org.papoose.core.util.Util;
 
 
 /**
@@ -141,6 +145,44 @@ public class UtilTest
         Assert.assertEquals("*Foo", Util.encodeName(pojo.getInclude().get(2)));
         Assert.assertEquals("*", Util.encodeName(pojo.getInclude().get(3)));
         Assert.assertEquals("*Baf*", Util.encodeName(pojo.getInclude().get(4)));
+    }
+
+    @Test
+    public void testParseLazyActivationDescription() throws Exception
+    {
+        LazyActivationDescription pojo = new LazyActivationDescription(true);
+
+        Util.parseLazyActivationDescription("include:=\"com.acme.service.base,com.acme.service.help\"", pojo);
+
+        Assert.assertEquals(2, pojo.getInclude().size());
+        Assert.assertTrue(pojo.getInclude().contains("com.acme.service.base"));
+        Assert.assertTrue(pojo.getInclude().contains("com.acme.service.help"));
+
+        pojo = new LazyActivationDescription(true);
+
+        Util.parseLazyActivationDescription("exclude:=\"com.acme.service.base,com.acme.service.help\"", pojo);
+
+        Assert.assertEquals(2, pojo.getExclude().size());
+        Assert.assertTrue(pojo.getExclude().contains("com.acme.service.base"));
+        Assert.assertTrue(pojo.getExclude().contains("com.acme.service.help"));
+
+        try
+        {
+            Util.parseLazyActivationDescription("include:=\"1com.acme.service.base,com.acme.service.help\"", pojo);
+            Assert.fail("1com.acme.service.base is a bad path");
+        }
+        catch (BundleException ignore)
+        {
+        }
+
+        try
+        {
+            Util.parseLazyActivationDescription("exclude:=\"1com.acme.service.base,com.acme.service.help\"", pojo);
+            Assert.fail("1com.acme.service.base is a bad path");
+        }
+        catch (BundleException ignore)
+        {
+        }
     }
 
     @Test

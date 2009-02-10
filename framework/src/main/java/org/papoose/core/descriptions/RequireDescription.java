@@ -14,26 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core;
+package org.papoose.core.descriptions;
 
 import java.util.Collections;
 import java.util.Map;
 
+import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Version;
+
+import org.papoose.core.VersionRange;
 
 
 /**
  * @version $Revision$ $Date$
  */
-public class FragmentDescription
+@ThreadSafe
+public class RequireDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
     private final String symbolName;
     private final Map<String, Object> parameters;
-    private Extension extension;
-    private VersionRange versionRange;
+    private volatile Visibility visibility = Visibility.PRIVATE;
+    private volatile Resolution resolution = Resolution.MANDATORY;
 
-    public FragmentDescription(String symbolName, Map<String, Object> parameters)
+    public RequireDescription(String symbolName, Map<String, Object> parameters)
     {
         this.symbolName = symbolName;
         this.parameters = Collections.unmodifiableMap(parameters);
@@ -49,23 +53,23 @@ public class FragmentDescription
         return parameters;
     }
 
-    public Extension getExtension()
+    public Visibility getVisibility()
     {
-        return extension;
+        return visibility;
     }
 
-    void setExtension(Extension extension)
+    void setVisibility(Visibility visibility)
     {
-        this.extension = extension;
+        this.visibility = visibility;
     }
 
-    public VersionRange getVersionRange()
+    public Resolution getResolution()
     {
-        return versionRange;
+        return resolution;
     }
 
-    public void setVersionRange(VersionRange versionRange)
+    void setResolution(Resolution resolution)
     {
-        this.versionRange = versionRange;
+        this.resolution = resolution;
     }
 }

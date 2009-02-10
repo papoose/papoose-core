@@ -49,10 +49,10 @@ import org.osgi.framework.InvalidSyntaxException;
 
 import org.papoose.core.AbstractArchiveStore;
 import org.papoose.core.L18nResourceBundle;
-import org.papoose.core.NativeCodeDescription;
+import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.Papoose;
 import org.papoose.core.UrlUtils;
-import org.papoose.core.Util;
+import org.papoose.core.util.Util;
 import org.papoose.core.util.FileUtils;
 
 

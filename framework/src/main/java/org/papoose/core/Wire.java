@@ -18,6 +18,9 @@ package org.papoose.core;
 
 import net.jcip.annotations.Immutable;
 
+import org.papoose.core.descriptions.ExportDescription;
+import org.papoose.core.util.Util;
+
 
 /**
  * @version $Revision$ $Date$

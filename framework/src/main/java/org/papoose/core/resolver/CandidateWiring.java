@@ -17,7 +17,7 @@
 package org.papoose.core.resolver;
 
 import org.papoose.core.BundleGeneration;
-import org.papoose.core.ExportDescription;
+import org.papoose.core.descriptions.ExportDescription;
 
 /**
  * @version $Revision$ $Date$

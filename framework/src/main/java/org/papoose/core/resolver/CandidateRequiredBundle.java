@@ -18,8 +18,8 @@ package org.papoose.core.resolver;
 
 import net.jcip.annotations.Immutable;
 
-import org.papoose.core.RequireDescription;
 import org.papoose.core.BundleGeneration;
+import org.papoose.core.descriptions.RequireDescription;
 
 /**
  * @version $Revision$ $Date$

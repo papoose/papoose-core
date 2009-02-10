@@ -14,12 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core;
+package org.papoose.core.descriptions;
 
 /**
+ * The visibility of the exports of a required bundle.
+ *
  * @version $Revision$ $Date$
  */
-public enum Resolution
+public enum Visibility
 {
-    MANDATORY, OPTIONAL
+    /**
+     * Do not re-export the wired bundle's exports
+     */
+    PRIVATE,
+
+    /**
+     * Re-export the wired bundle's exports
+     */
+    REEXPORT
 }

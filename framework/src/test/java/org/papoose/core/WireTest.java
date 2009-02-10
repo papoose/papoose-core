@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.papoose.core.mock.MockArchiveStore;
 import org.papoose.core.mock.MockBundleStore;
 import org.papoose.core.mock.MockStore;
+import org.papoose.core.descriptions.ExportDescription;
 
 
 /**

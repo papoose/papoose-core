@@ -14,36 +14,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core;
+package org.papoose.core.descriptions;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
-import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Version;
+
+import org.papoose.core.VersionRange;
 
 
 /**
  * @version $Revision$ $Date$
  */
-@ThreadSafe
-public class RequireDescription
+public class ImportDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
-    private final String symbolName;
+    private final Set<String> packages;
     private final Map<String, Object> parameters;
-    private volatile Visibility visibility = Visibility.PRIVATE;
-    private volatile Resolution resolution = Resolution.MANDATORY;
+    private Resolution resolution = Resolution.MANDATORY;
 
-    public RequireDescription(String symbolName, Map<String, Object> parameters)
+    public ImportDescription(Set<String> packages, Map<String, Object> parameters)
     {
-        this.symbolName = symbolName;
+        assert packages != null;
+        assert parameters != null;
+
+        this.packages = Collections.unmodifiableSet(packages);
         this.parameters = Collections.unmodifiableMap(parameters);
     }
 
-    public String getSymbolName()
+    public Set<String> getPackages()
     {
-        return symbolName;
+        return packages;
     }
 
     public Map<String, Object> getParameters()
@@ -51,15 +54,6 @@ public class RequireDescription
         return parameters;
     }
 
-    public Visibility getVisibility()
-    {
-        return visibility;
-    }
-
-    void setVisibility(Visibility visibility)
-    {
-        this.visibility = visibility;
-    }
 
     public Resolution getResolution()
     {
@@ -69,5 +63,30 @@ public class RequireDescription
     void setResolution(Resolution resolution)
     {
         this.resolution = resolution;
+    }
+
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder();
+
+        for (String pkg : packages)
+        {
+            if (builder.length() > 0) builder.append(";");
+            builder.append(pkg);
+        }
+        builder.append(";resolution:=");
+        builder.append(resolution);
+        if (!parameters.isEmpty())
+        {
+            for (String key : parameters.keySet())
+            {
+                builder.append(";");
+                builder.append(key);
+                builder.append("=");
+                builder.append(parameters.get(key));
+            }
+        }
+
+        return builder.toString();
     }
 }

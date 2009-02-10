@@ -37,6 +37,7 @@ import org.apache.xbean.classloader.ResourceHandle;
 import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
 
+import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.spi.ArchiveStore;
 
 

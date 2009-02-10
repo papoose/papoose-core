@@ -18,6 +18,8 @@ package org.papoose.core.spi;
 
 import java.io.File;
 
+import org.papoose.core.AutostartSetting;
+
 
 /**
  * @version $Revision$ $Date$
@@ -33,4 +35,8 @@ public interface BundleStore
     long getLastModified();
 
     void markModified();
+
+    AutostartSetting getAutostart();
+
+    void setAutoStart(AutostartSetting setting);
 }

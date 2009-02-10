@@ -21,13 +21,14 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 import org.apache.xbean.classloader.ResourceLocation;
 
-import org.papoose.core.DynamicDescription;
-import org.papoose.core.ExportDescription;
-import org.papoose.core.FragmentDescription;
-import org.papoose.core.ImportDescription;
+import org.papoose.core.descriptions.DynamicDescription;
+import org.papoose.core.descriptions.ExportDescription;
+import org.papoose.core.descriptions.FragmentDescription;
+import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.L18nResourceBundle;
-import org.papoose.core.NativeCodeDescription;
-import org.papoose.core.RequireDescription;
+import org.papoose.core.descriptions.NativeCodeDescription;
+import org.papoose.core.descriptions.RequireDescription;
+import org.papoose.core.descriptions.LazyActivationDescription;
 import org.papoose.core.spi.ArchiveStore;
 
 /**
@@ -134,6 +135,16 @@ public class MockArchiveStore implements ArchiveStore
     public ResourceLocation registerClassPathElement(String classPathElement) throws BundleException
     {
         return null;
+    }
+
+    public LazyActivationDescription getLazyActivationDescription()
+    {
+        return null;  //Todo: change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public boolean isLazyActivationPolicy()
+    {
+        return false;
     }
 
     public String loadLibrary(String libname)

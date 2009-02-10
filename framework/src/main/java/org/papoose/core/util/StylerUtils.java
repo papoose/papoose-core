@@ -48,6 +48,6 @@ public abstract class StylerUtils
     public static String style(Object value)
     {
         return DEFAULT_VALUE_STYLER.style(value);
-	}
+    }
 
 }

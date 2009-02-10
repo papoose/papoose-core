@@ -24,6 +24,7 @@ import java.util.SortedSet;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 
+import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.spi.ArchiveStore;
 
 

@@ -23,11 +23,11 @@ import java.util.List;
 import java.util.Set;
 
 import org.papoose.core.BundleGeneration;
-import org.papoose.core.ExportDescription;
 import org.papoose.core.FragmentGeneration;
 import org.papoose.core.Generation;
-import org.papoose.core.ImportDescription;
-import org.papoose.core.RequireDescription;
+import org.papoose.core.descriptions.ExportDescription;
+import org.papoose.core.descriptions.ImportDescription;
+import org.papoose.core.descriptions.RequireDescription;
 import org.papoose.core.util.ToStringCreator;
 
 /**

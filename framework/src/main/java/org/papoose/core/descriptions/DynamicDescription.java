@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core;
+package org.papoose.core.descriptions;
 
 import java.util.Collections;
 import java.util.Map;
@@ -22,22 +22,23 @@ import java.util.Set;
 
 import org.osgi.framework.Version;
 
+import org.papoose.core.VersionRange;
+
 
 /**
  * @version $Revision$ $Date$
  */
-public class ImportDescription
+public class DynamicDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
     private final Set<String> packages;
     private final Map<String, Object> parameters;
-    private Resolution resolution = Resolution.MANDATORY;
+    private VersionRange version;
+    private String bundleSymbolicName;
+    private VersionRange bundleVersion;
 
-    public ImportDescription(Set<String> packages, Map<String, Object> parameters)
+    public DynamicDescription(Set<String> packages, Map<String, Object> parameters)
     {
-        assert packages != null;
-        assert parameters != null;
-
         this.packages = Collections.unmodifiableSet(packages);
         this.parameters = Collections.unmodifiableMap(parameters);
     }
@@ -52,39 +53,35 @@ public class ImportDescription
         return parameters;
     }
 
-
-    public Resolution getResolution()
+    public VersionRange getVersion()
     {
-        return resolution;
+        return version;
     }
 
-    void setResolution(Resolution resolution)
+    void setVersion(VersionRange version)
     {
-        this.resolution = resolution;
+        this.version = version;
     }
 
-    public String toString()
+
+    public String getBundleSymbolicName()
     {
-        StringBuilder builder = new StringBuilder();
+        return bundleSymbolicName;
+    }
 
-        for (String pkg : packages)
-        {
-            if (builder.length() > 0) builder.append(";");
-            builder.append(pkg);
-        }
-        builder.append(";resolution:=");
-        builder.append(resolution);
-        if (!parameters.isEmpty())
-        {
-            for (String key : parameters.keySet())
-            {
-                builder.append(";");
-                builder.append(key);
-                builder.append("=");
-                builder.append(parameters.get(key));
-            }
-        }
+    void setBundleSymbolicName(String bundleSymbolicName)
+    {
+        this.bundleSymbolicName = bundleSymbolicName;
+    }
 
-        return builder.toString();
+
+    public VersionRange getBundleVersion()
+    {
+        return bundleVersion;
+    }
+
+    void setBundleVersion(VersionRange bundleVersion)
+    {
+        this.bundleVersion = bundleVersion;
     }
 }

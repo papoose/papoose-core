@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core;
+package org.papoose.core.descriptions;
 
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.osgi.framework.Version;
+
+import org.papoose.core.util.Util;
 
 
 /**
@@ -82,7 +84,7 @@ public class ExportDescription
         return include;
     }
 
-    void setInclude(List<String[]> include)
+    public void setInclude(List<String[]> include)
     {
         this.include = include;
     }
@@ -92,7 +94,7 @@ public class ExportDescription
         return exclude;
     }
 
-    void setExclude(List<String[]> exclude)
+    public void setExclude(List<String[]> exclude)
     {
         this.exclude = exclude;
     }

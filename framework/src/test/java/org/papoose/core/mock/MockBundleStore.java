@@ -20,6 +20,7 @@ import java.io.File;
 
 import org.osgi.framework.BundleException;
 
+import org.papoose.core.AutostartSetting;
 import org.papoose.core.spi.BundleStore;
 
 /**
@@ -71,5 +72,14 @@ public class MockBundleStore implements BundleStore
     public void markModified()
     {
         lastModified = System.currentTimeMillis();
+    }
+
+    public AutostartSetting getAutostart()
+    {
+        return null;
+    }
+
+    public void setAutoStart(AutostartSetting setting)
+    {
     }
 }

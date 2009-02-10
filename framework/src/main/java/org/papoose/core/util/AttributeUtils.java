@@ -33,8 +33,7 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 
-import org.papoose.core.ExportDescription;
-import org.papoose.core.Util;
+import org.papoose.core.descriptions.ExportDescription;
 
 
 /**

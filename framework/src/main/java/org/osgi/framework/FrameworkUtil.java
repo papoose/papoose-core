@@ -16,7 +16,7 @@
  */
 package org.osgi.framework;
 
-import org.papoose.core.FilterImpl;
+import org.papoose.core.DefaultFilter;
 import org.papoose.core.filter.Parser;
 
 
@@ -29,6 +29,6 @@ public class FrameworkUtil
 
     public static Filter createFilter(String filter) throws InvalidSyntaxException
     {
-        return new FilterImpl(new Parser().parse(filter));
+        return new DefaultFilter(new Parser().parse(filter));
     }
 }
