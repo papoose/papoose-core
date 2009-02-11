@@ -19,9 +19,9 @@ package org.papoose.core.resolver;
 import java.util.Map;
 
 import net.jcip.annotations.Immutable;
-import org.osgi.framework.Constants;
 
 import org.papoose.core.descriptions.ImportDescription;
+import org.papoose.core.descriptions.Resolution;
 
 /**
  * @version $Revision$ $Date$
@@ -31,13 +31,14 @@ class ImportDescriptionWrapper
 {
     private final String packageName;
     private final ImportDescription importDescription;
-    private final boolean mandatory;
 
     public ImportDescriptionWrapper(String packageName, ImportDescription importDescription)
     {
+        assert packageName != null;
+        assert importDescription != null;
+
         this.packageName = packageName;
         this.importDescription = importDescription;
-        this.mandatory = importDescription.getParameters().containsKey(Constants.MANDATORY_DIRECTIVE) && (Boolean) importDescription.getParameters().get(Constants.MANDATORY_DIRECTIVE);
     }
 
     public String getPackageName()
@@ -62,6 +63,6 @@ class ImportDescriptionWrapper
 
     public boolean isMandatory()
     {
-        return mandatory;
+        return importDescription.getResolution() == Resolution.MANDATORY;
     }
 }
