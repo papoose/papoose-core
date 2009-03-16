@@ -179,27 +179,27 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         return bundleLocalization;
     }
 
-    public List<ExportDescription> getBundleExportList()
+    public List<ExportDescription> getExportDescriptions()
     {
         return bundleExportList;
     }
 
-    public List<ImportDescription> getBundleImportList()
+    public List<ImportDescription> getImportDescriptions()
     {
         return bundleImportList;
     }
 
-    public List<RequireDescription> getBundleRequireBundle()
+    public List<RequireDescription> getRequireDescriptions()
     {
         return bundleRequireBundle;
     }
 
-    public Set<DynamicDescription> getDynamicImportSet()
+    public Set<DynamicDescription> getDynamicDescriptions()
     {
         return bundleDynamicImportSet;
     }
 
-    public FragmentDescription getBundleFragmentHost()
+    public FragmentDescription getFragmentDescription()
     {
         return bundleFragmentHost;
     }

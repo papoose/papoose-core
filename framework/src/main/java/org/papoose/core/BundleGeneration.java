@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.concurrent.Semaphore;
 
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 import org.papoose.core.descriptions.NativeCodeDescription;
@@ -43,6 +44,11 @@ public class BundleGeneration extends Generation
     public BundleGeneration(BundleController bundleController, ArchiveStore archiveStore)
     {
         super(bundleController, archiveStore);
+    }
+
+    public boolean isResolved()
+    {
+        return (getState() & (Bundle.UNINSTALLED | Bundle.INSTALLED)) != 0;
     }
 
     public BundleClassLoader getClassLoader()

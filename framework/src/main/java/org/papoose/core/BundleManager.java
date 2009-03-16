@@ -353,7 +353,7 @@ public class BundleManager
 
                 Set<String> exportedPackages = new HashSet<String>();
 
-                for (ExportDescription desc : currentStore.getBundleExportList())
+                for (ExportDescription desc : currentStore.getExportDescriptions())
                 {
                     exportedPackages.addAll(desc.getPackageNames());
                 }
@@ -412,7 +412,7 @@ public class BundleManager
                                                                       requiredBundles,
                                                                       bootDelegates,
                                                                       exportedPackages.toArray(new String[exportedPackages.size()]),
-                                                                      currentStore.getDynamicImportSet(),
+                                                                      currentStore.getDynamicDescriptions(),
                                                                       resourceLocations,
                                                                       archiveStores);
 
@@ -773,22 +773,22 @@ public class BundleManager
 
     private Generation allocateGeneration(BundleController bundle, ArchiveStore archiveStore) throws BundleException
     {
-        if (archiveStore.getBundleFragmentHost() != null)
+        if (archiveStore.getFragmentDescription() != null)
         {
-            FragmentDescription description = archiveStore.getBundleFragmentHost();
+            FragmentDescription description = archiveStore.getFragmentDescription();
             if (description.getExtension() == null)
             {
                 return new FragmentGeneration(bundle, archiveStore);
             }
             else
             {
-                if (!archiveStore.getBundleImportList().isEmpty()) throw new BundleException("Extension bundles cannot import packages");
-                if (!archiveStore.getBundleRequireBundle().isEmpty()) throw new BundleException("Extension bundles cannot require other bundles");
+                if (!archiveStore.getImportDescriptions().isEmpty()) throw new BundleException("Extension bundles cannot import packages");
+                if (!archiveStore.getRequireDescriptions().isEmpty()) throw new BundleException("Extension bundles cannot require other bundles");
                 if (!archiveStore.getBundleNativeCodeList().isEmpty()) throw new BundleException("Extension bundles cannot load native code");
-                if (!archiveStore.getDynamicImportSet().isEmpty()) throw new BundleException("Extension bundles cannot dynamically import packages");
+                if (!archiveStore.getDynamicDescriptions().isEmpty()) throw new BundleException("Extension bundles cannot dynamically import packages");
                 if (archiveStore.getBundleActivatorClass() != null) throw new BundleException("Extension bundles cannot have a bundle activator");
 
-                if (archiveStore.getBundleFragmentHost().getExtension() == Extension.FRAMEWORK)
+                if (archiveStore.getFragmentDescription().getExtension() == Extension.FRAMEWORK)
                 {
                     return new FrameworkExtensionGeneration(bundle, archiveStore);
                 }

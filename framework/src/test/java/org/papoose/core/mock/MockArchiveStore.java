@@ -107,27 +107,27 @@ public class MockArchiveStore implements ArchiveStore
         return Collections.emptyList();
     }
 
-    public List<ExportDescription> getBundleExportList()
+    public List<ExportDescription> getExportDescriptions()
     {
         return Collections.emptyList();
     }
 
-    public List<ImportDescription> getBundleImportList()
+    public List<ImportDescription> getImportDescriptions()
     {
         return Collections.emptyList();
     }
 
-    public List<RequireDescription> getBundleRequireBundle()
+    public List<RequireDescription> getRequireDescriptions()
     {
         return Collections.emptyList();
     }
 
-    public Set<DynamicDescription> getDynamicImportSet()
+    public Set<DynamicDescription> getDynamicDescriptions()
     {
         return Collections.emptySet();
     }
 
-    public FragmentDescription getBundleFragmentHost()
+    public FragmentDescription getFragmentDescription()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }

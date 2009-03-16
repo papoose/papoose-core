@@ -18,34 +18,22 @@ package org.papoose.core.resolver;
 
 import net.jcip.annotations.Immutable;
 
-import org.papoose.core.BundleGeneration;
-import org.papoose.core.descriptions.RequireDescription;
+import org.papoose.core.Generation;
 
 /**
  * @version $Revision$ $Date$
  */
 @Immutable
-public class CandidateRequiredBundle
+public class UnBound extends UnResolved
 {
-    private final RequireDescription requireDescription;
-    private final BundleGeneration bundleGeneration;
-
-    public CandidateRequiredBundle(RequireDescription requireDescription, BundleGeneration bundleGeneration)
+    public UnBound(Generation toBeResolved)
     {
-        assert requireDescription != null;
-        assert bundleGeneration != null;
-
-        this.requireDescription = requireDescription;
-        this.bundleGeneration = bundleGeneration;
+        super(toBeResolved);
     }
 
-    public RequireDescription getRequireDescription()
+    @SuppressWarnings({ "CloneDoesntCallSuperClone" })
+    public Object clone() throws CloneNotSupportedException
     {
-        return requireDescription;
-    }
-
-    public BundleGeneration getBundleGeneration()
-    {
-        return bundleGeneration;
+        return new UnBound(getToBeResolved());
     }
 }

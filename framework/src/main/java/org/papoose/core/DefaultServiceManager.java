@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2009 (C) The original author or authors
+ * Copyright 2007-2009 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.resolver;
+package org.papoose.core;
 
-import java.util.List;
-import java.util.Set;
-
-import org.papoose.core.BundleGeneration;
-import org.papoose.core.FragmentGeneration;
-import org.papoose.core.descriptions.RequireDescription;
+import org.papoose.core.spi.ServiceManager;
 
 /**
  * @version $Revision$ $Date$
  */
-public interface CandidateBundle
+class DefaultServiceManager implements ServiceManager
 {
-    BundleGeneration getBundleGeneration();
-
-    List<BoundFragment> getFragments();
-
-    List<RequiredBundleWrapper> getCandidateRequiredBundles();
-
-    List<ImportDescriptionWrapper> getImports();
-
-    Set<ExportDescriptionWrapper> getExports();
 }

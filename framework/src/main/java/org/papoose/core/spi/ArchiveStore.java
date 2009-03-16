@@ -65,15 +65,15 @@ public interface ArchiveStore extends Comparable
 
     List<String> getBundleRequiredExecutionEnvironment();
 
-    List<ExportDescription> getBundleExportList();
+    List<ExportDescription> getExportDescriptions();
 
-    List<ImportDescription> getBundleImportList();
+    List<ImportDescription> getImportDescriptions();
 
-    List<RequireDescription> getBundleRequireBundle();
+    List<RequireDescription> getRequireDescriptions();
 
-    Set<DynamicDescription> getDynamicImportSet();
+    Set<DynamicDescription> getDynamicDescriptions();
 
-    FragmentDescription getBundleFragmentHost();
+    FragmentDescription getFragmentDescription();
 
     ResourceLocation registerClassPathElement(String classPathElement) throws BundleException;
 

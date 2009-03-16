@@ -45,13 +45,12 @@ import org.papoose.core.PapooseException;
 import org.papoose.core.VersionRange;
 import org.papoose.core.Wire;
 import org.papoose.core.descriptions.ExportDescription;
-import org.papoose.core.descriptions.FragmentDescription;
 import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.RequireDescription;
 import org.papoose.core.descriptions.Resolution;
-import org.papoose.core.descriptions.Visibility;
 import org.papoose.core.spi.Resolver;
 import org.papoose.core.spi.Solution;
+import org.papoose.core.util.ResolverUtils;
 import org.papoose.core.util.Util;
 
 
@@ -85,9 +84,8 @@ public class DefaultResolver implements Resolver
         {
             if (this.framework != null)
             {
-                IllegalStateException ise = new IllegalStateException("Framework has already started");
-                LOGGER.throwing(CLASS_NAME, "start", ise);
-                throw ise;
+                LOGGER.warning("Framework has already started");
+                throw new IllegalStateException("Framework has already started");
             }
 
             this.framework = framework;
@@ -107,11 +105,10 @@ public class DefaultResolver implements Resolver
         {
             if (this.framework == null)
             {
-                IllegalStateException ise = new IllegalStateException("Framework has already stopped");
                 LOGGER.warning("Framework has already stopped");
-                LOGGER.throwing(CLASS_NAME, "stop", ise);
-                throw ise;
+                throw new IllegalStateException("Framework has already stopped");
             }
+
             bundles.clear();
             indexByPackage.clear();
             framework = null;
@@ -143,7 +140,7 @@ public class DefaultResolver implements Resolver
             {
                 LOGGER.finest("Bundle is an regular bundleGeneration");
 
-                for (ExportDescription exportDescription : generation.getArchiveStore().getBundleExportList())
+                for (ExportDescription exportDescription : generation.getArchiveStore().getExportDescriptions())
                 {
                     LOGGER.log(Level.FINEST, "Indexing", exportDescription);
 
@@ -185,7 +182,7 @@ public class DefaultResolver implements Resolver
                 LOGGER.finest("Bundle is an regular bundleGeneration");
 
                 BundleGeneration bundle = (BundleGeneration) generation;
-                for (ExportDescription exportDescription : bundle.getArchiveStore().getBundleExportList())
+                for (ExportDescription exportDescription : bundle.getArchiveStore().getExportDescriptions())
                 {
                     for (String packageName : exportDescription.getPackageNames())
                     {
@@ -206,63 +203,104 @@ public class DefaultResolver implements Resolver
     /**
      * {@inheritDoc}
      */
-    public Set<Solution> resolve(Generation bundle) throws BundleException
+    public Set<Solution> resolve(Generation generation) throws BundleException
     {
-        LOGGER.entering(CLASS_NAME, "resolve", bundle);
+        LOGGER.entering(CLASS_NAME, "resolve", generation);
 
-        if (bundle == null) throw new IllegalArgumentException("Bundle cannot be null");
-        if (bundle.getState() != Bundle.INSTALLED) throw new BundleException("Bundle not in INSTALLED STATE");
-        if (framework == null) throw new IllegalStateException("Framework has not started");
+        if (generation == null) throw new IllegalArgumentException("Bundle cannot be null");
 
         synchronized (lock)
         {
-            CheckPoint result = null;
+            if (!bundles.contains(generation)) throw new IllegalArgumentException("Bundle does not belong to this framework instance");
+            if (generation.getState() != Bundle.INSTALLED) throw new BundleException("Bundle not in INSTALLED STATE");
+            if (framework == null) throw new IllegalStateException("Framework has not started");
 
-            if (bundle instanceof BundleGeneration)
-            {
-                List<FragmentGeneration> availableFragments = collectAvailableFragments((BundleGeneration) bundle);
+            Set<Candidate> canonicalSet = ResolverUtils.collectCanonicalSet(bundles);
 
-                for (List<FragmentGeneration> fragments : Util.combinations(availableFragments))
-                {
-                    CandidateBundle candidate = new CandidateBundle(bundle, (BundleGeneration) bundle, fragments);
-
-                    CheckPoint checkPoint = new CheckPoint(candidate, generateBundleSet(bundle, bundles));
-
-                    result = doResolveBundle(checkPoint);
-
-                    if (result != null) break;
-                }
-            }
-            else if (bundle instanceof FragmentGeneration)
-            {
-                BundleGeneration host = collectAvailableHost((FragmentGeneration) bundle);
-
-                if (host == null) throw new BundleException("No consistent solution set found");
-
-                List<FragmentGeneration> fragments = new ArrayList<FragmentGeneration>(host.getFragments());
-                fragments.add((FragmentGeneration) bundle);
-
-                CandidateBundle candidate = new CandidateBundle(bundle, host, fragments);
-
-                CheckPoint checkPoint = new CheckPoint(candidate, generateBundleSet(bundle, bundles));
-
-                result = doResolveBundle(checkPoint);
-            }
-            else if (bundle instanceof FrameworkExtensionGeneration)
-            {
-            }
+            CheckPoint result = doResolve(new CheckPoint(generation, canonicalSet));
 
             if (result == null) throw new BundleException("No consistent solution set found");
 
-            return extractSolutions(result);
+            Set<Solution> solutions = extractSolutions(result);
+
+            LOGGER.exiting(CLASS_NAME, "resolve", solutions);
+
+            return solutions;
         }
+    }
+
+    private CheckPoint doResolve(CheckPoint checkPoint) throws BundleException
+    {
+        LOGGER.entering(CLASS_NAME, "doResolve", checkPoint);
+
+        assert checkPoint.getResolving() instanceof UnBound;
+
+        CheckPoint result = null;
+        Generation bundle = checkPoint.getResolving().getToBeResolved();
+
+        if (bundle instanceof BundleGeneration)
+        {
+            BundleGeneration host = (BundleGeneration) bundle;
+            List<BoundFragment> availableFragments = ResolverUtils.collectAvailableFragments(host, checkPoint);
+
+            for (List<BoundFragment> fragments : Util.combinations(availableFragments))
+            {
+                result = doResolveBundle(checkPoint.newCheckPoint(new BoundHost(bundle, host, fragments)));
+
+                if (result != null) break;
+            }
+        }
+        else if (bundle instanceof FragmentGeneration)
+        {
+            List<Candidate> hostCandidates = collectAvailableHosts((FragmentGeneration) bundle);
+
+            if (hostCandidates.isEmpty()) throw new BundleException("No consistent solution set found");
+
+            for (Candidate hostCandidate : hostCandidates)
+            {
+                if (hostCandidate instanceof Resolved)
+                {
+                    Resolved resolvedHost = (Resolved) hostCandidate;
+                }
+                else if ( hostCandidate instanceof UnBound)
+                {
+                    UnBound unBound = (UnBound) hostCandidate;
+                }else{
+                    BoundHost bound = (BoundHost) hostCandidate;
+                }
+                if (bundle.getState() == Bundle.INSTALLED)
+                {
+                    List<BoundFragment> fragments = new ArrayList<BoundFragment>(hostCandidate.getFragments());
+                    fragments.add((FragmentGeneration) bundle);
+
+                    result = doResolveBundle(checkPoint.newCheckPoint(new BoundHost(bundle, hostCandidate, fragments)));
+                }
+                else
+                {
+                    List<FragmentGeneration> fragments = new ArrayList<FragmentGeneration>(hostCandidate.getFragments());
+                    fragments.add((FragmentGeneration) bundle);
+
+                    result = doResolveBundle(checkPoint.newCheckPoint(new BoundHost(bundle, hostCandidate, fragments)));
+                }
+                if (result != null) break;
+            }
+        }
+        else if (bundle instanceof FrameworkExtensionGeneration)
+        {
+        }
+
+        if (result == null) throw new BundleException("No consistent solution set found");
+
+        LOGGER.exiting(CLASS_NAME, "doResolve", result);
+
+        return result;
     }
 
     private static Set<Solution> extractSolutions(CheckPoint result)
     {
         Set<Solution> solutions = new HashSet<Solution>();
 
-        for (CandidateBundle candidateBundle : result.getResolved())
+        for (BoundHost candidateBundle : result.getResolved())
         {
             Set<Wire> wires = new HashSet<Wire>();
 
@@ -274,17 +312,16 @@ public class DefaultResolver implements Resolver
 
             List<Solution.RequiredBundleWrapper> requiredBundles = new ArrayList<Solution.RequiredBundleWrapper>();
 
-            for (CandidateRequiredBundle candidateRequiredBundle : candidateBundle.getCandidateRequiredBundles())
+            for (RequiredBundleWrapper requiredBundle : candidateBundle.getCandidateRequiredBundles())
             {
-                BundleGeneration bundleGeneration = candidateRequiredBundle.getBundleGeneration();
-                RequireDescription requireDescription = candidateRequiredBundle.getRequireDescription();
+                BundleGeneration bundleGeneration = requiredBundle.getBundleGeneration();
 
-                for (ExportDescription description : bundleGeneration.getArchiveStore().getBundleExportList())
+                for (ExportDescription description : bundleGeneration.getArchiveStore().getExportDescriptions())
                 {
                     for (String packageName : description.getPackageNames())
                     {
                         Wire wire = new Wire(packageName, description, bundleGeneration);
-                        requiredBundles.add(new Solution.RequiredBundleWrapper(wire, requireDescription.getVisibility() == Visibility.REEXPORT));
+                        requiredBundles.add(new Solution.RequiredBundleWrapper(wire, requiredBundle.isReExport()));
                     }
                 }
             }
@@ -313,34 +350,7 @@ public class DefaultResolver implements Resolver
         return result;
     }
 
-    private List<FragmentGeneration> collectAvailableFragments(BundleGeneration bundle)
-    {
-        assert Thread.holdsLock(lock);
-
-        List<FragmentGeneration> result = new ArrayList<FragmentGeneration>();
-
-        String hostSymbolName = bundle.getSymbolicName();
-        Version hostVersion = bundle.getVersion();
-        for (Generation generation : bundles)
-        {
-            if (generation instanceof FragmentGeneration)
-            {
-                FragmentGeneration fragmentGeneration = (FragmentGeneration) generation;
-                FragmentDescription description = fragmentGeneration.getArchiveStore().getBundleFragmentHost();
-
-                if (fragmentGeneration.getState() == Bundle.INSTALLED
-                    && description.getSymbolName().equals(hostSymbolName)
-                    && description.getVersionRange().includes(hostVersion))
-                {
-                    result.add(fragmentGeneration);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private static BundleGeneration collectAvailableHost(FragmentGeneration fragmentBundle)
+    private static List<Candidate> collectAvailableHosts(FragmentGeneration fragmentBundle)
     {
         return null;  //todo: consider this autogenerated code
     }
@@ -360,7 +370,7 @@ public class DefaultResolver implements Resolver
 
     private CheckPoint resolveRequiredBundles(CheckPoint checkPoint)
     {
-        List<RequireDescription> requiredBundles = checkPoint.getResolving().getRequiredBundles();
+        List<RequireDescription> requiredBundles = ((BoundHost) checkPoint.getResolving()).getRequiredBundles();
 
         if (!requiredBundles.isEmpty())
         {
@@ -368,25 +378,36 @@ public class DefaultResolver implements Resolver
 
             for (RequiredBundleWrapper candiateBundle : collectEligibleBundlesFromUsed(requiredBundle, checkPoint.getUsed()))
             {
-                CandidateRequiredBundle candidate = new CandidateRequiredBundle(requiredBundle, candiateBundle.getBundleGeneration());
+                CandidateBundle candidate = new CandidateRequiredBundle(requiredBundle, candiateBundle.getBundleGeneration());
 
                 CheckPoint result = resolveRequiredBundles(checkPoint.newCheckPoint(candidate));
 
                 if (result != null) return result;
             }
 
+            done:
             for (RequiredBundleWrapper candiateBundle : collectEligibleBundlesFromUnused(requiredBundle, checkPoint.getUnused()))
             {
                 BundleGeneration bundleGeneration = candiateBundle.getBundleGeneration();
-                CandidateRequiredBundle candidate = new CandidateRequiredBundle(requiredBundle, bundleGeneration);
-
-                List<FragmentGeneration> availableFragments = collectAvailableFragments(bundleGeneration);
-
-                for (List<FragmentGeneration> fragments : Util.combinations(availableFragments))
+                if (bundleGeneration.isResolved())
                 {
-                    CheckPoint result = doResolveBundle(new CheckPoint(new CandidateBundle(bundleGeneration, bundleGeneration, fragments), generateBundleSet(bundleGeneration, bundles)));
+                    CheckPoint result = doResolveBundle(new CheckPoint(new Resolved(bundleGeneration), generateBundleSet(bundleGeneration, bundles)));
 
                     if (result != null) break;
+                }
+                else
+                {
+                    //todo: is this correct?  Do we capture all the possibilities?
+//                    CandidateBundle candidate = new CandidateRequiredBundle(requiredBundle, bundleGeneration);
+
+                    List<FragmentGeneration> availableFragments = collectAvailableFragments(bundleGeneration);
+
+                    for (List<FragmentGeneration> fragments : Util.combinations(availableFragments))
+                    {
+                        CheckPoint result = doResolveBundle(new CheckPoint(new BoundHost(bundleGeneration, bundleGeneration, fragments), generateBundleSet(bundleGeneration, bundles)));
+
+                        if (result != null) break done;
+                    }
                 }
             }
 
@@ -400,12 +421,12 @@ public class DefaultResolver implements Resolver
         return resolveWires(checkPoint);
     }
 
-    private static List<RequiredBundleWrapper> collectEligibleBundlesFromUsed(RequireDescription requiredBundle, Set<CandidateBundle> used)
+    private static List<RequiredBundleWrapper> collectEligibleBundlesFromUsed(RequireDescription requiredBundle, Set<Candidate> used)
     {
         List<RequiredBundleWrapper> result = new ArrayList<RequiredBundleWrapper>();
         Map<String, Object> prameters = requiredBundle.getParameters();
 
-        for (CandidateBundle candidateBundle : used)
+        for (BoundHost candidateBundle : used)
         {
             BundleGeneration bundleGeneration = candidateBundle.getBundleGeneration();
 
@@ -457,11 +478,10 @@ public class DefaultResolver implements Resolver
 
     private CheckPoint resolveWires(CheckPoint checkPoint)
     {
-        assert Thread.holdsLock(lock);
         assert checkPoint != null;
         assert checkPoint.getResolving() != null;
 
-        List<ImportDescriptionWrapper> imports = checkPoint.getResolving().getImports();
+        List<ImportDescriptionWrapper> imports = ((BoundHost) checkPoint.getResolving()).getImports();
 
         if (!imports.isEmpty())
         {
@@ -491,7 +511,8 @@ public class DefaultResolver implements Resolver
 
                     if (isConsistent(checkPoint.getUsed(), impliedCandidateWirings))
                     {
-                        CandidateBundle newBundle = generateCandidatePairing(candidateExport);
+                        //todo: is this correct?  Do we capture all the possibilities?  Some may not be resolved
+                        BoundHost newBundle = generateCandidatePairing(candidateExport);
                         CandidateWiring newWiring = new CandidateWiring(targetImport.getPackageName(), candidateExport.getExportDescription(), candidateExport.getBundleGeneration());
 
                         CheckPoint result = resolveWires(checkPoint.newCheckPoint(newBundle, newWiring));
@@ -514,9 +535,9 @@ public class DefaultResolver implements Resolver
         return checkPoint;
     }
 
-    private static CandidateBundle generateCandidatePairing(ExportDescriptionWrapper candidateExport)
+    private static BoundHost generateCandidatePairing(ExportDescriptionWrapper candidateExport)
     {
-        CandidateBundle candidateBundle = new CandidateBundle(candidateExport.getBundleGeneration(), candidateExport.getBundleGeneration(), Collections.<FragmentGeneration>emptyList());
+        BoundHost candidateBundle = new BoundHost(candidateExport.getBundleGeneration(), candidateExport.getBundleGeneration(), Collections.<FragmentGeneration>emptyList());
         return candidateBundle;  //Todo change body of created methods use File | Settings | File Templates.
     }
 
@@ -572,13 +593,13 @@ public class DefaultResolver implements Resolver
         return result;
     }
 
-    private static boolean isConsistent(Set<CandidateBundle> used, Set<Wire> impliedCandidateWirings)
+    private static boolean isConsistent(Set<Candidate> used, Set<Wire> impliedCandidateWirings)
     {
         Map<String, Wire> implied = new HashMap<String, Wire>(impliedCandidateWirings.size());
 
         for (Wire wire : impliedCandidateWirings) implied.put(wire.getPackageName(), wire);
 
-        for (CandidateBundle candidateBundle : used)
+        for (BoundHost candidateBundle : used)
         {
             for (CandidateWiring candidateWiring : candidateBundle.getCandidateWirings())
             {
@@ -644,12 +665,12 @@ public class DefaultResolver implements Resolver
         return false;
     }
 
-    private static List<ExportDescriptionWrapper> collectEligibleExportsFromUsed(ImportDescriptionWrapper targetImport, Set<CandidateBundle> used)
+    private static List<ExportDescriptionWrapper> collectEligibleExportsFromUsed(ImportDescriptionWrapper targetImport, Set<Candidate> used)
     {
         String importPackage = targetImport.getPackageName();
         List<ExportDescriptionWrapper> results = new ArrayList<ExportDescriptionWrapper>();
 
-        for (CandidateBundle candidateBundle : used)
+        for (BoundHost candidateBundle : used)
         {
             for (ExportDescriptionWrapper exportDescriptionWrapper : candidateBundle.getExports())
             {
@@ -675,7 +696,7 @@ public class DefaultResolver implements Resolver
         {
             if (generation instanceof BundleGeneration)
             {
-                for (ExportDescription exportDescription : generation.getArchiveStore().getBundleExportList())
+                for (ExportDescription exportDescription : generation.getArchiveStore().getExportDescriptions())
                 {
                     for (String exportPackage : exportDescription.getPackageNames())
                     {
@@ -705,7 +726,7 @@ public class DefaultResolver implements Resolver
         SortedSet<ExportDescriptionWrapper> sorted = new TreeSet<ExportDescriptionWrapper>();
         for (BundleGeneration bundle : indexByPackage.get(importWrapper.getPackageName()))
         {
-            for (ExportDescription exportDescription : bundle.getArchiveStore().getBundleExportList())
+            for (ExportDescription exportDescription : bundle.getArchiveStore().getExportDescriptions())
             {
                 sorted.add(new ExportDescriptionWrapper(exportDescription, bundle));
             }

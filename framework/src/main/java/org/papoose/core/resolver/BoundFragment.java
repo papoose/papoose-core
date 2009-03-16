@@ -16,25 +16,38 @@
  */
 package org.papoose.core.resolver;
 
-import java.util.List;
-import java.util.Set;
+import net.jcip.annotations.Immutable;
 
 import org.papoose.core.BundleGeneration;
-import org.papoose.core.FragmentGeneration;
-import org.papoose.core.descriptions.RequireDescription;
+import org.papoose.core.Generation;
+
 
 /**
  * @version $Revision$ $Date$
  */
-public interface CandidateBundle
+@Immutable
+public class BoundFragment extends UnResolved
 {
-    BundleGeneration getBundleGeneration();
+    private final BundleGeneration host;
 
-    List<BoundFragment> getFragments();
+    public BoundFragment(Generation fragment, BundleGeneration host)
+    {
+        super(fragment);
 
-    List<RequiredBundleWrapper> getCandidateRequiredBundles();
+        assert host != null;
 
-    List<ImportDescriptionWrapper> getImports();
+        this.host = host;
+    }
 
-    Set<ExportDescriptionWrapper> getExports();
+    public BundleGeneration getHost()
+    {
+        return host;
+    }
+
+    @Override
+    @SuppressWarnings({ "CloneDoesntCallSuperClone" })
+    public Object clone() throws CloneNotSupportedException
+    {
+        return new BoundFragment(getToBeResolved(), host);
+    }
 }

@@ -14,27 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.resolver;
-
-import java.util.List;
-import java.util.Set;
-
-import org.papoose.core.BundleGeneration;
-import org.papoose.core.FragmentGeneration;
-import org.papoose.core.descriptions.RequireDescription;
+package org.papoose.core.spi;
 
 /**
  * @version $Revision$ $Date$
  */
-public interface CandidateBundle
+public interface ServiceManager
 {
-    BundleGeneration getBundleGeneration();
-
-    List<BoundFragment> getFragments();
-
-    List<RequiredBundleWrapper> getCandidateRequiredBundles();
-
-    List<ImportDescriptionWrapper> getImports();
-
-    Set<ExportDescriptionWrapper> getExports();
 }

@@ -16,33 +16,47 @@
  */
 package org.papoose.core.resolver;
 
+import java.util.List;
+import java.util.Set;
+import java.util.Collections;
+
 import net.jcip.annotations.Immutable;
 
 import org.papoose.core.BundleGeneration;
-import org.papoose.core.descriptions.RequireDescription;
+import org.papoose.core.FragmentGeneration;
 
 /**
  * @version $Revision$ $Date$
  */
 @Immutable
-public class RequiredBundleWrapper
+class RequiredBundleWrapper implements CandidateBundle
 {
-    private final RequireDescription requireDescription;
-    private final BundleGeneration bundleGeneration;
+    private final CandidateBundle delegate;
+    private final boolean reExport;
 
-    public RequiredBundleWrapper(RequireDescription requireDescription, BundleGeneration bundleGeneration)
+    RequiredBundleWrapper(CandidateBundle delegate, boolean reExport)
     {
-        this.requireDescription = requireDescription;
-        this.bundleGeneration = bundleGeneration;
+        assert delegate != null;
+
+        this.delegate = delegate;
+        this.reExport = reExport;
     }
 
-    public RequireDescription getRequireDescription()
+    public BundleGeneration getBundleGeneration() { return delegate.getBundleGeneration(); }
+
+    public List<BoundFragment> getFragments() { return delegate.getFragments(); }
+
+    public List<RequiredBundleWrapper> getCandidateRequiredBundles()
     {
-        return requireDescription;
+        return Collections.emptyList();
     }
 
-    public BundleGeneration getBundleGeneration()
+    public List<ImportDescriptionWrapper> getImports() { return delegate.getImports(); }
+
+    public Set<ExportDescriptionWrapper> getExports() { return delegate.getExports(); }
+
+    public boolean isReExport()
     {
-        return bundleGeneration;
+        return reExport;
     }
 }

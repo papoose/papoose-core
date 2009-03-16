@@ -171,7 +171,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
                         {
                             if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Searching bundle " + bundleController);
 
-                            for (ExportDescription export : bundleGeneration.getArchiveStore().getBundleExportList())
+                            for (ExportDescription export : bundleGeneration.getArchiveStore().getExportDescriptions())
                             {
                                 Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
                                 for (String packageName : export.getPackageNames())
@@ -249,7 +249,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
                         {
                             if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Searching bundle " + bundle);
 
-                            for (ExportDescription export : bundleGeneration.getArchiveStore().getBundleExportList())
+                            for (ExportDescription export : bundleGeneration.getArchiveStore().getExportDescriptions())
                             {
                                 Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
                                 for (String packageName : export.getPackageNames())
@@ -322,7 +322,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
                         {
                             if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Searching bundle " + bundleController);
 
-                            for (ExportDescription export : bundleGeneration.getArchiveStore().getBundleExportList())
+                            for (ExportDescription export : bundleGeneration.getArchiveStore().getExportDescriptions())
                             {
                                 Version version = (Version) export.getParameters().get(Constants.VERSION_ATTRIBUTE);
                                 for (String packageName : export.getPackageNames())
