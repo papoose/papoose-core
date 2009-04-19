@@ -21,7 +21,6 @@ import java.util.Set;
 
 import org.papoose.core.BundleGeneration;
 import org.papoose.core.FragmentGeneration;
-import org.papoose.core.descriptions.RequireDescription;
 
 /**
  * @version $Revision$ $Date$
@@ -30,11 +29,19 @@ public interface CandidateBundle
 {
     BundleGeneration getBundleGeneration();
 
-    List<BoundFragment> getFragments();
+    List<FragmentGeneration> getFragments();
 
     List<RequiredBundleWrapper> getCandidateRequiredBundles();
 
     List<ImportDescriptionWrapper> getImports();
 
     Set<ExportDescriptionWrapper> getExports();
+
+    boolean addCandidateWiring(CandidateWiring candidateWiring);
+
+    boolean replaceCandidateWiring(CandidateWiring candidateWiring);
+
+    Set<CandidateWiring> getWirings();
+
+    Set<CandidateWiring> getCandidateWirings();
 }

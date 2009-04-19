@@ -31,22 +31,22 @@ import org.papoose.core.VersionRange;
 public class ImportDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
-    private final Set<String> packages;
+    private final Set<String> packageNames;
     private final Map<String, Object> parameters;
     private Resolution resolution = Resolution.MANDATORY;
 
-    public ImportDescription(Set<String> packages, Map<String, Object> parameters)
+    public ImportDescription(Set<String> packageNames, Map<String, Object> parameters)
     {
-        assert packages != null;
+        assert packageNames != null;
         assert parameters != null;
 
-        this.packages = Collections.unmodifiableSet(packages);
+        this.packageNames = Collections.unmodifiableSet(packageNames);
         this.parameters = Collections.unmodifiableMap(parameters);
     }
 
-    public Set<String> getPackages()
+    public Set<String> getPackageNames()
     {
-        return packages;
+        return packageNames;
     }
 
     public Map<String, Object> getParameters()
@@ -65,11 +65,34 @@ public class ImportDescription
         this.resolution = resolution;
     }
 
+    @Override
+    @SuppressWarnings({ "SimplifiableIfStatement" })
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (!(o instanceof ImportDescription)) return false;
+
+        ImportDescription that = (ImportDescription) o;
+
+        if (!packageNames.equals(that.packageNames)) return false;
+        if (!parameters.equals(that.parameters)) return false;
+        return resolution == that.resolution;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = packageNames.hashCode();
+        result = 31 * result + parameters.hashCode();
+        result = 31 * result + resolution.hashCode();
+        return result;
+    }
+
     public String toString()
     {
         StringBuilder builder = new StringBuilder();
 
-        for (String pkg : packages)
+        for (String pkg : packageNames)
         {
             if (builder.length() > 0) builder.append(";");
             builder.append(pkg);

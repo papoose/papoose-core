@@ -26,47 +26,16 @@ import org.papoose.core.Generation;
 @Immutable
 public abstract class UnResolved extends Candidate implements Cloneable
 {
-    private final Generation toBeResolved;
-
-    public UnResolved(Generation toBeResolved)
+    protected UnResolved(Generation toBeResolved)
     {
-        assert toBeResolved != null;
-
-        this.toBeResolved = toBeResolved;
+        super(toBeResolved);
     }
 
     public Generation getToBeResolved()
     {
-        return toBeResolved;
+        return getGeneration();
     }
 
     @Override
     public abstract Object clone() throws CloneNotSupportedException;
-
-    /**
-     * This slightly odd equals implementation allows various instances of
-     * subclasses of <code>UnResolved</code> to all be identified by the
-     * unresolved instance that is being wrapped.
-     *
-     * @param obj the reference object with which to compare.
-     * @return <code>true</code> if this object is the same as the obj
-     *         argument; <code>false</code> otherwise.
-     */
-    @Override
-    @SuppressWarnings({ "EqualsWhichDoesntCheckParameterClass" })
-    public boolean equals(Object obj)
-    {
-        if (this == obj) return true;
-        if (!UnResolved.class.isInstance(obj)) return false;
-
-        UnResolved that = (UnResolved) obj;
-
-        return toBeResolved.equals(that.toBeResolved);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return toBeResolved.hashCode();
-    }
 }

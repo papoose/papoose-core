@@ -19,7 +19,7 @@ package org.papoose.core;
 /**
  * @version $Revision$ $Date$
  */
-public class PapooseConstants
+public final class PapooseConstants
 {
     public final static String PAPOOSE_VERSION = "org.papoose.framework.version";
     public final static String PAPOOSE_CONTACT_ADDRESS = "org.papoose.framework.contact.address";
@@ -27,6 +27,9 @@ public class PapooseConstants
     public final static String PAPOOSE_DESCRIPTION = "org.papoose.framework.description";
     public final static String PAPOOSE_DOC_URL = "org.papoose.framework.doc.url";
     public final static String PAPOOSE_VENDOR = "org.papoose.framework.vendor";
+
+    public final static String PAPOOSE_BOOT_LEVEL_SERVICES = "org.papoose.service.boot";
+    public final static String PAPOOSE_SERVICE_PACKAGE_ADMIN = "org.papoose.service.boot.packageAdmin";
 
     private PapooseConstants() {}
 }

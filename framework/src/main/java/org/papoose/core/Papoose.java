@@ -20,11 +20,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -45,6 +48,7 @@ import org.papoose.core.spi.Resolver;
 import org.papoose.core.spi.SecurityAdmin;
 import org.papoose.core.spi.Store;
 import org.papoose.core.util.ToStringCreator;
+import org.papoose.core.util.Util;
 
 
 /**
@@ -70,16 +74,19 @@ public final class Papoose
     private final AccessControlContext acc = AccessController.getContext();
     private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private final BundleManager bundleManager;
+    private final ServiceRegistry serviceRegistry;
     private final ExecutorService executorService;
-    private final Properties properties;
+    private final Properties clientProperties;
     private final String frameworkName;
     private final int frameworkId;
+    private final long timestamp;
+    private volatile Properties properties;
     private volatile long waitPeriod;
-    @GuardedBy("lock")
-    private volatile Parser parser = new Parser();
-    @GuardedBy("lock")
-    private volatile Resolver resolver = new DefaultResolver();
+    private volatile String[] bootDelegates;
+    @GuardedBy("lock") private volatile Parser parser = new Parser();
+    @GuardedBy("lock") private volatile Resolver resolver = new DefaultResolver();
     private volatile SecurityAdmin securityAdmin;
+    private final List<Object> bootServices = new ArrayList<Object>();
 
     static
     {
@@ -170,6 +177,7 @@ public final class Papoose
 
         ensureUrlHandling();
 
+        this.timestamp = System.currentTimeMillis();
         this.frameworkId = FRAMEWORK_COUNTER++;
 
         if (frameworkName == null)
@@ -187,7 +195,9 @@ public final class Papoose
         FRAMEWORKS_BY_NAME.put(this.frameworkName, new WeakReference<Papoose>(this));
 
         this.bundleManager = new BundleManager(this, store);
+        this.serviceRegistry = new ServiceRegistry(this);
         this.executorService = executorService;
+        this.clientProperties = properties;
         this.properties = assembleProperties(properties);
 
         if (LOGGER.isLoggable(Level.CONFIG))
@@ -215,6 +225,11 @@ public final class Papoose
         return bundleManager;
     }
 
+    ServiceRegistry getServiceRegistry()
+    {
+        return serviceRegistry;
+    }
+
     ExecutorService getExecutorService()
     {
         return executorService;
@@ -230,6 +245,11 @@ public final class Papoose
         return frameworkId;
     }
 
+    long getTimestamp()
+    {
+        return timestamp;
+    }
+
     public boolean isRunning()
     {
         return running;
@@ -243,6 +263,26 @@ public final class Papoose
     public void setWaitPeriod(long waitPeriod)
     {
         this.waitPeriod = waitPeriod;
+    }
+
+    public void appendBootDelegates(String[] delegates)
+    {
+        if (delegates == null) throw new IllegalArgumentException("delegates is null");
+        String[] temp = new String[bootDelegates.length + delegates.length];
+
+        System.arraycopy(bootDelegates, 0, temp, 0, bootDelegates.length);
+        System.arraycopy(delegates, 0, temp, bootDelegates.length, delegates.length);
+
+        bootDelegates = temp;
+    }
+
+    public String[] getBootDelegates()
+    {
+        String[] result = new String[bootDelegates.length];
+
+        System.arraycopy(bootDelegates, 0, result, 0, result.length);
+
+        return result;
     }
 
     /**
@@ -275,10 +315,14 @@ public final class Papoose
 
             if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("Framework parser: " + parser);
         }
-
     }
 
-    Object getProperty(String key)
+    public Properties getClientProperties()
+    {
+        return clientProperties;
+    }
+
+    public Object getProperty(String key)
     {
         return properties.get(key);
     }
@@ -361,13 +405,37 @@ public final class Papoose
 
             try
             {
+                properties = assembleProperties(clientProperties);
+
+                String bootDelegateString = properties.getProperty(Constants.FRAMEWORK_BOOTDELEGATION);
+                if (bootDelegateString == null)
+                {
+                    bootDelegateString = "org.papoose.*";
+                }
+                else
+                {
+                    bootDelegateString += ",org.papoose.*";
+                }
+
+                bootDelegates = bootDelegateString.split(",");
+
+                for (int i = 0; i < bootDelegates.length; i++)
+                {
+                    bootDelegates[i] = bootDelegates[i].trim();
+                    if (bootDelegates[i].endsWith(".*")) bootDelegates[i] = bootDelegates[i].substring(0, bootDelegates[i].length() - 1);
+                }
+
                 resolver.start(this);
 
                 SystemBundleController systemBundleController = (SystemBundleController) manager.installSystemBundle(new Version(properties.getProperty(PAPOOSE_VERSION)));
 
                 systemBundleController.performStart(0);
 
+                serviceRegistry.start();
+
                 running = true;
+
+                startBootLevelServices();
             }
             catch (PapooseException pe)
             {
@@ -410,6 +478,7 @@ public final class Papoose
             finally
             {
                 manager.uninstallSystemBundle();
+                serviceRegistry.stop();
                 resolver.stop();
                 running = false;
             }
@@ -562,5 +631,91 @@ public final class Papoose
         while (true);
 
         return builder.toString();
+    }
+
+    private void startBootLevelServices()
+    {
+        String bootLevelServiceClassKeys = (String) getProperty(PapooseConstants.PAPOOSE_BOOT_LEVEL_SERVICES);
+        if (bootLevelServiceClassKeys != null)
+        {
+            for (String bootLevelServiceClassKey : bootLevelServiceClassKeys.split(","))
+            {
+                startBootLevelService(bootLevelServiceClassKey.trim());
+            }
+        }
+    }
+
+    private void startBootLevelService(String bootLevelServiceClassKey)
+    {
+        String bootLevelServiceClassName = (String) getProperty(bootLevelServiceClassKey);
+        if (bootLevelServiceClassName != null)
+        {
+            try
+            {
+                /**
+                 * Keep this redundant cast in place.  It's a kludgy workaround due
+                 * to the fact that Equinox bundles v4.0 OSGi R4 spec classes in
+                 * with its framework.  This breaks the Spring OSGi integration
+                 * tests.
+                 */
+                //noinspection RedundantCast
+                Class bootLevelServiceClass = getSystemBundleContext().getBundle().loadClass(bootLevelServiceClassName);
+                Object pojo = bootLevelServiceClass.newInstance();
+                Util.callStart(pojo, this);
+
+                bootServices.add(pojo);
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new FatalError("Unable to instantiate " + bootLevelServiceClassName, e);
+            }
+            catch (IllegalAccessException e)
+            {
+                throw new FatalError("Unable to instantiate " + bootLevelServiceClassName, e);
+            }
+            catch (InstantiationException e)
+            {
+                throw new FatalError("Unable to instantiate " + bootLevelServiceClassName, e);
+            }
+            catch (NoSuchMethodException e)
+            {
+                throw new FatalError("Unable to start " + bootLevelServiceClassName, e);
+            }
+            catch (InvocationTargetException e)
+            {
+                throw new FatalError("Unable to start " + bootLevelServiceClassName, e);
+            }
+        }
+    }
+
+    private void stopBootLevelServices()
+    {
+        Object pojo = null;
+
+        try
+        {
+            for (int i = bootServices.size() - 1; 0 < i; i--)
+            {
+                pojo = bootServices.get(i);
+
+                Util.callStop(pojo);
+            }
+        }
+        catch (NoSuchMethodException e)
+        {
+            throw new FatalError("Unable to stop " + pojo, e);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new FatalError("Unable to stop " + pojo, e);
+        }
+        catch (InvocationTargetException e)
+        {
+            throw new FatalError("Unable to stop " + pojo, e);
+        }
+        finally
+        {
+            bootServices.clear();
+        }
     }
 }

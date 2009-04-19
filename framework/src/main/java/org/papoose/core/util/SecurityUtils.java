@@ -18,7 +18,6 @@ package org.papoose.core.util;
 
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -32,6 +31,7 @@ import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
+import org.osgi.framework.ServicePermission;
 
 
 /**
@@ -51,11 +51,25 @@ public class SecurityUtils
         {
             LOGGER.finest("Found security manager");
 
-            Permission perm = new AdminPermission(bundle, action);
-            sm.checkPermission(perm);
+            sm.checkPermission(new AdminPermission(bundle, action));
         }
 
         LOGGER.exiting(CLASS_NAME, "checkAdminPermission");
+    }
+
+    public static void checkServicePermission(String name, String action) throws SecurityException
+    {
+        LOGGER.entering(CLASS_NAME, "checkServicePermission", new Object[]{ name, action });
+
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+        {
+            LOGGER.finest("Found security manager");
+
+            sm.checkPermission(new ServicePermission(name, action));
+        }
+
+        LOGGER.exiting(CLASS_NAME, "checkServicePermission");
     }
 
     public static void bundleChanged(final BundleListener listener, final BundleEvent event, AccessControlContext context)

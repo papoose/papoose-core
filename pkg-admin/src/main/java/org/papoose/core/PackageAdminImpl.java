@@ -33,6 +33,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
 import org.osgi.service.packageadmin.ExportedPackage;
@@ -49,29 +50,27 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
 {
     private final static String CLASSNAME = PackageAdminImpl.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASSNAME);
-    private final Papoose framework;
+    private volatile Papoose framework;
+    private volatile ServiceRegistration serviceRegistration;
 
-    public PackageAdminImpl(Papoose framework)
+    public void start(Papoose framework)
     {
-        assert framework != null;
+        LOGGER.entering(CLASSNAME, "start", framework);
 
         this.framework = framework;
 
-        if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("framework: " + framework);
+        BundleContext context = framework.getSystemBundleContext();
+
+        this.serviceRegistration = context.registerService(PackageAdmin.class.getName(), this, null);
+
+        context.addBundleListener(this);
+
+        LOGGER.exiting(CLASSNAME, "start");
     }
 
-    void start() throws InterruptedException
+    public void stop()
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "start");
-
-        BundleManager manager = framework.getBundleManager();
-
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "start");
-    }
-
-    void stop() throws InterruptedException
-    {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "stop");
+        LOGGER.entering(CLASSNAME, "stop");
 
         BundleManager manager = framework.getBundleManager();
 
@@ -82,7 +81,8 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
         catch (InterruptedException ie)
         {
             LOGGER.log(Level.WARNING, "Wait for write lock interrupted", ie);
-            throw ie;
+            Thread.currentThread().interrupt();
+            return;
         }
 
         try
@@ -96,9 +96,14 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
         finally
         {
             manager.writeUnlock();
+
+            serviceRegistration.unregister();
+
+            serviceRegistration = null;
+            framework = null;
         }
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "stop");
+        LOGGER.exiting(CLASSNAME, "stop");
     }
 
     /**
@@ -123,7 +128,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public ExportedPackage[] getExportedPackages(Bundle bundle)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getExportedPackages", bundle);
+        LOGGER.entering(CLASSNAME, "getExportedPackages", bundle);
 
         Set<BundleController> collectedBundles = new HashSet<BundleController>();
         Set<ExportedPackageImpl> collectedExports = new HashSet<ExportedPackageImpl>();
@@ -216,7 +221,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
         int numExports = collectedExports.size();
         ExportedPackage[] result = (numExports == 0 ? null : collectedExports.toArray(new ExportedPackage[numExports]));
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getExportedPackages", result);
+        LOGGER.exiting(CLASSNAME, "getExportedPackages", result);
 
         return result;
     }
@@ -226,7 +231,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public ExportedPackage[] getExportedPackages(String targetPackageName)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getExportedPackages", targetPackageName);
+        LOGGER.entering(CLASSNAME, "getExportedPackages", targetPackageName);
 
         Set<ExportedPackageImpl> collectedExports = new HashSet<ExportedPackageImpl>();
 
@@ -290,7 +295,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
         int numExports = collectedExports.size();
         ExportedPackage[] result = (numExports == 0 ? null : collectedExports.toArray(new ExportedPackage[numExports]));
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getExportedPackages", result);
+        LOGGER.exiting(CLASSNAME, "getExportedPackages", result);
 
         return result;
     }
@@ -300,7 +305,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public ExportedPackage getExportedPackage(String targetPackageName)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getExportedPackage", targetPackageName);
+        LOGGER.entering(CLASSNAME, "getExportedPackage", targetPackageName);
 
         ExportedPackageImpl result = null;
 
@@ -359,7 +364,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
             readUnlock();
         }
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getExportedPackage", result);
+        LOGGER.exiting(CLASSNAME, "getExportedPackage", result);
 
         return result;
     }
@@ -369,14 +374,14 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public void refreshPackages(Bundle[] bundles)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "refreshPackages", bundles);
+        LOGGER.entering(CLASSNAME, "refreshPackages", bundles);
 
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(new AdminPermission(framework.getBundleManager().getBundle(0), AdminPermission.RESOLVE));
 
         framework.getExecutorService().submit(new RefreshPackagesRunnable(framework, bundles));
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "refreshPackages");
+        LOGGER.exiting(CLASSNAME, "refreshPackages");
     }
 
     /**
@@ -386,7 +391,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public boolean resolveBundles(Bundle[] bundles)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "resolveBundles", bundles);
+        LOGGER.entering(CLASSNAME, "resolveBundles", bundles);
 
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(new AdminPermission(framework.getBundleManager().getBundle(0), AdminPermission.RESOLVE));
@@ -440,7 +445,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
             }
         }
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "resolveBundles", result);
+        LOGGER.exiting(CLASSNAME, "resolveBundles", result);
 
         return result;
     }
@@ -450,7 +455,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public RequiredBundle[] getRequiredBundles(String symbolicName)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getRequiredBundles", symbolicName);
+        LOGGER.entering(CLASSNAME, "getRequiredBundles", symbolicName);
 
         Bundle[] bundles = framework.getBundleManager().getBundles();
 
@@ -498,7 +503,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
 
         RequiredBundle[] result = list.isEmpty() ? null : list.toArray(new RequiredBundle[list.size()]);
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getRequiredBundles", result);
+        LOGGER.exiting(CLASSNAME, "getRequiredBundles", result);
 
         return result;
     }
@@ -508,7 +513,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public Bundle[] getBundles(String symbolicName, String versionRange)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getBundles", new Object[]{ symbolicName, versionRange });
+        LOGGER.entering(CLASSNAME, "getBundles", new Object[]{ symbolicName, versionRange });
 
         if (symbolicName == null) throw new IllegalArgumentException("symbolicName cannot be null");
 
@@ -563,7 +568,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
 
         Bundle[] result = list.isEmpty() ? null : list.toArray(new Bundle[list.size()]);
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getBundles", result);
+        LOGGER.exiting(CLASSNAME, "getBundles", result);
 
         return result;
     }
@@ -573,7 +578,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public Bundle[] getFragments(Bundle bundle)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getFragments", bundle);
+        LOGGER.entering(CLASSNAME, "getFragments", bundle);
 
         Bundle[] result = null;
         if (bundle instanceof BundleController)
@@ -607,7 +612,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
             LOGGER.warning("Bundle does not belong to the Papoose framework");
         }
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getFragments", result);
+        LOGGER.exiting(CLASSNAME, "getFragments", result);
 
         return result;
     }
@@ -617,7 +622,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public Bundle[] getHosts(Bundle bundle)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getHosts", bundle);
+        LOGGER.entering(CLASSNAME, "getHosts", bundle);
 
         Bundle[] result = null;
         if (bundle instanceof BundleController)
@@ -646,7 +651,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
             LOGGER.warning("Bundle does not belong to the Papoose framework");
         }
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getHosts", result);
+        LOGGER.exiting(CLASSNAME, "getHosts", result);
 
         return result;
     }
@@ -656,7 +661,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public Bundle getBundle(Class clazz)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getBundleGeneration", clazz);
+        LOGGER.entering(CLASSNAME, "getBundleGeneration", clazz);
 
         Bundle result = null;
         ClassLoader classLoader = clazz.getClassLoader();
@@ -679,7 +684,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
             LOGGER.warning("Class was not loaded by the Papoose framework");
         }
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getBundleGeneration", result);
+        LOGGER.exiting(CLASSNAME, "getBundleGeneration", result);
 
         return result;
     }
@@ -689,7 +694,7 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
      */
     public int getBundleType(Bundle bundle)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "getBundleType", bundle);
+        LOGGER.entering(CLASSNAME, "getBundleType", bundle);
 
         int result = 0;
 
@@ -701,19 +706,19 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
             }
         }
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "getBundleType", result);
+        LOGGER.exiting(CLASSNAME, "getBundleType", result);
 
         return result;
     }
 
     public void bundleChanged(BundleEvent event)
     {
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.entering(CLASSNAME, "bundleChanged", event);
+        LOGGER.entering(CLASSNAME, "bundleChanged", event);
 
         Bundle bundle = event.getBundle();
         //todo: consider this autogenerated code
 
-        if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASSNAME, "bundleChanged");
+        LOGGER.exiting(CLASSNAME, "bundleChanged");
     }
 
     private void readLock() throws InterruptedException

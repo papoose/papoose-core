@@ -17,18 +17,18 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
 
+import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
-import org.apache.xbean.classloader.ResourceLocation;
 
+import org.papoose.core.L18nResourceBundle;
 import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.FragmentDescription;
 import org.papoose.core.descriptions.ImportDescription;
-import org.papoose.core.L18nResourceBundle;
+import org.papoose.core.descriptions.LazyActivationDescription;
 import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.descriptions.RequireDescription;
-import org.papoose.core.descriptions.LazyActivationDescription;
 import org.papoose.core.spi.ArchiveStore;
 
 /**

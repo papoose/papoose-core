@@ -46,9 +46,9 @@ public class PackageAdminActivator implements BundleActivator
         if (!(bundleContext instanceof BundleContextImpl)) throw new IllegalArgumentException("Package Admin Service will only work with Papoose");
 
         BundleContextImpl bundleContextImpl = (BundleContextImpl) bundleContext;
-        packageAdmin = new PackageAdminImpl(bundleContextImpl.getFramework());
+        packageAdmin = new PackageAdminImpl();
 
-        packageAdmin.start();
+        packageAdmin.start(bundleContextImpl.getFramework());
 
         bundleContext.registerService(PackageAdmin.class.getName(), packageAdmin, null);
 

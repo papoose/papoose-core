@@ -16,9 +16,9 @@
  */
 package org.papoose.core.resolver;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.Collections;
 
 import net.jcip.annotations.Immutable;
 
@@ -44,7 +44,7 @@ class RequiredBundleWrapper implements CandidateBundle
 
     public BundleGeneration getBundleGeneration() { return delegate.getBundleGeneration(); }
 
-    public List<BoundFragment> getFragments() { return delegate.getFragments(); }
+    public List<FragmentGeneration> getFragments() { return delegate.getFragments(); }
 
     public List<RequiredBundleWrapper> getCandidateRequiredBundles()
     {
@@ -54,6 +54,14 @@ class RequiredBundleWrapper implements CandidateBundle
     public List<ImportDescriptionWrapper> getImports() { return delegate.getImports(); }
 
     public Set<ExportDescriptionWrapper> getExports() { return delegate.getExports(); }
+
+    public boolean addCandidateWiring(CandidateWiring candidateWiring) { return delegate.addCandidateWiring(candidateWiring); }
+
+    public boolean replaceCandidateWiring(CandidateWiring candidateWiring) { return delegate.replaceCandidateWiring(candidateWiring); }
+
+    public Set<CandidateWiring> getWirings() { return delegate.getWirings(); }
+
+    public Set<CandidateWiring> getCandidateWirings() { return delegate.getCandidateWirings(); }
 
     public boolean isReExport()
     {

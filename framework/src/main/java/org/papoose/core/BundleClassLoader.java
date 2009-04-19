@@ -54,8 +54,8 @@ public class BundleClassLoader extends NamedClassLoader
         }
     };
     private final static URL[] EMPTY_URLS = new URL[0];
+    private final Papoose framework;
     private final BundleGeneration bundle;
-    private final String[] bootDelegates;
     private final Set<Wire> wires;
     private final List<Wire> requiredBundles;
     private final String[] exportedPackages;
@@ -84,10 +84,10 @@ public class BundleClassLoader extends NamedClassLoader
         assert requiredBundles != null;
         assert boundClassPath != null;
 
+        this.framework = framework;
         this.bundle = bundle;
         this.wires = Collections.unmodifiableSet(wires);
         this.requiredBundles = requiredBundles;
-        this.bootDelegates = bootDelegates;
         this.exportedPackages = exportedPackages;
         this.dynamicImports = Collections.synchronizedSet(dynamicImports);
         this.boundClassPath = boundClassPath;
@@ -105,6 +105,11 @@ public class BundleClassLoader extends NamedClassLoader
         return wires;
     }
 
+    public String[] getExportedPackages()
+    {
+        return exportedPackages;
+    }
+
     @SuppressWarnings({ "EmptyCatchBlock" })
     public Class<?> loadClass(String className) throws ClassNotFoundException
     {
@@ -112,7 +117,7 @@ public class BundleClassLoader extends NamedClassLoader
 
         String packageName = className.substring(0, Math.max(0, className.lastIndexOf('.')));
 
-        for (String delegate : bootDelegates)
+        for (String delegate : framework.getBootDelegates())
         {
             if ((delegate.endsWith(".") && packageName.regionMatches(0, delegate, 0, delegate.length() - 1)) || packageName.equals(delegate))
             {
@@ -167,9 +172,16 @@ public class BundleClassLoader extends NamedClassLoader
     @SuppressWarnings({ "EmptyCatchBlock" })
     protected Class<?> delegateLoadClass(String className) throws ClassNotFoundException
     {
-        assert !inSet(this);
+//        assert !inSet(this);
+//
+//        register(this);
 
-        register(this);
+        Class clazz = findLoadedClass(className);
+
+        if (clazz != null)
+        {
+            return clazz;
+        }
 
         try
         {
@@ -225,7 +237,7 @@ public class BundleClassLoader extends NamedClassLoader
         }
         finally
         {
-            unregister(this);
+//            unregister(this);
         }
     }
 

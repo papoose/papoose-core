@@ -35,9 +35,9 @@ import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.FragmentDescription;
 import org.papoose.core.descriptions.ImportDescription;
+import org.papoose.core.descriptions.LazyActivationDescription;
 import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.descriptions.RequireDescription;
-import org.papoose.core.descriptions.LazyActivationDescription;
 
 
 /**

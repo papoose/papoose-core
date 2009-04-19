@@ -114,7 +114,7 @@ public class BundleContextImplTest
                 count++;
             }
 
-            Assert.assertEquals(7, count);
+            Assert.assertEquals(6, count);
 
             count = 0;
             enumeration = bundle.getEntryPaths("/");

@@ -27,7 +27,7 @@ import org.papoose.core.descriptions.Resolution;
  * @version $Revision$ $Date$
  */
 @Immutable
-class ImportDescriptionWrapper
+public class ImportDescriptionWrapper
 {
     private final String packageName;
     private final ImportDescription importDescription;
@@ -64,5 +64,22 @@ class ImportDescriptionWrapper
     public boolean isMandatory()
     {
         return importDescription.getResolution() == Resolution.MANDATORY;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (!(o instanceof ImportDescriptionWrapper)) return false;
+
+        ImportDescriptionWrapper that = (ImportDescriptionWrapper) o;
+
+        return packageName.equals(that.packageName);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return packageName.hashCode();
     }
 }

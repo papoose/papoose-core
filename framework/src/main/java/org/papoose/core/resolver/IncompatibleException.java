@@ -16,38 +16,30 @@
  */
 package org.papoose.core.resolver;
 
-import net.jcip.annotations.Immutable;
-
-import org.papoose.core.BundleGeneration;
-import org.papoose.core.Generation;
-
-
 /**
+ * Thrown if the imports and/or exports of a host and its fragments are
+ * incompatible.
+ *
  * @version $Revision$ $Date$
  */
-@Immutable
-public class BoundFragment extends UnResolved
+public class IncompatibleException extends Exception
 {
-    private final BundleGeneration host;
-
-    public BoundFragment(Generation fragment, BundleGeneration host)
+    public IncompatibleException()
     {
-        super(fragment);
-
-        assert host != null;
-
-        this.host = host;
     }
 
-    public BundleGeneration getHost()
+    public IncompatibleException(String message)
     {
-        return host;
+        super(message);
     }
 
-    @Override
-    @SuppressWarnings({ "CloneDoesntCallSuperClone" })
-    public Object clone() throws CloneNotSupportedException
+    public IncompatibleException(String message, Throwable cause)
     {
-        return new BoundFragment(getToBeResolved(), host);
+        super(message, cause);
+    }
+
+    public IncompatibleException(Throwable cause)
+    {
+        super(cause);
     }
 }

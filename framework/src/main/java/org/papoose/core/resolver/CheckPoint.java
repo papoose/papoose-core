@@ -21,9 +21,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.osgi.framework.Bundle;
-
+import org.papoose.core.BundleGeneration;
+import org.papoose.core.FragmentGeneration;
 import org.papoose.core.Generation;
+import org.papoose.core.descriptions.RequireDescription;
 import org.papoose.core.util.ToStringCreator;
 
 
@@ -32,51 +33,56 @@ import org.papoose.core.util.ToStringCreator;
  */
 public class CheckPoint
 {
-    private UnResolved resolving;
+    private BoundHost resolving;
     private final List<BoundHost> resolved = new ArrayList<BoundHost>();
-    private final List<UnResolved> unResolved = new ArrayList<UnResolved>();
-    private final Set<Candidate> used = new HashSet<Candidate>();
+    private final List<UnBound> unResolved = new ArrayList<UnBound>();
+
+    private final Set<CandidateBundle> used = new HashSet<CandidateBundle>();
     private final Set<Candidate> unused = new HashSet<Candidate>();
 
 
-    public CheckPoint(Generation toBeResolved, Set<Candidate> canonicalSet)
+    public CheckPoint(Generation generation, Set<Candidate> canonicalSet)
     {
+        assert generation != null;
+        assert canonicalSet != null;
+
+        unResolved.add(new UnBound(generation));
         unused.addAll(canonicalSet);
-
-        resolving = new UnBound(toBeResolved);
-        used.add(resolving);
-        unused.remove(toBeResolved);
-    }
-
-    CheckPoint(BoundHost resolving, Set<Candidate> unused)
-    {
-        this.resolving = resolving;
-        this.used.add(resolving);
-        this.unused.addAll(unused);
     }
 
     CheckPoint(CheckPoint checkPoint)
     {
-        try
+        resolved.addAll(checkPoint.resolved);
+        unResolved.addAll(checkPoint.unResolved);
+        used.addAll(checkPoint.used);
+        unused.addAll(checkPoint.unused);
+
+        if (checkPoint.resolving != null)
         {
-            resolving = (UnResolved) checkPoint.resolving.clone();
-            unResolved.addAll(checkPoint.unResolved);
-            used.addAll(checkPoint.used);
-            unused.addAll(checkPoint.unused);
-        }
-        catch (CloneNotSupportedException notPossible)
-        {
+            resolving = new BoundHost(checkPoint.resolving);
+            assert used.remove(resolving);
+            assert used.add(resolving);
+            for (CandidateBundle candidateBundle : used)
+            {
+                Set<CandidateWiring> replace = new HashSet<CandidateWiring>();
+
+                for (CandidateWiring wiring : candidateBundle.getWirings())
+                {
+                    if (wiring.getCandidate().equals(resolving))
+                    {
+                        replace.add(new CandidateWiring(wiring, resolving));
+                    }
+                }
+
+                for (CandidateWiring wiring : replace)
+                {
+                    candidateBundle.replaceCandidateWiring(wiring);
+                }
+            }
         }
     }
 
-    public CheckPoint(Resolved resolving, Set<Candidate> unused)
-    {
-        this.resolving = null;
-        this.used.add(resolving);
-        this.unused.addAll(unused);
-    }
-
-    public UnResolved getResolving()
+    public BoundHost getResolving()
     {
         return resolving;
     }
@@ -86,7 +92,12 @@ public class CheckPoint
         return resolved;
     }
 
-    public Set<Candidate> getUsed()
+    public List<UnBound> getUnResolved()
+    {
+        return unResolved;
+    }
+
+    public Set<CandidateBundle> getUsed()
     {
         return used;
     }
@@ -101,82 +112,133 @@ public class CheckPoint
         return unResolved.isEmpty();
     }
 
-    public void resolveCompleted()
-    {
-        resolved.add((BoundHost) resolving);
-        resolving = null;
-    }
-
     public CheckPoint nextBundle()
     {
-        resolving = unResolved.get(0);
+        UnBound next = unResolved.get(0);
+        //TODO NOT DONE HERE!!
+//        resolving = new BoundHost(next.)
+
         return this;
     }
 
-    /**
-     * Create a new checkpoint by replacing the currently resolving candidate
-     * with the new one that is being passed.  This is used by methods that are
-     * searching for variants of a candidate, e.g. looking for a good set of
-     * fragments to link with a host.
-     *
-     * @param boundHost the replacing candidate bundle
-     * @return a new checkpoint w/ the new canidate bundle
-     */
-    public CheckPoint newCheckPoint(BoundHost boundHost)
+    public void resolveCompleted()
+    {
+        if (resolving != null)
+        {
+            resolved.add(resolving);
+            resolving = null;
+        }
+    }
+
+    public CheckPoint newCheckPoint(Resolved resolvedHost, RequireDescription requiredBundle)
     {
         CheckPoint checkPoint = new CheckPoint(this);
 
-        UnResolved oldCandidate = checkPoint.getResolving();
+        return checkPoint;  //Todo: change body of created methods use File | Settings | File Templates.
+    }
 
-        assert oldCandidate instanceof UnBound;
+    public CheckPoint newCheckPoint(BoundHost bound, RequireDescription requiredBundle)
+    {
+        CheckPoint checkPoint = new CheckPoint(this);
 
-        checkPoint.resolving = boundHost;
+        return checkPoint;  //Todo: change body of created methods use File | Settings | File Templates.
+    }
 
-        checkPoint.getUsed().remove(oldCandidate);
-        checkPoint.getUsed().add(boundHost);
+    public CheckPoint newCheckPoint(UnBound unBound, RequireDescription requiredBundle)
+    {
+        CheckPoint checkPoint = new CheckPoint(this);
 
-        for (Candidate candidate : boundHost.getFragments())
+        return checkPoint;  //Todo: change body of created methods use File | Settings | File Templates.
+    }
+
+    // add a wire to the bundle being resolved
+    public CheckPoint newCheckPoint(CandidateWiring candidateWiring)
+    {
+        CheckPoint checkPoint = new CheckPoint(this);
+
+        assert checkPoint.resolving.addCandidateWiring(candidateWiring);
+
+        return checkPoint;
+    }
+
+    // add a wire to the bundle being resolved
+    // move resolved to used
+    public CheckPoint newCheckPoint(CandidateWiring candidateWiring, Resolved resolved)
+    {
+        CheckPoint checkPoint = new CheckPoint(this);
+
+        assert checkPoint.resolving.addCandidateWiring(candidateWiring);
+        assert checkPoint.used.add(resolved);
+        assert checkPoint.unused.remove(resolved);
+
+        return checkPoint;
+    }
+
+    // add a wire to the bundle being resolved
+    // move the unbound to to be resolved
+    // add the unbound to used
+    public CheckPoint newCheckPoint(CandidateWiring candidateWiring, UnBound unBound)
+    {
+        CheckPoint checkPoint = new CheckPoint(this);
+
+        assert checkPoint.resolving.addCandidateWiring(candidateWiring);
+        assert checkPoint.unResolved.add(unBound);
+        assert checkPoint.unused.remove(unBound);
+
+        return checkPoint;
+    }
+
+    public CheckPoint newCheckPoint(BundleGeneration host, List<FragmentGeneration> fragments) throws IncompatibleException
+    {
+        CheckPoint checkPoint = new CheckPoint(this);
+
+        assert host != null;
+        assert fragments != null;
+
+        if (checkPoint.resolving != null)
         {
-            if (!checkPoint.getUnused().contains(candidate))
-            {
-                checkPoint.getUsed().add(candidate);
-                checkPoint.getUnused().remove(candidate);
-            }
+            checkPoint.resolved.add(checkPoint.resolving);
         }
 
-        return checkPoint;
-    }
+        checkPoint.resolving = new BoundHost(host, fragments);
 
-    public CheckPoint newCheckPoint(RequiredBundleWrapper candidate)
-    {
-        CheckPoint checkPoint = new CheckPoint(this);
+        checkPoint.used.add(checkPoint.resolving);
 
-        ((BoundHost) checkPoint.resolving).getCandidateRequiredBundles().add(candidate);
+        checkPoint.unused.remove(checkPoint.resolving);
+        for (FragmentGeneration fragmentGeneration : fragments) checkPoint.unused.remove(new Candidate(fragmentGeneration));
 
         return checkPoint;
     }
 
-    public CheckPoint newCheckPoint(CandidateWiring newWiring)
+    // remove overlapping import
+    public CheckPoint newCheckPoint(ImportDescriptionWrapper targetImport)
     {
         CheckPoint checkPoint = new CheckPoint(this);
 
-        ((BoundHost) checkPoint.resolving).getCandidateWirings().add(newWiring);
+        assert checkPoint.getResolving().removeImport(targetImport.getPackageName());
 
         return checkPoint;
     }
 
-    public CheckPoint newCheckPoint(BoundHost newBundle, CandidateWiring newWiring)
+    public CheckPoint newCheckPoint(Resolved resolvedHost, FragmentGeneration fragmentGeneration) throws IncompatibleException
     {
         CheckPoint checkPoint = new CheckPoint(this);
 
-        ((BoundHost) checkPoint.resolving).getCandidateWirings().add(newWiring);
+        return checkPoint;  //Todo: change body of created methods use File | Settings | File Templates.
+    }
 
-        if (newBundle.getBundleGeneration().getState() == Bundle.INSTALLED) unResolved.add(newBundle);
+    public CheckPoint newCheckPoint(UnBound unBound, FragmentGeneration fragmentGeneration) throws IncompatibleException
+    {
+        CheckPoint checkPoint = new CheckPoint(this);
 
-        checkPoint.used.add(newBundle);
-        checkPoint.unused.remove(newBundle.getBundleGeneration());
+        return checkPoint;  //Todo: change body of created methods use File | Settings | File Templates.
+    }
 
-        return checkPoint;
+    public CheckPoint newCheckPoint(BoundHost bound, FragmentGeneration fragmentGeneration) throws IncompatibleException
+    {
+        CheckPoint checkPoint = new CheckPoint(this);
+
+        return checkPoint;  //Todo: change body of created methods use File | Settings | File Templates.
     }
 
     @Override

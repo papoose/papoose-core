@@ -36,6 +36,7 @@ import java.util.Set;
 
 import org.osgi.framework.BundleException;
 
+import org.papoose.core.Papoose;
 import org.papoose.core.descriptions.Extension;
 import org.papoose.core.descriptions.Resolution;
 import org.papoose.core.descriptions.Visibility;
@@ -562,6 +563,20 @@ public final class Util
         }
 
         return test.substring(pointer).endsWith(values[values.length - 1]);
+    }
+
+    public static void callStart(Object pojo, Papoose framework) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    {
+        Class pojoClass = pojo.getClass();
+        Method startMethod = pojoClass.getMethod("start", Papoose.class);
+        startMethod.invoke(pojo, framework);
+    }
+
+    public static void callStop(Object pojo) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    {
+        Class pojoClass = pojo.getClass();
+        Method stopMethod = pojoClass.getMethod("stop");
+        stopMethod.invoke(pojo);
     }
 
     private static class State

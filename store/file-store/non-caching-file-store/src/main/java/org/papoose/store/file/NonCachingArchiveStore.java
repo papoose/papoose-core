@@ -27,11 +27,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -49,11 +47,11 @@ import org.osgi.framework.InvalidSyntaxException;
 
 import org.papoose.core.AbstractArchiveStore;
 import org.papoose.core.L18nResourceBundle;
-import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.Papoose;
 import org.papoose.core.UrlUtils;
-import org.papoose.core.util.Util;
+import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.util.FileUtils;
+import org.papoose.core.util.Util;
 
 
 /**
@@ -131,8 +129,8 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         }
         else
         {
-            JarEntry entry = archive.getJarEntry(path);
-            if (entry == null) entry = archive.getJarEntry(path + "/");
+            JarEntry entry = archive.getJarEntry(path + "/");
+            if (entry == null) entry = archive.getJarEntry(path);
             if (entry != null)
             {
                 if (entry.isDirectory())
@@ -169,6 +167,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
     {
         if (path.startsWith("/")) path = path.substring(1);
         if (!path.endsWith("/") && path.length() > 1) path += "/";
+        if (filePattern == null) filePattern = "*";
 
         Object targets;
         try
@@ -181,13 +180,13 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             return null;
         }
 
-        Set<URL> result = new HashSet<URL>();
+        List<URL> result = new ArrayList<URL>();
         Enumeration entries = archive.entries();
         while (entries.hasMoreElements())
         {
             ZipEntry entry = (ZipEntry) entries.nextElement();
             String name = entry.getName();
-            if (name.startsWith(path))
+            if (name.startsWith(path) && name.length() != path.length())
             {
                 int count = 0;
                 name = name.substring(path.length());
@@ -204,7 +203,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
                         result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), entry.getName(), getGeneration()));
                     }
                 }
-                else if (includeDirectory && count < 2)
+                else if (includeDirectory && (recurse || count <= 1) && Util.match(targets, name.substring(0, Math.max(0, name.length() - 1))))
                 {
                     result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), entry.getName(), getGeneration()));
                 }

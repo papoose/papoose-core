@@ -43,9 +43,9 @@ import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.FragmentDescription;
 import org.papoose.core.descriptions.ImportDescription;
+import org.papoose.core.descriptions.LazyActivationDescription;
 import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.descriptions.RequireDescription;
-import org.papoose.core.descriptions.LazyActivationDescription;
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.spi.BundleStore;
 import org.papoose.core.spi.StartManager;
@@ -161,11 +161,11 @@ public class SystemBundleController extends BundleController
         Papoose framework = getFramework();
         BundleManager manager = framework.getBundleManager();
 
-//todo        setStartingState();
+        //todo setStartingState();
 
         manager.loadAndStartBundles();
 
-        //todo   setActiveState();
+        //todo setActiveState();
 
         manager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.STARTED, this, null));
     }
@@ -195,7 +195,12 @@ public class SystemBundleController extends BundleController
             {
                 exportDescriptions.addAll(AttributeUtils.parseBundleExportList(packages, getBundleSymbolicName(), getBundleVersion()));
             }
-            exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.framework;version=1.4", getBundleSymbolicName(), getBundleVersion()));
+            exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.framework;version=1.4,org.osgi.service.url;version=1.4,org.osgi.util.tracker;version=1.4", getBundleSymbolicName(), getBundleVersion()));
+
+            if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_PACKAGE_ADMIN) != null)
+            {
+                exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.packageadmin;version=1.2", getBundleSymbolicName(), getBundleVersion()));
+            }
 
             Properties p = framework.getProperties();
             Attributes a = new Attributes();

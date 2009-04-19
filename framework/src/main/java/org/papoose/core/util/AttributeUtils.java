@@ -39,6 +39,7 @@ import org.papoose.core.descriptions.ExportDescription;
 /**
  * @version $Revision$ $Date$
  */
+@SuppressWarnings({ "deprecation" })
 public class AttributeUtils
 {
     public static Dictionary allocateReadOnlyDictionary(final Attributes attributes)

@@ -21,6 +21,9 @@ import org.osgi.framework.BundleException;
 import org.papoose.core.spi.StartManager;
 
 /**
+ * A simple default start manager that simply passes the request to start a
+ * bundle to the bundle manager.
+ *
  * @version $Revision$ $Date$
  */
 public class DefaultStartManager implements StartManager
@@ -29,6 +32,8 @@ public class DefaultStartManager implements StartManager
 
     public DefaultStartManager(BundleManager bundleManager)
     {
+        assert bundleManager != null;
+
         this.bundleManager = bundleManager;
     }
 

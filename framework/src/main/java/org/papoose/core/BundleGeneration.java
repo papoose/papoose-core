@@ -93,7 +93,7 @@ public class BundleGeneration extends Generation
 
     public boolean hasPermission(Object object)
     {
-        return false;  //Todo change body of implemented methods use File | Settings | File Templates.
+        return true;  //Todo change body of implemented methods use File | Settings | File Templates.
     }
 
     public void setNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException

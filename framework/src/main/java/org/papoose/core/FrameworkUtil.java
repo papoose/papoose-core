@@ -26,7 +26,7 @@ import org.papoose.core.filter.Parser;
  */
 public class FrameworkUtil
 {
-    private static Parser parser;
+    private static Parser parser = new Parser();
 
     public static Parser getParser()
     {

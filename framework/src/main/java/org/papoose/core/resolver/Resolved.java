@@ -16,44 +16,94 @@
  */
 package org.papoose.core.resolver;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.papoose.core.BundleGeneration;
 import org.papoose.core.FragmentGeneration;
+import org.papoose.core.descriptions.ExportDescription;
+import org.papoose.core.descriptions.ImportDescription;
+import org.papoose.core.spi.ArchiveStore;
 
 /**
  * @version $Revision$ $Date$
  */
 public class Resolved extends Candidate implements CandidateBundle
 {
+    private final List<RequiredBundleWrapper> candidateRequiredBundles = new ArrayList<RequiredBundleWrapper>();
+    private final List<ImportDescriptionWrapper> imports = new ArrayList<ImportDescriptionWrapper>();
+    private final Set<ExportDescriptionWrapper> exports = new HashSet<ExportDescriptionWrapper>();
+    private final Set<CandidateWiring> wirings = new HashSet<CandidateWiring>();
+    private final Set<CandidateWiring> candidateWirings = new HashSet<CandidateWiring>();
+
     public Resolved(BundleGeneration bundleGeneration)
     {
-        //Todo: change body of created methods use File | Settings | File Templates.
+        super(bundleGeneration);
+
+        final ArchiveStore archiveStore = bundleGeneration.getArchiveStore();
+        for (ImportDescription description : archiveStore.getImportDescriptions())
+        {
+            for (String packageName : description.getPackageNames())
+            {
+                imports.add(new ImportDescriptionWrapper(packageName, description));
+            }
+        }
+        for (ExportDescription description : archiveStore.getExportDescriptions())
+        {
+            exports.add(new ExportDescriptionWrapper(description, this));
+        }
     }
 
     public BundleGeneration getBundleGeneration()
     {
-        return null;  //Todo: change body of implemented methods use File | Settings | File Templates.
+        return (BundleGeneration) getGeneration();
     }
 
-    public List<BoundFragment> getFragments()
+    public List<FragmentGeneration> getFragments()
     {
-        return null;  //Todo: change body of implemented methods use File | Settings | File Templates.
+        return Collections.unmodifiableList(getBundleGeneration().getFragments());
     }
 
     public List<RequiredBundleWrapper> getCandidateRequiredBundles()
     {
-        return null;  //Todo: change body of implemented methods use File | Settings | File Templates.
+        return Collections.unmodifiableList(candidateRequiredBundles);
     }
 
     public List<ImportDescriptionWrapper> getImports()
     {
-        return null;  //Todo: change body of implemented methods use File | Settings | File Templates.
+        return Collections.unmodifiableList(imports);
     }
 
     public Set<ExportDescriptionWrapper> getExports()
     {
-        return null;  //Todo: change body of implemented methods use File | Settings | File Templates.
+        return Collections.unmodifiableSet(exports);
+    }
+
+    public boolean addCandidateWiring(CandidateWiring candidateWiring)
+    {
+        return candidateWirings.add(candidateWiring);
+    }
+
+    public boolean replaceCandidateWiring(CandidateWiring candidateWiring)
+    {
+        return candidateWirings.remove(candidateWiring) && candidateWirings.add(candidateWiring);
+    }
+    
+    public Set<CandidateWiring> getWirings()
+    {
+        Set<CandidateWiring> result = new HashSet<CandidateWiring>();
+
+        result.addAll(wirings);
+        result.addAll(candidateWirings);
+
+        return Collections.unmodifiableSet(result);
+    }
+
+    public Set<CandidateWiring> getCandidateWirings()
+    {
+        return Collections.unmodifiableSet(candidateWirings);
     }
 }

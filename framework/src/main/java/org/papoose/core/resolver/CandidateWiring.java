@@ -16,8 +16,8 @@
  */
 package org.papoose.core.resolver;
 
-import org.papoose.core.BundleGeneration;
 import org.papoose.core.descriptions.ExportDescription;
+import org.papoose.core.util.ToStringCreator;
 
 /**
  * @version $Revision$ $Date$
@@ -26,17 +26,26 @@ class CandidateWiring
 {
     private final String packageName;
     private final ExportDescription exportDescription;
-    private final BundleGeneration bundleGeneration;
+    private final Candidate candidate;
 
-    public CandidateWiring(String packageName, ExportDescription exportDescription, BundleGeneration bundleGeneration)
+    public CandidateWiring(String packageName, ExportDescription exportDescription, Candidate candidate)
     {
         assert packageName != null;
         assert exportDescription != null;
-        assert bundleGeneration != null;
+        assert candidate != null;
 
         this.packageName = packageName;
         this.exportDescription = exportDescription;
-        this.bundleGeneration = bundleGeneration;
+        this.candidate = candidate;
+    }
+
+    public CandidateWiring(CandidateWiring that, Candidate candidate)
+    {
+        assert candidate != null;
+
+        this.packageName = that.packageName;
+        this.exportDescription = that.exportDescription;
+        this.candidate = candidate;
     }
 
     public String getPackageName()
@@ -49,9 +58,9 @@ class CandidateWiring
         return exportDescription;
     }
 
-    public BundleGeneration getBundleGeneration()
+    public Candidate getCandidate()
     {
-        return bundleGeneration;
+        return candidate;
     }
 
     @Override
@@ -69,5 +78,17 @@ class CandidateWiring
     public int hashCode()
     {
         return packageName.hashCode();
+    }
+
+    @Override
+    public String toString()
+    {
+        ToStringCreator creator = new ToStringCreator(this);
+
+        creator.append("packageName", packageName);
+        creator.append("exportDescription", exportDescription);
+        creator.append("candidate", candidate);
+
+        return creator.toString();
     }
 }

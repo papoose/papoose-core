@@ -100,9 +100,10 @@ class BundleContextImpl implements BundleContext
         return getFramework().getBundleManager().getBundles();
     }
 
-    public void addServiceListener(ServiceListener serviceListener, String filter) throws InvalidSyntaxException
+    public void addServiceListener(ServiceListener serviceListener, String filterStr) throws InvalidSyntaxException
     {
-        getBundle().addServiceListener(serviceListener, new DefaultFilter(getFramework().getParser().parse(filter)));
+        Filter filter = filterStr == null ? DefaultFilter.TRUE : new DefaultFilter(getFramework().getParser().parse(filterStr));
+        getBundle().addServiceListener(serviceListener, filter);
     }
 
     public void addServiceListener(ServiceListener serviceListener)

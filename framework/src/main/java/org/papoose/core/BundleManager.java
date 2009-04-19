@@ -170,6 +170,8 @@ public class BundleManager
 
             framework.getResolver().added(systemBundle.getCurrentGeneration());
 
+            insertSystemClassLoader((BundleGeneration) systemBundle.getCurrentGeneration());
+
             bundleStore.markModified();
 
             LOGGER.exiting(CLASS_NAME, "installSystemBundle", systemBundle);
@@ -186,6 +188,87 @@ public class BundleManager
             store.removeBundleStore(systemBundleId);
             throw new BundleException("Error occured while loading location " + Constants.SYSTEM_BUNDLE_LOCATION, e);
         }
+    }
+
+    private void insertSystemClassLoader(BundleGeneration bundle) throws BundleException
+    {
+        ArchiveStore currentStore = bundle.getArchiveStore();
+
+        Set<String> exportedPackages = new HashSet<String>();
+
+        for (ExportDescription desc : currentStore.getExportDescriptions())
+        {
+            exportedPackages.addAll(desc.getPackageNames());
+        }
+
+        Set<ArchiveStore> archiveStores = new HashSet<ArchiveStore>();
+
+        archiveStores.add(currentStore);
+        for (FragmentGeneration fragment : bundle.getFragments()) archiveStores.add(fragment.getArchiveStore());
+
+        List<ResourceLocation> resourceLocations = new ArrayList<ResourceLocation>();
+
+        for (String element : currentStore.getBundleClassPath())
+        {
+            ResourceLocation resourceLocation = currentStore.registerClassPathElement(element);
+            if (resourceLocation == null)
+            {
+                for (FragmentGeneration fragment : bundle.getFragments())
+                {
+                    resourceLocation = fragment.getArchiveStore().registerClassPathElement(element);
+
+                    if (resourceLocation != null) break;
+                }
+            }
+            if (resourceLocation != null) resourceLocations.add(resourceLocation);
+        }
+
+        for (FragmentGeneration fragment : bundle.getFragments())
+        {
+            ArchiveStore archiveStore = fragment.getArchiveStore();
+
+            for (String element : archiveStore.getBundleClassPath())
+            {
+                ResourceLocation resourceLocation = archiveStore.registerClassPathElement(element);
+                if (resourceLocation != null) resourceLocations.add(resourceLocation);
+            }
+        }
+
+        /**
+         * Empty for system bundle
+         */
+        List<Wire> requiredBundles = new ArrayList<Wire>();
+        Set<Wire> wires = new HashSet<Wire>();
+
+        BundleClassLoader classLoader = new BundleClassLoader(bundle.getBundleController().getLocation(),
+                                                              framework.getClassLoader(),
+                                                              framework,
+                                                              bundle,
+                                                              wires,
+                                                              requiredBundles,
+                                                              framework.getBootDelegates(),
+                                                              exportedPackages.toArray(new String[exportedPackages.size()]),
+                                                              currentStore.getDynamicDescriptions(),
+                                                              resourceLocations,
+                                                              archiveStores)
+        {
+            @Override
+            protected Class<?> delegateLoadClass(String className) throws ClassNotFoundException
+            {
+                String packageName = className.substring(0, Math.max(0, className.lastIndexOf('.')));
+
+                for (String exportedPackage : getExportedPackages())
+                {
+                    if (exportedPackage.equals(packageName)) return getParent().loadClass(className);
+                }
+
+                throw new ClassNotFoundException();
+            }
+        };
+
+        bundle.setClassLoader(classLoader);
+
+        bundle.setState(Bundle.RESOLVED);
     }
 
     public void uninstallSystemBundle()
@@ -339,11 +422,6 @@ public class BundleManager
 
             if (solutions.isEmpty()) return false;
 
-            String bootDelegateString = (String) framework.getProperty(Constants.FRAMEWORK_BOOTDELEGATION);
-            String[] bootDelegates = (bootDelegateString == null ? new String[]{ } : bootDelegateString.split(","));
-
-            for (int i = 0; i < bootDelegates.length; i++) bootDelegates[i] = bootDelegates[i].trim();
-
             for (Solution solution : solutions)
             {
                 BundleGeneration bundle = solution.getBundle();
@@ -374,7 +452,7 @@ public class BundleManager
                 Set<ArchiveStore> archiveStores = new HashSet<ArchiveStore>();
 
                 archiveStores.add(currentStore);
-                for (FragmentGeneration fragment : bundle.getFragments()) archiveStores.add(fragment.getArchiveStore());
+                for (FragmentGeneration fragment : solution.getFragments()) archiveStores.add(fragment.getArchiveStore());
 
                 List<ResourceLocation> resourceLocations = new ArrayList<ResourceLocation>();
 
@@ -383,7 +461,7 @@ public class BundleManager
                     ResourceLocation resourceLocation = currentStore.registerClassPathElement(element);
                     if (resourceLocation == null)
                     {
-                        for (FragmentGeneration fragment : bundle.getFragments())
+                        for (FragmentGeneration fragment : solution.getFragments())
                         {
                             resourceLocation = fragment.getArchiveStore().registerClassPathElement(element);
 
@@ -393,7 +471,7 @@ public class BundleManager
                     if (resourceLocation != null) resourceLocations.add(resourceLocation);
                 }
 
-                for (FragmentGeneration fragment : bundle.getFragments())
+                for (FragmentGeneration fragment : solution.getFragments())
                 {
                     ArchiveStore archiveStore = fragment.getArchiveStore();
 
@@ -402,15 +480,18 @@ public class BundleManager
                         ResourceLocation resourceLocation = archiveStore.registerClassPathElement(element);
                         if (resourceLocation != null) resourceLocations.add(resourceLocation);
                     }
+
+                    fragment.setHost(bundle);
+                    bundle.getFragments().add(fragment);
                 }
 
-                BundleClassLoader classLoader = new BundleClassLoader(bundle.getBundleController().getLocation(),
-                                                                      framework.getClassLoader(),
+                BundleClassLoader classLoader = new BundleClassLoader(bundle.getBundleController().getLocation(),  //todo: remove?
+                                                                      framework.getClassLoader(),  //todo: remove?
                                                                       framework,
                                                                       bundle,
                                                                       wires,
                                                                       requiredBundles,
-                                                                      bootDelegates,
+                                                                      framework.getBootDelegates(),  //todo: remove?
                                                                       exportedPackages.toArray(new String[exportedPackages.size()]),
                                                                       currentStore.getDynamicDescriptions(),
                                                                       resourceLocations,
@@ -648,9 +729,9 @@ public class BundleManager
     {
         Collection<BundleController> bundles = installedbundles.values();
 
-        for (final BundleController bundle : bundles)
+        for (BundleController bundle : bundles)
         {
-            for (final BundleListener listener : bundle.getSyncBundleListeners())
+            for (BundleListener listener : bundle.getSyncBundleListeners())
             {
                 try
                 {
@@ -716,7 +797,7 @@ public class BundleManager
         }
     }
 
-    public void fireServiceEvent(final ServiceEvent event)
+    public void fireServiceEvent(ServiceEvent event)
     {
         ServiceReference reference = event.getServiceReference();
         String[] classes = (String[]) reference.getProperty(Constants.OBJECTCLASS);
@@ -736,7 +817,7 @@ public class BundleManager
         }
     }
 
-    protected void fireServiceEvent(final ServiceEvent event, Set<ServiceListener> listeners, final Bundle bundle)
+    protected void fireServiceEvent(ServiceEvent event, Set<ServiceListener> listeners, Bundle bundle)
     {
         for (final ServiceListener listener : listeners)
         {

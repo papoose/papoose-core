@@ -19,7 +19,6 @@ package org.papoose.core.resolver;
 import net.jcip.annotations.Immutable;
 import org.osgi.framework.Version;
 
-import org.papoose.core.BundleGeneration;
 import org.papoose.core.descriptions.ExportDescription;
 
 /**
@@ -33,19 +32,22 @@ import org.papoose.core.descriptions.ExportDescription;
  * @version $Revision$ $Date$
  */
 @Immutable
-class ExportDescriptionWrapper implements Comparable<ExportDescriptionWrapper>
+public class ExportDescriptionWrapper implements Comparable<ExportDescriptionWrapper>
 {
     private final ExportDescription exportDescription;
-    private final BundleGeneration bundleGeneration;
+    private final Candidate candidate;
     private final long bundleId;
     private final Version version;
 
-    public ExportDescriptionWrapper(ExportDescription exportDescription, BundleGeneration bundleGeneration)
+    public ExportDescriptionWrapper(ExportDescription exportDescription, Candidate candidate)
     {
         this.exportDescription = exportDescription;
-        this.bundleGeneration = bundleGeneration;
-        this.bundleId = bundleGeneration.getBundleId();
+        this.candidate = candidate;
+        this.bundleId = candidate.getGeneration().getBundleId();
         this.version = (Version) exportDescription.getParameters().get("version");
+
+        assert bundleId >= 0;
+        assert version != null;
     }
 
     public ExportDescription getExportDescription()
@@ -53,9 +55,9 @@ class ExportDescriptionWrapper implements Comparable<ExportDescriptionWrapper>
         return exportDescription;
     }
 
-    public BundleGeneration getBundleGeneration()
+    public Candidate getCandidate()
     {
-        return bundleGeneration;
+        return candidate;
     }
 
     public int compareTo(ExportDescriptionWrapper o)
@@ -63,5 +65,28 @@ class ExportDescriptionWrapper implements Comparable<ExportDescriptionWrapper>
         int result = version.compareTo(o.version);
         if (result == 0) result = (int) (bundleId - o.bundleId);
         return result;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (!(o instanceof ExportDescriptionWrapper)) return false;
+
+        ExportDescriptionWrapper that = (ExportDescriptionWrapper) o;
+
+        return exportDescription.equals(that.exportDescription);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return exportDescription.hashCode();
+    }
+
+    @Override
+    public String toString()
+    {
+        return exportDescription.toString();
     }
 }
