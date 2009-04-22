@@ -22,6 +22,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
@@ -39,7 +40,7 @@ public class BundleGeneration extends Generation
     private BundleClassLoader classLoader;
     private final List<FragmentGeneration> fragments = new ArrayList<FragmentGeneration>();
     private final List<BundleGeneration> requiredBundles = new ArrayList<BundleGeneration>();
-    private final Semaphore starting = new Semaphore(1, true);
+    private final ReentrantLock starting = new ReentrantLock(true);
 
     public BundleGeneration(BundleController bundleController, ArchiveStore archiveStore)
     {
@@ -76,7 +77,7 @@ public class BundleGeneration extends Generation
         return null;  //Todo change body of created methods use File | Settings | File Templates.
     }
 
-    public Semaphore getStarting()
+    public ReentrantLock getStarting()
     {
         return starting;
     }

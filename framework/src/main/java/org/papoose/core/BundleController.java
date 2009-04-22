@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 import org.osgi.framework.AdminPermission;
 import org.osgi.framework.AllServiceListener;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.BundleListener;
@@ -76,6 +77,8 @@ public class BundleController implements Bundle
     private final Map<Integer, Generation> generations = new HashMap<Integer, Generation>();
     private volatile BundleContextImpl bundleContext;
     private volatile Generation currentGeneration;
+    private volatile BundleActivator bundleActivator;
+
 
     public BundleController(Papoose framework, BundleStore bundleStore)
     {
@@ -142,6 +145,16 @@ public class BundleController implements Bundle
         this.currentGeneration = currentGeneration;
     }
 
+    BundleActivator getBundleActivator()
+    {
+        return bundleActivator;
+    }
+
+    void setBundleActivator(BundleActivator bundleActivator)
+    {
+        this.bundleActivator = bundleActivator;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -185,7 +198,11 @@ public class BundleController implements Bundle
 
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
-        //Todo change body of implemented methods use File | Settings | File Templates.
+        Papoose framework = getFramework();
+        BundleManager bundleManager = framework.getBundleManager();
+        BundleGeneration bundleGeneration = (BundleGeneration) getCurrentGeneration();
+
+        bundleManager.requestStop(bundleGeneration, options);
     }
 
     /**
@@ -227,6 +244,8 @@ public class BundleController implements Bundle
 
         Papoose framework = getFramework();
         BundleManager bundleManager = framework.getBundleManager();
+
+        bundleManager.uninstall(this);
     }
 
     /**
@@ -679,52 +698,52 @@ public class BundleController implements Bundle
         return bundleContext;
     }
 
-    public void setAutostart(AutostartSetting setting)
+    void setAutostart(AutostartSetting setting)
     {
         bundleStore.setAutoStart(setting);
     }
 
-    public AutostartSetting getAutostartSetting()
+    AutostartSetting getAutostartSetting()
     {
         return bundleStore.getAutostart();
     }
 
-    public ServiceRegistration registerService(String[] clazzes, Object service, Dictionary properties)
+    ServiceRegistration registerService(String[] clazzes, Object service, Dictionary properties)
     {
         ServiceRegistration registration = framework.getServiceRegistry().registerService(this, clazzes, service, properties);
 
         return registration;
     }
 
-    public ServiceReference[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException
+    ServiceReference[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException
     {
         ServiceReference[] references = framework.getServiceRegistry().getServiceReferences(this, clazz, filter);
 
         return references;
     }
 
-    public ServiceReference[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException
+    ServiceReference[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException
     {
         ServiceReference[] references = framework.getServiceRegistry().getAllServiceReferences(this, clazz, filter);
 
         return references;
     }
 
-    public ServiceReference getServiceReference(String clazz)
+    ServiceReference getServiceReference(String clazz)
     {
         ServiceReference reference = framework.getServiceRegistry().getServiceReference(this, clazz);
 
         return reference;
     }
 
-    public Object getService(ServiceReference serviceReference)
+    Object getService(ServiceReference serviceReference)
     {
         Object reference = framework.getServiceRegistry().getService(this, serviceReference);
 
         return reference;
     }
 
-    public boolean ungetService(ServiceReference serviceReference)
+    boolean ungetService(ServiceReference serviceReference)
     {
         boolean result = framework.getServiceRegistry().ungetService(this, serviceReference);
 
@@ -808,6 +827,17 @@ public class BundleController implements Bundle
             serviceListeners.remove(new ServiceListenerWithFilter(serviceListener));
         }
         serviceListeners.remove(new ServiceListenerWithFilter(serviceListener, DefaultFilter.TRUE));
+    }
+
+    void clearListeners()
+    {
+        syncBundleListeners.clear();
+        bundleListeners.clear();
+
+        frameworkListeners.clear();
+
+        allServiceListeners.clear();
+        serviceListeners.clear();
     }
 
     public static class ServiceListenerWithFilter implements AllServiceListener

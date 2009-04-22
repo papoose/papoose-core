@@ -22,9 +22,11 @@ import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -132,9 +134,10 @@ public class ServiceRegistry
 
             if (thisBundleController == thatBundleController) return true;
 
+            BundleClassLoader bundleClassLoader = obtainClassLoader(thatBundleController);
             BundleClassLoader thatClassLoader = obtainSource(thatBundleController, packageName);
 
-            if (thatClassLoader == null) return true;
+            if (thatClassLoader == bundleClassLoader) return true;
 
             BundleClassLoader thisClassLoader = obtainSource(thisBundleController, packageName);
 
@@ -143,6 +146,23 @@ public class ServiceRegistry
     }
 
     private BundleClassLoader obtainSource(BundleController bundle, String packageName)
+    {
+        BundleClassLoader bundleClassLoader = obtainClassLoader(bundle);
+
+        if (bundleClassLoader == null) return null;
+
+        for (Wire wire : bundleClassLoader.getWires())
+        {
+            for (String exportPackage : wire.getExportDescription().getPackageNames())
+            {
+                if (exportPackage.equals(packageName)) return wire.getBundleClassLoader();
+            }
+        }
+
+        return bundleClassLoader;
+    }
+
+    private static BundleClassLoader obtainClassLoader(BundleController bundle)
     {
         Generation generation = bundle.getCurrentGeneration();
         BundleGeneration bundleGeneration;
@@ -161,21 +181,7 @@ public class ServiceRegistry
             return null;
         }
 
-        if (bundleGeneration == null) return null;
-
-        BundleClassLoader bundleClassLoader = bundleGeneration.getClassLoader();
-
-        if (bundleClassLoader == null) return null;
-
-        for (Wire wire : bundleClassLoader.getWires())
-        {
-            for (String exportPackage : wire.getExportDescription().getPackageNames())
-            {
-                if (exportPackage.equals(packageName)) return wire.getBundleClassLoader();
-            }
-        }
-
-        return null;
+        return bundleGeneration.getClassLoader();
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -465,10 +471,13 @@ public class ServiceRegistry
 
     public void unregister(long serviceId)
     {
+        ServiceEntry oldEntry;
         ServiceEntry entry;
+
 
         synchronized (lock)
         {
+            oldEntry = removing.get();
             removing.set(entry = serviceEntries.get(serviceId));
 
             serviceEntries.remove(serviceId);
@@ -493,7 +502,29 @@ public class ServiceRegistry
         }
         finally
         {
-            removing.set(null);
+            removing.set(oldEntry);
+        }
+    }
+
+
+    public void unregister(BundleController bundleController)
+    {
+        Set<ServiceEntry> entries = new HashSet<ServiceEntry>();
+
+        synchronized (lock)
+        {
+            for (ServiceEntry entry : serviceEntries.values())
+            {
+                if (entry.getBundle() == bundleController)
+                {
+                    entries.add(entry);
+                }
+            }
+
+            for (ServiceEntry entry : entries)
+            {
+                unregister((Long) entry.getRegistration().getReference().getProperty(Constants.SERVICE_ID));
+            }
         }
     }
 

@@ -170,7 +170,7 @@ public class BundleClassLoader extends NamedClassLoader
     }
 
     @SuppressWarnings({ "EmptyCatchBlock" })
-    protected Class<?> delegateLoadClass(String className) throws ClassNotFoundException
+    protected synchronized Class<?> delegateLoadClass(String className) throws ClassNotFoundException
     {
 //        assert !inSet(this);
 //

@@ -286,7 +286,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         public BundleDirectoryResourceLocation(String path, int location)
         {
             super(codeSource);
-            this.path = path;
+            this.path = (path.length() == 0 || path.endsWith("/") ? path : path + "/");
             this.location = location;
         }
 

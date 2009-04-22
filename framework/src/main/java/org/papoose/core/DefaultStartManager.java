@@ -42,8 +42,8 @@ public class DefaultStartManager implements StartManager
         bundleManager.beginStart(bundle, options);
     }
 
-    public void stop(BundleGeneration bundle)
+    public void stop(BundleGeneration bundle, int options) throws BundleException
     {
-        bundleManager.performStop(bundle);
+        bundleManager.beginStop(bundle, options);
     }
 }

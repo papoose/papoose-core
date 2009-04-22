@@ -27,5 +27,5 @@ public interface StartManager
 {
     public void start(BundleGeneration bundle, int options) throws BundleException;
 
-    public void stop(BundleGeneration bundle);
+    public void stop(BundleGeneration bundle, int options) throws BundleException;
 }

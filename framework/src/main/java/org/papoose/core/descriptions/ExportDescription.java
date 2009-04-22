@@ -39,6 +39,7 @@ public class ExportDescription
     private List<String> mandatory = Collections.emptyList();
     private List<String[]> include = Collections.emptyList();
     private List<String[]> exclude = Collections.emptyList();
+    private volatile int referenceCount = 0;
 
     public ExportDescription(Set<String> packageNames, Map<String, Object> parameters)
     {
@@ -97,6 +98,21 @@ public class ExportDescription
     public void setExclude(List<String[]> exclude)
     {
         this.exclude = exclude;
+    }
+
+    public void incrementReferenceCount()
+    {
+        referenceCount++;
+    }
+
+    public void decrementReferenceCount()
+    {
+        referenceCount--;
+    }
+
+    public int getReferenceCount()
+    {
+        return referenceCount;
     }
 
     @Override
