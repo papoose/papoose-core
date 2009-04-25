@@ -559,7 +559,9 @@ public class BundleController implements Bundle
 
             if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
-            final Enumeration<URL> enumeration = getCurrentGeneration().getArchiveStore().findEntries(path, "*", true, false);
+            Enumeration<URL> result = getCurrentGeneration().getArchiveStore().findEntries(path, "*", true, false);
+            if (result == null) result = Collections.enumeration(Collections.<URL>emptySet());
+            final Enumeration<URL> enumeration = result;
             return new Enumeration<String>()
             {
                 public boolean hasMoreElements()
@@ -570,7 +572,9 @@ public class BundleController implements Bundle
                 public String nextElement()
                 {
                     URL url = enumeration.nextElement();
-                    return url.getPath();
+                    String path = url.getPath();
+
+                    return path.substring(1, path.length());
                 }
             };
         }
