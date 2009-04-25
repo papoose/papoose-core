@@ -42,6 +42,7 @@ import org.papoose.core.PapooseException;
 import org.papoose.core.VersionRange;
 import org.papoose.core.Wire;
 import org.papoose.core.descriptions.ExportDescription;
+import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.RequireDescription;
 import org.papoose.core.descriptions.Resolution;
 import org.papoose.core.spi.Resolver;
@@ -237,6 +238,35 @@ public class DefaultResolver implements Resolver
         }
     }
 
+    public Set<Solution> resolve(BundleGeneration bundleGeneration, ImportDescription importDescription) throws BundleException
+    {
+        LOGGER.entering(CLASS_NAME, "resolve", new Object[]{ bundleGeneration, importDescription });
+
+        if (bundleGeneration == null) throw new IllegalArgumentException("Bundle cannot be null");
+        if (importDescription == null) throw new IllegalArgumentException("ImportDescription cannot be null");
+
+        synchronized (lock)
+        {
+            if (!bundles.contains(bundleGeneration)) throw new IllegalArgumentException("Bundle does not belong to this framework instance");
+            if ((bundleGeneration.getState() & (Bundle.INSTALLED | Bundle.UNINSTALLED)) != 0) throw new BundleException("Bundle not already resolved");
+            if (framework == null) throw new IllegalStateException("Framework has not started");
+
+            Set<Candidate> canonicalSet = ResolverUtils.collectCanonicalSet(bundles);
+
+            CheckPoint result = doResolveBundle(new CheckPoint(bundleGeneration, importDescription, canonicalSet));
+
+            if (result == null) throw new BundleException("No consistent solution set found");
+
+            result.resolveCompleted();
+
+            Set<Solution> solutions = extractSolutions(result);
+
+            LOGGER.exiting(CLASS_NAME, "resolve", solutions);
+
+            return solutions;
+        }
+    }
+
     private static Set<Solution> extractSolutions(CheckPoint result)
     {
         Set<Solution> solutions = new HashSet<Solution>();
@@ -245,7 +275,7 @@ public class DefaultResolver implements Resolver
         {
             Set<Wire> wires = new HashSet<Wire>();
 
-            for (CandidateWiring candidateWiring : candidateBundle.getWirings())
+            for (CandidateWiring candidateWiring : candidateBundle.getCandidateWirings())
             {
                 wires.add(new Wire(candidateWiring.getPackageName(), candidateWiring.getExportDescription(), (BundleGeneration) candidateWiring.getCandidate().getGeneration()));
             }

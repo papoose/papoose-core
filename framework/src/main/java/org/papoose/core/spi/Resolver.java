@@ -20,9 +20,11 @@ import java.util.Set;
 
 import org.osgi.framework.BundleException;
 
+import org.papoose.core.BundleGeneration;
 import org.papoose.core.Generation;
 import org.papoose.core.Papoose;
 import org.papoose.core.PapooseException;
+import org.papoose.core.descriptions.ImportDescription;
 
 
 /**
@@ -48,13 +50,13 @@ public interface Resolver
      *          if an error occurs that prevents the resolver
      *          from functioning correctly.
      */
-    public void start(Papoose framework) throws PapooseException;
+    void start(Papoose framework) throws PapooseException;
 
     /**
      * Called by the owning framework to notify the resolver that the framework
      * is stopping.
      */
-    public void stop();
+    void stop();
 
     /**
      * Notify the resolve that a bundle has been added.
@@ -63,7 +65,7 @@ public interface Resolver
      *
      * @param bundle the bundle that was added.
      */
-    public void added(Generation bundle);
+    void added(Generation bundle);
 
     /**
      * Notify the resolver that a bundle has been removed.
@@ -72,7 +74,7 @@ public interface Resolver
      *
      * @param bundle the bundle that was removed.
      */
-    public void removed(Generation bundle);
+    void removed(Generation bundle);
 
     /**
      * Resolve a bundle to obtain a solution set of bundles that can be
@@ -83,5 +85,13 @@ public interface Resolver
      * @return a set of solutions that is consistent with the bundle's requirements
      * @throws BundleException if no consistent set of wires can be found
      */
-    public Set<Solution> resolve(Generation bundle) throws BundleException;
+    Set<Solution> resolve(Generation bundle) throws BundleException;
+
+    /**
+     * @param bundle            the bundle that owns the dynamic import
+     * @param importDescription a description of the dynamic import
+     * @return a wire that is consistent with the bundle's current wires and the import's requirements
+     * @throws BundleException if no consistent wire can be found
+     */
+    Set<Solution> resolve(BundleGeneration bundle, ImportDescription importDescription) throws BundleException;
 }

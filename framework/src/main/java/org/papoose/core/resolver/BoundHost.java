@@ -26,6 +26,8 @@ import java.util.Set;
 
 import org.papoose.core.BundleGeneration;
 import org.papoose.core.FragmentGeneration;
+import org.papoose.core.Wire;
+import org.papoose.core.BundleClassLoader;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.RequireDescription;
@@ -40,6 +42,7 @@ public class BoundHost extends UnResolved implements CandidateBundle
     private final List<ImportDescriptionWrapper> imports = new ArrayList<ImportDescriptionWrapper>();
     private final Set<ExportDescriptionWrapper> exports = new HashSet<ExportDescriptionWrapper>();
     private final List<RequireDescription> requireDescriptions = new ArrayList<RequireDescription>();
+    private final Set<CandidateWiring> wirings = new HashSet<CandidateWiring>();
     private final Set<CandidateWiring> candidateWirings = new HashSet<CandidateWiring>();
     private final List<RequiredBundleWrapper> candidateRequiredBundles = new ArrayList<RequiredBundleWrapper>();
     private final Set<String> removeImports = new HashSet<String>();
@@ -70,10 +73,27 @@ public class BoundHost extends UnResolved implements CandidateBundle
         this.imports.addAll(candidateBundle.getImports());
         this.exports.addAll(candidateBundle.getExports());
         this.requireDescriptions.addAll(candidateBundle.getRequireDescriptions());
-        this.candidateWirings.addAll(candidateBundle.getWirings());
+        this.wirings.addAll(candidateBundle.getWirings());
+        this.candidateWirings.addAll(candidateBundle.getCandidateWirings());
         this.candidateRequiredBundles.addAll(candidateBundle.getCandidateRequiredBundles());
         this.removeImports.addAll(candidateBundle.getRemoveImports());
         this.removeExports.addAll(candidateBundle.getRemoveExports());
+    }
+
+    public BoundHost(BundleGeneration generation, ImportDescription importDescription) throws IncompatibleException
+    {
+        super(generation);
+
+        this.bundleGeneration = generation;
+        this.fragments = Collections.unmodifiableList(new ArrayList<FragmentGeneration>(generation.getFragments()));
+        this.requireDescriptions.addAll(bundleGeneration.getArchiveStore().getRequireDescriptions());
+
+        for (String packageName : importDescription.getPackageNames())
+        {
+            this.imports.add(new ImportDescriptionWrapper(packageName, importDescription));
+        }
+
+        initializeExports();
     }
 
     public BundleGeneration getBundleGeneration()
@@ -117,9 +137,19 @@ public class BoundHost extends UnResolved implements CandidateBundle
         return candidateWirings.remove(candidateWiring) && candidateWirings.add(candidateWiring);
     }
 
+    public boolean addWiring(CandidateWiring candidateWiring)
+    {
+        return wirings.add(candidateWiring);
+    }
+
     public Set<CandidateWiring> getWirings()
     {
-        return Collections.unmodifiableSet(candidateWirings);
+        Set<CandidateWiring> result = new HashSet<CandidateWiring>();
+
+        result.addAll(wirings);
+        result.addAll(candidateWirings);
+
+        return Collections.unmodifiableSet(result);
     }
 
     public Set<CandidateWiring> getCandidateWirings()

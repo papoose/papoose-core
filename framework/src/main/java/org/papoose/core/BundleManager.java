@@ -51,10 +51,10 @@ import org.osgi.framework.ServicePermission;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
 
-import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.Extension;
 import org.papoose.core.descriptions.FragmentDescription;
+import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.LazyActivationDescription;
 import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.spi.ArchiveStore;
@@ -283,6 +283,7 @@ public class BundleManager
         if (locations.containsKey(location)) return locations.get(location);
 
         long bundleId = ++bundleCounter;
+
         try
         {
             BundleStore bundleStore = store.allocateBundleStore(bundleId, location);
@@ -424,88 +425,7 @@ public class BundleManager
 
             for (Solution solution : solutions)
             {
-                BundleGeneration bundle = solution.getBundle();
-                ArchiveStore currentStore = bundle.getArchiveStore();
-                Set<Wire> wires = solution.getWires();
-
-                for (Wire wire : wires)
-                {
-                    wire.getExportDescription().incrementReferenceCount();
-                }
-
-                Set<String> exportedPackages = new HashSet<String>();
-                for (ExportDescription desc : currentStore.getExportDescriptions())
-                {
-                    exportedPackages.addAll(desc.getPackageNames());
-                }
-
-                List<Wire> requiredBundles = new ArrayList<Wire>();
-                for (Solution.RequiredBundleWrapper wrapper : solution.getRequiredBundles())
-                {
-                    Wire wire = wrapper.getWire();
-
-                    requiredBundles.add(wire);
-                    bundle.getRequiredBundles().add(wire.getBundleGeneration());
-
-                    if (wrapper.isReExport())
-                    {
-                        exportedPackages.add(wire.getPackageName());
-                    }
-                }
-
-                Set<ArchiveStore> archiveStores = new HashSet<ArchiveStore>();
-
-                archiveStores.add(currentStore);
-                for (FragmentGeneration fragment : solution.getFragments()) archiveStores.add(fragment.getArchiveStore());
-
-                List<ResourceLocation> resourceLocations = new ArrayList<ResourceLocation>();
-
-                for (String element : currentStore.getBundleClassPath())
-                {
-                    ResourceLocation resourceLocation = currentStore.registerClassPathElement(element);
-                    if (resourceLocation == null)
-                    {
-                        for (FragmentGeneration fragment : solution.getFragments())
-                        {
-                            resourceLocation = fragment.getArchiveStore().registerClassPathElement(element);
-
-                            if (resourceLocation != null) break;
-                        }
-                    }
-                    if (resourceLocation != null) resourceLocations.add(resourceLocation);
-                }
-
-                for (FragmentGeneration fragment : solution.getFragments())
-                {
-                    ArchiveStore archiveStore = fragment.getArchiveStore();
-
-                    for (String element : archiveStore.getBundleClassPath())
-                    {
-                        ResourceLocation resourceLocation = archiveStore.registerClassPathElement(element);
-                        if (resourceLocation != null) resourceLocations.add(resourceLocation);
-                    }
-
-                    fragment.setHost(bundle);
-                    bundle.getFragments().add(fragment);
-                }
-
-                BundleClassLoader classLoader = new BundleClassLoader(bundle.getBundleController().getLocation(),  //todo: remove?
-                                                                      framework.getClassLoader(),  //todo: remove?
-                                                                      framework,
-                                                                      bundle,
-                                                                      wires,
-                                                                      requiredBundles,
-                                                                      framework.getBootDelegates(),  //todo: remove?
-                                                                      exportedPackages.toArray(new String[exportedPackages.size()]),
-                                                                      currentStore.getDynamicDescriptions(),
-                                                                      resourceLocations,
-                                                                      archiveStores);
-
-                bundle.setClassLoader(classLoader);
-
-                bundle.setState(Bundle.RESOLVED);
-
-                fireBundleEvent(new BundleEvent(BundleEvent.RESOLVED, target));
+                finishResolution(solution);
             }
         }
         catch (BundleException be)
@@ -516,9 +436,129 @@ public class BundleManager
         return true;
     }
 
-    public Wire resolve(DynamicDescription dynamicDescription)
+    public Wire resolve(Bundle target, ImportDescription importDescription)
     {
-        return null; // todo:
+        assert target != null;
+        assert importDescription != null;
+
+        Wire result = null;
+
+        try
+        {
+            BundleController targetController = (BundleController) target;
+            BundleGeneration targetGeneration = (BundleGeneration) targetController.getCurrentGeneration();
+            Set<Solution> solutions = framework.getResolver().resolve(targetGeneration, importDescription);
+
+            if (solutions.isEmpty()) return null;
+
+            for (Solution solution : solutions)
+            {
+                BundleGeneration solutionGeneration = solution.getBundle();
+
+                if (solutionGeneration == targetGeneration)
+                {
+                    result = solution.getWires().iterator().next();
+                }
+                else
+                {
+                    finishResolution(solution);
+                }
+            }
+
+            assert result != null;
+        }
+        catch (BundleException be)
+        {
+            LOGGER.log(Level.FINEST, "Unable to resolve bundle's dynamic import", be);
+        }
+
+        return result;
+    }
+
+    private void finishResolution(Solution solution) throws BundleException
+    {
+        BundleGeneration bundleGeneration = solution.getBundle();
+        ArchiveStore currentStore = bundleGeneration.getArchiveStore();
+        Set<Wire> wires = solution.getWires();
+
+        for (Wire wire : wires)
+        {
+            wire.getExportDescription().incrementReferenceCount();
+        }
+
+        Set<String> exportedPackages = new HashSet<String>();
+        for (ExportDescription desc : currentStore.getExportDescriptions())
+        {
+            exportedPackages.addAll(desc.getPackageNames());
+        }
+
+        List<Wire> requiredBundles = new ArrayList<Wire>();
+        for (Solution.RequiredBundleWrapper wrapper : solution.getRequiredBundles())
+        {
+            Wire wire = wrapper.getWire();
+
+            requiredBundles.add(wire);
+            bundleGeneration.getRequiredBundles().add(wire.getBundleGeneration());
+
+            if (wrapper.isReExport())
+            {
+                exportedPackages.add(wire.getPackageName());
+            }
+        }
+
+        Set<ArchiveStore> archiveStores = new HashSet<ArchiveStore>();
+
+        archiveStores.add(currentStore);
+        for (FragmentGeneration fragment : solution.getFragments()) archiveStores.add(fragment.getArchiveStore());
+
+        List<ResourceLocation> resourceLocations = new ArrayList<ResourceLocation>();
+
+        for (String element : currentStore.getBundleClassPath())
+        {
+            ResourceLocation resourceLocation = currentStore.registerClassPathElement(element);
+            if (resourceLocation == null)
+            {
+                for (FragmentGeneration fragment : solution.getFragments())
+                {
+                    resourceLocation = fragment.getArchiveStore().registerClassPathElement(element);
+
+                    if (resourceLocation != null) break;
+                }
+            }
+            if (resourceLocation != null) resourceLocations.add(resourceLocation);
+        }
+
+        for (FragmentGeneration fragment : solution.getFragments())
+        {
+            ArchiveStore archiveStore = fragment.getArchiveStore();
+
+            for (String element : archiveStore.getBundleClassPath())
+            {
+                ResourceLocation resourceLocation = archiveStore.registerClassPathElement(element);
+                if (resourceLocation != null) resourceLocations.add(resourceLocation);
+            }
+
+            fragment.setHost(bundleGeneration);
+            bundleGeneration.getFragments().add(fragment);
+        }
+
+        BundleClassLoader classLoader = new BundleClassLoader(bundleGeneration.getBundleController().getLocation(),  //todo: remove?
+                                                              framework.getClassLoader(),  //todo: remove?
+                                                              framework,
+                                                              bundleGeneration,
+                                                              wires,
+                                                              requiredBundles,
+                                                              framework.getBootDelegates(),  //todo: remove?
+                                                              exportedPackages.toArray(new String[exportedPackages.size()]),
+                                                              currentStore.getDynamicDescriptions(),
+                                                              resourceLocations,
+                                                              archiveStores);
+
+        bundleGeneration.setClassLoader(classLoader);
+
+        bundleGeneration.setState(Bundle.RESOLVED);
+
+        fireBundleEvent(new BundleEvent(BundleEvent.RESOLVED, bundleGeneration.getBundleController()));
     }
 
     public void loadAndStartBundles()
@@ -723,6 +763,7 @@ public class BundleManager
 
             bundleGeneration.setState(Bundle.STOPPING);
 
+            fireBundleEvent(new BundleEvent(BundleEvent.STOPPING, bundleController));
 
             Throwable throwable = null;
             try

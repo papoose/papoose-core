@@ -21,9 +21,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.papoose.core.BundleClassLoader;
 import org.papoose.core.BundleGeneration;
 import org.papoose.core.FragmentGeneration;
 import org.papoose.core.Generation;
+import org.papoose.core.Wire;
+import org.papoose.core.descriptions.ExportDescription;
+import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.RequireDescription;
 import org.papoose.core.util.ToStringCreator;
 
@@ -48,6 +52,50 @@ public class CheckPoint
 
         unResolved.add(new UnBound(generation));
         unused.addAll(canonicalSet);
+    }
+
+    public CheckPoint(BundleGeneration bundleGeneration, ImportDescription importDescription, Set<Candidate> canonicalSet)
+    {
+        assert bundleGeneration != null;
+        assert importDescription != null;
+        assert canonicalSet != null;
+
+        unused.addAll(canonicalSet);
+
+        try
+        {
+            resolving = new BoundHost(bundleGeneration, importDescription);
+
+            BundleClassLoader bundleClassLoader = bundleGeneration.getClassLoader();
+            for (Wire wire : bundleClassLoader.getWires())
+            {
+                Candidate candidateBundle = findCandidate(wire.getBundleGeneration());
+                ExportDescription exportDescription = wire.getExportDescription();
+
+                for (String packageName : exportDescription.getPackageNames())
+                {
+                    resolving.addWiring(new CandidateWiring(packageName, exportDescription, candidateBundle));
+                }
+            }
+        }
+        catch (IncompatibleException neverHappens)
+        {
+            assert false;
+        }
+
+        used.add(resolving);
+
+        unused.remove(resolving);
+        for (FragmentGeneration fragmentGeneration : resolving.getFragments()) unused.remove(new Candidate(fragmentGeneration));
+    }
+
+    private Candidate findCandidate(BundleGeneration bundleGeneration)
+    {
+        for (Candidate candidate : unused) if (candidate.getGeneration() == bundleGeneration) return candidate;
+
+        assert false;
+
+        return null;
     }
 
     CheckPoint(CheckPoint checkPoint)

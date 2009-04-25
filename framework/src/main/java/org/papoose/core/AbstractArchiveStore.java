@@ -355,19 +355,34 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 
         if (headers.containsKey("DynamicImport-Package"))
         {
-            String[] importDescriptions = headers.getValue("DynamicImport-Package").split(",");
-            result = new HashSet<DynamicDescription>(importDescriptions.length);
+            String[] dynamicDescriptions = headers.getValue("DynamicImport-Package").split(",");
+            result = new HashSet<DynamicDescription>(dynamicDescriptions.length);
 
-            for (String importDescription : importDescriptions)
+            for (String dynamicDescription : dynamicDescriptions)
             {
                 Set<String> paths = new HashSet<String>(1);
                 Map<String, Object> parameters = new HashMap<String, Object>();
                 DynamicDescription description = new DynamicDescription(paths, parameters);
 
-                Util.parseParameters(importDescription, description, parameters, true, paths);
+                Util.parseParameters(dynamicDescription, description, parameters, true, paths);
 
-                if (description.getVersion() == null) Util.callSetter(description, "version", DynamicDescription.DEFAULT_VERSION_RANGE);
-                if (description.getBundleVersion() == null) Util.callSetter(description, "bundle-version", DynamicDescription.DEFAULT_VERSION_RANGE);
+                if (parameters.containsKey("version"))
+                {
+                    parameters.put("version", VersionRange.parseVersionRange((String) parameters.get("version")));
+                }
+                else
+                {
+                    parameters.put("version", DynamicDescription.DEFAULT_VERSION_RANGE);
+                }
+
+                if (parameters.containsKey("bundle-version"))
+                {
+                    parameters.put("bundle-version", VersionRange.parseVersionRange((String) parameters.get("bundle-veriosn")));
+                }
+                else
+                {
+                    parameters.put("bundle-version", DynamicDescription.DEFAULT_VERSION_RANGE);
+                }
 
                 result.add(description);
             }

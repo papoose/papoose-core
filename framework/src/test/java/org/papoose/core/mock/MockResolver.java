@@ -20,9 +20,11 @@ import java.util.Set;
 
 import org.osgi.framework.BundleException;
 
+import org.papoose.core.BundleGeneration;
 import org.papoose.core.Generation;
 import org.papoose.core.Papoose;
 import org.papoose.core.PapooseException;
+import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.spi.Resolver;
 import org.papoose.core.spi.Solution;
 
@@ -41,4 +43,6 @@ public class MockResolver implements Resolver
     public void removed(Generation bundle) { }
 
     public Set<Solution> resolve(Generation bundle) throws BundleException { return null; }
+
+    public Set<Solution> resolve(BundleGeneration bundleGeneration, ImportDescription importDescription) throws BundleException { return null; }
 }

@@ -110,9 +110,9 @@ public class ServiceRegistry
     {
         if (!(thatBundle instanceof BundleController)) return false;
 
-        BundleController thatBundleController = (BundleController) thatBundle;
+        BundleController requestingBundleController = (BundleController) thatBundle;
 
-        if (thatBundleController.getFramework() != framework) return false;
+        if (requestingBundleController.getFramework() != framework) return false;
 
         String packageName = className.substring(0, Math.max(0, className.lastIndexOf('.')));
 
@@ -130,18 +130,17 @@ public class ServiceRegistry
         {
             ServiceEntry serviceEntry = serviceEntries.get(serviceId);
             if (serviceEntry == null) serviceEntry = removing.get();
-            BundleController thisBundleController = serviceEntry.getBundle();
+            BundleController registeringBundleController = serviceEntry.getBundle();
 
-            if (thisBundleController == thatBundleController) return true;
+            if (registeringBundleController == requestingBundleController) return true;
 
-            BundleClassLoader bundleClassLoader = obtainClassLoader(thatBundleController);
-            BundleClassLoader thatClassLoader = obtainSource(thatBundleController, packageName);
+            BundleClassLoader requestingClassLoader = obtainSource(requestingBundleController, packageName);
 
-            if (thatClassLoader == bundleClassLoader) return true;
+            if (requestingClassLoader == null) return true;
 
-            BundleClassLoader thisClassLoader = obtainSource(thisBundleController, packageName);
+            BundleClassLoader registeringClassLoader = obtainSource(registeringBundleController, packageName);
 
-            return thisClassLoader == thatClassLoader;
+            return registeringClassLoader == null || registeringClassLoader == requestingClassLoader;
         }
     }
 
@@ -159,7 +158,7 @@ public class ServiceRegistry
             }
         }
 
-        return bundleClassLoader;
+        return null;
     }
 
     private static BundleClassLoader obtainClassLoader(BundleController bundle)

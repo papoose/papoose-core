@@ -31,57 +31,22 @@ import org.papoose.core.VersionRange;
 public class DynamicDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);
-    private final Set<String> packages;
+    private final Set<String> packagePatterns;
     private final Map<String, Object> parameters;
-    private VersionRange version;
-    private String bundleSymbolicName;
-    private VersionRange bundleVersion;
 
-    public DynamicDescription(Set<String> packages, Map<String, Object> parameters)
+    public DynamicDescription(Set<String> packagePatterns, Map<String, Object> parameters)
     {
-        this.packages = Collections.unmodifiableSet(packages);
+        this.packagePatterns = Collections.unmodifiableSet(packagePatterns);
         this.parameters = Collections.unmodifiableMap(parameters);
     }
 
-    public Set<String> getPackages()
+    public Set<String> getPackagePatterns()
     {
-        return packages;
+        return packagePatterns;
     }
 
     public Map<String, Object> getParameters()
     {
         return parameters;
-    }
-
-    public VersionRange getVersion()
-    {
-        return version;
-    }
-
-    void setVersion(VersionRange version)
-    {
-        this.version = version;
-    }
-
-
-    public String getBundleSymbolicName()
-    {
-        return bundleSymbolicName;
-    }
-
-    void setBundleSymbolicName(String bundleSymbolicName)
-    {
-        this.bundleSymbolicName = bundleSymbolicName;
-    }
-
-
-    public VersionRange getBundleVersion()
-    {
-        return bundleVersion;
-    }
-
-    void setBundleVersion(VersionRange bundleVersion)
-    {
-        this.bundleVersion = bundleVersion;
     }
 }

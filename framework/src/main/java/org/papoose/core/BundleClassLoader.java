@@ -26,9 +26,9 @@ import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -38,6 +38,7 @@ import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
 
 import org.papoose.core.descriptions.DynamicDescription;
+import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.spi.ArchiveStore;
 
 
@@ -46,13 +47,6 @@ import org.papoose.core.spi.ArchiveStore;
  */
 public class BundleClassLoader extends NamedClassLoader
 {
-    private final static ThreadLocal<Set<BundleClassLoader>> LOADER_VISITED = new ThreadLocal<Set<BundleClassLoader>>()
-    {
-        protected Set<BundleClassLoader> initialValue()
-        {
-            return new HashSet<BundleClassLoader>();
-        }
-    };
     private final static URL[] EMPTY_URLS = new URL[0];
     private final Papoose framework;
     private final BundleGeneration bundle;
@@ -86,7 +80,7 @@ public class BundleClassLoader extends NamedClassLoader
 
         this.framework = framework;
         this.bundle = bundle;
-        this.wires = Collections.unmodifiableSet(wires);
+        this.wires = new HashSet<Wire>(wires);
         this.requiredBundles = requiredBundles;
         this.exportedPackages = exportedPackages;
         this.dynamicImports = Collections.synchronizedSet(dynamicImports);
@@ -102,7 +96,7 @@ public class BundleClassLoader extends NamedClassLoader
 
     public Set<Wire> getWires()
     {
-        return wires;
+        return Collections.unmodifiableSet(wires);
     }
 
     public String[] getExportedPackages()
@@ -172,10 +166,6 @@ public class BundleClassLoader extends NamedClassLoader
     @SuppressWarnings({ "EmptyCatchBlock" })
     protected synchronized Class<?> delegateLoadClass(String className) throws ClassNotFoundException
     {
-//        assert !inSet(this);
-//
-//        register(this);
-
         Class clazz = findLoadedClass(className);
 
         if (clazz != null)
@@ -183,62 +173,78 @@ public class BundleClassLoader extends NamedClassLoader
             return clazz;
         }
 
-        try
+        String packageName = className.substring(0, Math.max(0, className.lastIndexOf('.')));
+
+        for (Wire wire : wires)
         {
-            String packageName = className.substring(0, Math.max(0, className.lastIndexOf('.')));
+            if (wire.validFor(className)) return wire.getBundleClassLoader().delegateLoadClass(className);
+        }
 
-            for (Wire wire : wires)
+        for (Wire wire : requiredBundles)
+        {
+            try
             {
-                if (wire.validFor(className) && !inSet(wire.getBundleClassLoader())) return wire.getBundleClassLoader().delegateLoadClass(className);
+                if (wire.validFor(className)) return wire.getBundleClassLoader().delegateLoadClass(className);
             }
-
-            for (Wire wire : requiredBundles)
+            catch (ClassNotFoundException doNothing)
             {
-                try
-                {
-                    if (wire.validFor(className) && !inSet(wire.getBundleClassLoader())) return wire.getBundleClassLoader().delegateLoadClass(className);
-                }
-                catch (ClassNotFoundException doNothing)
-                {
-                }
             }
+        }
 
-            for (ResourceLocation location : boundClassPath)
+        for (ResourceLocation location : boundClassPath)
+        {
+            try
             {
-                try
-                {
-                    return findClass(location, className);
-                }
-                catch (ClassNotFoundException doNothing)
-                {
-                }
+                return findClass(location, className);
             }
-
-            for (String exportedPackage : exportedPackages)
+            catch (ClassNotFoundException doNothing)
             {
-                if (exportedPackage.equals(packageName)) throw new ClassNotFoundException();
             }
+        }
 
-            synchronized (dynamicImports)
+        for (String exportedPackage : exportedPackages)
+        {
+            if (exportedPackage.equals(packageName)) throw new ClassNotFoundException();
+        }
+
+        synchronized (dynamicImports)
+        {
+            DynamicDescription used = null;
+
+            try
             {
                 for (DynamicDescription dynamicDescription : dynamicImports)
                 {
-                    Wire wire = bundle.getBundleController().getFramework().getBundleManager().resolve(dynamicDescription);
-                    if (wire != null)
+                    for (String packagePattern : dynamicDescription.getPackagePatterns())
                     {
-                        dynamicImports.remove(dynamicDescription);
-                        wires.add(wire);
-                        if (!inSet(wire.getBundleClassLoader())) return wire.getBundleClassLoader().delegateLoadClass(className);
+                        if (packagePattern.length() == 0
+                            || (packagePattern.endsWith(".") && packageName.startsWith(packagePattern))
+                            || packageName.equals(packagePattern))
+                        {
+                            BundleController bundleController = bundle.getBundleController();
+                            ImportDescription importDescription = new ImportDescription(Collections.singleton(packageName), dynamicDescription.getParameters());
+
+                            Wire wire = bundleController.getFramework().getBundleManager().resolve(bundleController, importDescription);
+
+                            if (wire != null)
+                            {
+                                used = dynamicDescription;
+                                wires.add(wire);
+
+                                return wire.getBundleClassLoader().delegateLoadClass(className);
+                            }
+                        }
                     }
                 }
             }
+            finally
+            {
+                if (used != null) assert dynamicImports.remove(used);
+            }
 
-            throw new ClassNotFoundException();
         }
-        finally
-        {
-//            unregister(this);
-        }
+
+        throw new ClassNotFoundException();
     }
 
     protected Class<?> findClass(final ResourceLocation location, final String className) throws ClassNotFoundException
@@ -382,20 +388,5 @@ public class BundleClassLoader extends NamedClassLoader
     private boolean isSealed(Attributes packageAttributes, Attributes mainAttributes)
     {
         return "true".equalsIgnoreCase(getAttribute(Attributes.Name.SEALED, packageAttributes, mainAttributes));
-    }
-
-    private static boolean inSet(BundleClassLoader bundleClassLoader)
-    {
-        return LOADER_VISITED.get().contains(bundleClassLoader);
-    }
-
-    private static void register(BundleClassLoader bundleClassLoader)
-    {
-        LOADER_VISITED.get().add(bundleClassLoader);
-    }
-
-    private static void unregister(BundleClassLoader bundleClassLoader)
-    {
-        LOADER_VISITED.get().remove(bundleClassLoader);
     }
 }
