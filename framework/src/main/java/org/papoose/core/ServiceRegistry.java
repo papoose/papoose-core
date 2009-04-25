@@ -85,7 +85,16 @@ public class ServiceRegistry
     {
         synchronized (lock)
         {
-            return serviceEntries.get(serviceId).getBundle();
+            ServiceEntry entry = serviceEntries.get(serviceId);
+
+            if (entry != null)
+            {
+                return entry.getBundle();
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 

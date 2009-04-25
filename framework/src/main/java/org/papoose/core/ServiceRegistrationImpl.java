@@ -49,11 +49,17 @@ public final class ServiceRegistrationImpl implements ServiceRegistration
         this.serviceRegistry = new WeakReference<ServiceRegistry>(serviceRegistry);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public ServiceReference getReference()
     {
         return new ServiceReferenceImpl();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setProperties(Dictionary properties)
     {
         ServiceRegistry pinnedRegistry = serviceRegistry.get();
@@ -94,6 +100,9 @@ public final class ServiceRegistrationImpl implements ServiceRegistration
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void unregister()
     {
         ServiceRegistry pinnedRegistry = serviceRegistry.get();
@@ -104,11 +113,17 @@ public final class ServiceRegistrationImpl implements ServiceRegistration
 
     public final class ServiceReferenceImpl implements ServiceReference
     {
+        /**
+         * {@inheritDoc}
+         */
         public Object getProperty(String key)
         {
             return properties.get(key);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public String[] getPropertyKeys()
         {
             List<String> keys = new ArrayList<String>();
@@ -119,6 +134,9 @@ public final class ServiceRegistrationImpl implements ServiceRegistration
             return keys.toArray(new String[keys.size()]);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public Bundle getBundle()
         {
             ServiceRegistry pinnedRegistry = serviceRegistry.get();
@@ -127,6 +145,9 @@ public final class ServiceRegistrationImpl implements ServiceRegistration
             return pinnedRegistry.getBundle(serviceId);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public Bundle[] getUsingBundles()
         {
             ServiceRegistry pinnedRegistry = serviceRegistry.get();
@@ -135,6 +156,9 @@ public final class ServiceRegistrationImpl implements ServiceRegistration
             return pinnedRegistry.getUsingBundles(serviceId);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public boolean isAssignableTo(Bundle bundle, String className)
         {
             ServiceRegistry pinnedRegistry = serviceRegistry.get();
