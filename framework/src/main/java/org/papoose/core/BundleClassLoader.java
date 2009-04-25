@@ -26,9 +26,9 @@ import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -131,6 +131,8 @@ public class BundleClassLoader extends NamedClassLoader
     public URL getResource(String resourceName)
     {
         ResourceHandle handle;
+
+        if (resourceName.startsWith("/")) resourceName = resourceName.substring(1, resourceName.length());
 
         for (ResourceLocation location : boundClassPath)
         {
