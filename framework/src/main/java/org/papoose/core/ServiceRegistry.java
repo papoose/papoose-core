@@ -488,6 +488,8 @@ public class ServiceRegistry
             oldEntry = removing.get();
             removing.set(entry = serviceEntries.get(serviceId));
 
+            if (entry == null) throw new IllegalStateException("Service has already be unregistered");
+
             serviceEntries.remove(serviceId);
         }
 
