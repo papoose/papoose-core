@@ -185,27 +185,36 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         while (entries.hasMoreElements())
         {
             ZipEntry entry = (ZipEntry) entries.nextElement();
-            String name = entry.getName();
-            if (name.startsWith(path) && name.length() != path.length())
+            String entryName = entry.getName();
+            if (entryName.startsWith(path) && entryName.length() != path.length())
             {
                 int count = 0;
-                name = name.substring(path.length());
-                for (int i = 0; i < name.length(); i++) if (name.charAt(i) == '/') count++;
+                entryName = entryName.substring(path.length());
+                for (int i = 0; i < entryName.length(); i++) if (entryName.charAt(i) == '/') count++;
 
                 if (!entry.isDirectory())
                 {
-                    if (count == 0 && Util.match(targets, name))
+                    if (count == 0 && Util.match(targets, entryName))
                     {
                         result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), entry.getName(), getGeneration()));
                     }
-                    else if (recurse && Util.match(targets, name.substring(name.lastIndexOf('/') + 1)))
+                    else if (recurse && Util.match(targets, entryName.substring(entryName.lastIndexOf('/') + 1)))
                     {
                         result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), entry.getName(), getGeneration()));
                     }
                 }
-                else if (includeDirectory && (recurse || count <= 1) && Util.match(targets, name.substring(0, Math.max(0, name.length() - 1))))
+                else if (includeDirectory)
                 {
-                    result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), entry.getName(), getGeneration()));
+                    entryName = entryName.substring(0, entryName.length() - 1);
+
+                    if (count == 0 && Util.match(targets, entryName))
+                    {
+                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), entry.getName(), getGeneration()));
+                    }
+                    else if ((recurse || count <= 1) && Util.match(targets, entryName.substring(entryName.lastIndexOf('/') + 1)))
+                    {
+                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), entry.getName(), getGeneration()));
+                    }
                 }
             }
         }
@@ -292,12 +301,19 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
 
         public ResourceHandle getResourceHandle(String resourceName)
         {
+            NonCachingArchiveStore archiveStore = NonCachingArchiveStore.this;
+
+            if (resourceName.length() == 0)
+            {
+                return new BundleRootResourceHandle(UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), path + "/", getGeneration(), location));
+            }
+
             ZipEntry entry = archive.getEntry(path + resourceName);
             if (entry != null)
             {
-                NonCachingArchiveStore archiveStore = NonCachingArchiveStore.this;
                 return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), path + "/" + entry.getName(), getGeneration(), location));
             }
+
             return null;
         }
 
@@ -328,6 +344,34 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             public InputStream getInputStream() throws IOException { return archive.getInputStream(entry); }
 
             public int getContentLength() { return (int) entry.getSize(); }
+        }
+
+        private class BundleRootResourceHandle extends AbstractResourceHandle
+        {
+            private final URL url;
+
+            public BundleRootResourceHandle(URL url)
+            {
+                this.url = url;
+            }
+
+            public String getName() { return "/"; }
+
+            public URL getUrl() { return url; }
+
+            public boolean isDirectory() { return true; }
+
+            public URL getCodeSourceUrl() { return codeSource; }
+
+            public InputStream getInputStream() throws IOException
+            {
+                return new InputStream()
+                {
+                    public int read() throws IOException { return -1; }
+                };
+            }
+
+            public int getContentLength() { return 0; }
         }
     }
 
