@@ -598,16 +598,14 @@ public class BundleController implements Bundle
 
             String path = "";
             String file = name;
-            String[] parts = name.split("/");
-            if (parts.length > 1)
+
+            if (name.contains("/"))
             {
-                StringBuilder builder = new StringBuilder(parts[0]);
-                for (int i = 1; i < parts.length - 1; i++) builder.append("/").append(parts[i]);
-                path = builder.toString();
-                file = parts[parts.length - 1];
+                path = name.substring(0, name.lastIndexOf('/'));
+                file = name.substring(name.lastIndexOf('/') + 1, name.length());
             }
 
-            Enumeration<URL> entries = getCurrentGeneration().getArchiveStore().findEntries(path, file, false, false);
+            Enumeration<URL> entries = getCurrentGeneration().getArchiveStore().findEntries(path, file, true, false);
 
             if (entries != null && entries.hasMoreElements())
             {

@@ -169,6 +169,11 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         if (!path.endsWith("/") && path.length() > 1) path += "/";
         if (filePattern == null) filePattern = "*";
 
+        if (path.length() == 0 && filePattern.length() == 0)
+        {
+            return Collections.enumeration(Collections.<URL>singleton(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), "", getGeneration())));
+        }
+
         Object targets;
         try
         {
@@ -186,7 +191,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         {
             ZipEntry entry = (ZipEntry) entries.nextElement();
             String entryName = entry.getName();
-            if (entryName.startsWith(path) && entryName.length() != path.length())
+            if (entryName.startsWith(path) && (entryName.length() != path.length() || filePattern.length() == 0))
             {
                 int count = 0;
                 entryName = entryName.substring(path.length());
@@ -205,7 +210,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
                 }
                 else if (includeDirectory)
                 {
-                    entryName = entryName.substring(0, entryName.length() - 1);
+                    entryName = entryName.substring(0, Math.max(0, entryName.length() - 1));
 
                     if (count == 0 && Util.match(targets, entryName))
                     {
@@ -455,7 +460,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             outputStream.close();
 
             File archiveDir = new File(bundleRoot, ARCHIVE_NAME);
-            archiveDir.mkdirs();
+            assert archiveDir.mkdirs();
 
             JarInputStream jarInputStream = new JarInputStream(new FileInputStream(archiveFile));
 

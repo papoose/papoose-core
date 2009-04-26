@@ -164,6 +164,12 @@ public class BundleContextImplTest
 
             Assert.assertEquals("<anvil>How now brown cow.</anvil>", line);
 
+            url = bundle.getEntry("/");
+            Assert.assertNotNull(url);
+
+            url = bundle.getEntry("META-INF/");
+            Assert.assertNotNull(url);
+
             papoose.stop();
 
             fileStore.removeBundleStore(1);
