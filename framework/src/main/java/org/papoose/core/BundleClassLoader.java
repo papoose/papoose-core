@@ -130,9 +130,9 @@ public class BundleClassLoader extends NamedClassLoader
 
     public URL getResource(String resourceName)
     {
-        ResourceHandle handle;
-
         if (resourceName.startsWith("/")) resourceName = resourceName.substring(1, resourceName.length());
+
+        ResourceHandle handle;
 
         for (ResourceLocation location : boundClassPath)
         {
@@ -144,6 +144,8 @@ public class BundleClassLoader extends NamedClassLoader
 
     public Enumeration<URL> findResources(String resourceName) throws IOException
     {
+        if (resourceName.startsWith("/")) resourceName = resourceName.substring(1, resourceName.length());
+
         List<URL> urls = new ArrayList<URL>();
         ResourceHandle handle;
 
