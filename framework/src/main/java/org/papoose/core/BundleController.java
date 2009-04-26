@@ -609,7 +609,7 @@ public class BundleController implements Bundle
 
             Enumeration<URL> entries = getCurrentGeneration().getArchiveStore().findEntries(path, file, false, false);
 
-            if (entries.hasMoreElements())
+            if (entries != null && entries.hasMoreElements())
             {
                 return entries.nextElement();
             }
