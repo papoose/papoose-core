@@ -182,7 +182,7 @@ public final class Papoose
 
         if (frameworkName == null)
         {
-            this.frameworkName = "Papoose." + frameworkId;
+            this.frameworkName = "org.papoose.framework-" + frameworkId;
         }
         else
         {
