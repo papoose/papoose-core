@@ -17,6 +17,8 @@
 package org.papoose.core;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -163,6 +165,8 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
                 LOGGER.warning("Bundle does not belong to the Papoose framework");
             }
 
+            final List<BundleController> bundles = Collections.unmodifiableList(Arrays.asList(framework.getBundleManager().getBundles()));
+
             for (BundleController bundleController : collectedBundles)
             {
                 for (Generation generation : bundleController.getGenerations().values())
@@ -185,12 +189,23 @@ public class PackageAdminImpl implements PackageAdmin, SynchronousBundleListener
 
                                     if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Searching package " + packageName);
 
-                                    for (Wire wire : classLoader.getWires())
+                                    for (BundleController controller : bundles)
                                     {
-                                        if (packageName.equals(wire.getPackageName()))
+                                        Generation g = controller.getCurrentGeneration();
+
+                                        if (controller != bundleController && g instanceof BundleGeneration)
                                         {
-                                            importers.add(wire.getBundleGeneration().getBundleController());
-                                            if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Added bundle " + wire.getBundleGeneration().getBundleController());
+                                            BundleGeneration bg = (BundleGeneration) g;
+                                            BundleClassLoader cl = bg.getClassLoader();
+
+                                            for (Wire wire : cl.getWires())
+                                            {
+                                                if (packageName.equals(wire.getPackageName()) && wire.getBundleGeneration() == bundleGeneration)
+                                                {
+                                                    importers.add(controller);
+                                                    if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Added bundle " + controller);
+                                                }
+                                            }
                                         }
                                     }
 

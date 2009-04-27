@@ -37,4 +37,14 @@ public class Handler extends URLStreamHandler
     {
         return UrlUtils.allocateCodesourceConnection(url);
     }
+
+    @Override
+    protected int hashCode(URL url)
+    {
+        int hash = super.hashCode(url);
+
+        hash += url.getUserInfo().hashCode();
+
+        return hash;
+    }
 }

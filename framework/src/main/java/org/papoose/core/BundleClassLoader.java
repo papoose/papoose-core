@@ -130,31 +130,120 @@ public class BundleClassLoader extends NamedClassLoader
 
     public URL getResource(String resourceName)
     {
-        if (resourceName.startsWith("/")) resourceName = resourceName.substring(1, resourceName.length());
-
-        ResourceHandle handle;
-
-        for (ResourceLocation location : boundClassPath)
+        try
         {
-            if ((handle = location.getResourceHandle(resourceName)) != null) return handle.getUrl();
-        }
+            Enumeration<URL> enumeration = huntResources(resourceName, true);
 
-        return null;
+            if (enumeration.hasMoreElements()) return enumeration.nextElement();
+            return null;
+        }
+        catch (IOException ioe)
+        {
+            return null;
+        }
     }
 
-    public Enumeration<URL> findResources(String resourceName) throws IOException
+    public Enumeration<URL> findResources(String resourceName)
+    {
+        try
+        {
+            return huntResources(resourceName, false);
+        }
+        catch (IOException ioe)
+        {
+            return Collections.enumeration(Collections.<URL>emptySet());
+        }
+    }
+
+    protected Enumeration<URL> huntResources(String resourceName, boolean stopAtFirst) throws IOException
     {
         if (resourceName.startsWith("/")) resourceName = resourceName.substring(1, resourceName.length());
 
-        List<URL> urls = new ArrayList<URL>();
-        ResourceHandle handle;
+        if (resourceName.startsWith("java/")) return getParent().getResources(resourceName);
 
-        for (ResourceLocation location : boundClassPath)
+        String packageName = resourceName.substring(0, Math.max(0, resourceName.lastIndexOf('/')));
+
+        for (String delegate : framework.getBootDelegates())
         {
-            if ((handle = location.getResourceHandle(resourceName)) != null) urls.add(handle.getUrl());
+            delegate = delegate.replace(".", "/");
+
+            if ((delegate.endsWith("/") && packageName.regionMatches(0, delegate, 0, delegate.length() - 1)) || packageName.equals(delegate))
+            {
+                return getParent().getResources(resourceName);
+            }
         }
 
-        return Collections.enumeration(urls);
+        return delegateHuntResources(resourceName, stopAtFirst);
+    }
+
+    private Enumeration<URL> delegateHuntResources(String resourceName, boolean stopAtFirst)
+    {
+        String packageName = resourceName.substring(0, Math.max(0, resourceName.lastIndexOf('/')));
+
+        for (Wire wire : wires)
+        {
+            if (wire.validFor(resourceName)) return wire.getBundleClassLoader().delegateHuntResources(resourceName, stopAtFirst);
+        }
+
+        for (Wire wire : requiredBundles)
+        {
+            if (wire.validFor(resourceName)) return wire.getBundleClassLoader().delegateHuntResources(resourceName, stopAtFirst);
+        }
+
+        List<URL> urls = new ArrayList<URL>();
+        for (ResourceLocation location : boundClassPath)
+        {
+            ResourceHandle resourceHandle = location.getResourceHandle(resourceName);
+            if (resourceHandle != null)
+            {
+                urls.add(resourceHandle.getUrl());
+            }
+        }
+        if (!urls.isEmpty()) return Collections.enumeration(urls);
+
+
+        for (String exportedPackage : exportedPackages)
+        {
+            if (exportedPackage.equals(packageName)) return Collections.enumeration(Collections.<URL>emptySet());
+        }
+
+        synchronized (dynamicImports)
+        {
+            DynamicDescription used = null;
+
+            try
+            {
+                for (DynamicDescription dynamicDescription : dynamicImports)
+                {
+                    for (String packagePattern : dynamicDescription.getPackagePatterns())
+                    {
+                        if (packagePattern.length() == 0
+                            || (packagePattern.endsWith("/") && packageName.startsWith(packagePattern))
+                            || packageName.equals(packagePattern))
+                        {
+                            BundleController bundleController = bundle.getBundleController();
+                            ImportDescription importDescription = new ImportDescription(Collections.singleton(packageName), dynamicDescription.getParameters());
+
+                            Wire wire = bundleController.getFramework().getBundleManager().resolve(bundleController, importDescription);
+
+                            if (wire != null)
+                            {
+                                used = dynamicDescription;
+                                wires.add(wire);
+
+                                return wire.getBundleClassLoader().delegateHuntResources(resourceName, stopAtFirst);
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                if (used != null) assert dynamicImports.remove(used);
+            }
+        }
+
+        return Collections.enumeration(Collections.<URL>emptySet());
     }
 
     protected String findLibrary(String libname)
@@ -179,16 +268,17 @@ public class BundleClassLoader extends NamedClassLoader
 
         String packageName = className.substring(0, Math.max(0, className.lastIndexOf('.')));
 
+        String wireCheck = className.replace('.', '/');
         for (Wire wire : wires)
         {
-            if (wire.validFor(className)) return wire.getBundleClassLoader().delegateLoadClass(className);
+            if (wire.validFor(wireCheck)) return wire.getBundleClassLoader().delegateLoadClass(className);
         }
 
         for (Wire wire : requiredBundles)
         {
             try
             {
-                if (wire.validFor(className)) return wire.getBundleClassLoader().delegateLoadClass(className);
+                if (wire.validFor(wireCheck)) return wire.getBundleClassLoader().delegateLoadClass(className);
             }
             catch (ClassNotFoundException doNothing)
             {
@@ -245,7 +335,6 @@ public class BundleClassLoader extends NamedClassLoader
             {
                 if (used != null) assert dynamicImports.remove(used);
             }
-
         }
 
         throw new ClassNotFoundException();

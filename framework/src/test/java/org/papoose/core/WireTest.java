@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.net.URL;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -47,7 +48,7 @@ public class WireTest
     private Papoose mockFramework;
 
     @Test
-    public void testMatch()
+    public void testMatch() throws Exception
     {
         Set<String> packages = new HashSet<String>();
         packages.add("com.acme");
@@ -57,83 +58,83 @@ public class WireTest
         BundleController mockBundleController = new BundleController(mockFramework, new MockBundleStore(1, "mock:location"));
         Wire test = new Wire("com.acme", description, new BundleGeneration(mockBundleController, new MockArchiveStore()));
 
-        Assert.assertTrue(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertTrue(test.validFor("com.acme.Anvil"));
+        Assert.assertTrue(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops/Dynamite.class"));
+        Assert.assertTrue(test.validFor("com/acme/Anvil.class"));
 
-        description.setInclude(Collections.singletonList(new String[]{ "Dynamite" }));
+        description.setInclude(Collections.singletonList(new String[]{ "Dynamite.class" }));
 
-        Assert.assertTrue(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.Anvil"));
+        Assert.assertTrue(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/Anvil.class"));
 
         description.setInclude(Collections.singletonList(new String[]{ "Dynam", "" }));
 
-        Assert.assertTrue(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.Anvil"));
+        Assert.assertTrue(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/Anvil.class"));
 
         description.setInclude(Collections.singletonList(new String[]{ "", "nam", "" }));
 
-        Assert.assertTrue(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.Anvil"));
+        Assert.assertTrue(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/Anvil.class"));
 
         description.setInclude(Collections.<String[]>emptyList());
-        description.setExclude(Collections.singletonList(new String[]{ "Dynamite" }));
+        description.setExclude(Collections.singletonList(new String[]{ "Dynamite.class" }));
 
-        Assert.assertFalse(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertTrue(test.validFor("com.acme.Anvil"));
+        Assert.assertFalse(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops/Dynamite.class"));
+        Assert.assertTrue(test.validFor("com/acme/Anvil.class"));
 
         description.setExclude(Collections.singletonList(new String[]{ "Dynam", "" }));
 
-        Assert.assertFalse(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertTrue(test.validFor("com.acme.Anvil"));
+        Assert.assertFalse(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops/Dynamite.class"));
+        Assert.assertTrue(test.validFor("com/acme/Anvil.class"));
 
         description.setExclude(Collections.singletonList(new String[]{ "", "nam", "" }));
 
-        Assert.assertFalse(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertTrue(test.validFor("com.acme.Anvil"));
+        Assert.assertFalse(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops/Dynamite.class"));
+        Assert.assertTrue(test.validFor("com/acme/Anvil.class"));
 
         description.setInclude(Collections.singletonList(new String[]{ "Dynamite" }));
 
-        Assert.assertFalse(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.Anvil"));
+        Assert.assertFalse(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/Anvil.class"));
 
         description.setInclude(Collections.singletonList(new String[]{ "Dynam", "" }));
 
-        Assert.assertFalse(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.Anvil"));
+        Assert.assertFalse(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/Anvil.class"));
 
         description.setInclude(Collections.singletonList(new String[]{ "", "nam", "" }));
 
-        Assert.assertFalse(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.Anvil"));
+        Assert.assertFalse(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops.Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/Anvil.class"));
 
         List<String[]> included = new ArrayList<String[]>();
         included.add(new String[]{ "", "nam", "" });
         included.add(new String[]{ "", "vi", "" });
         description.setInclude(included);
 
-        Assert.assertFalse(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertTrue(test.validFor("com.acme.Anvil"));
+        Assert.assertFalse(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops/Dynamite.class"));
+        Assert.assertTrue(test.validFor("com/acme/Anvil.class"));
 
         List<String[]> excluded = new ArrayList<String[]>();
         excluded.add(new String[]{ "", "nam", "" });
         excluded.add(new String[]{ "", "vi", "" });
         description.setExclude(excluded);
 
-        Assert.assertFalse(test.validFor("com.acme.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.oops.Dynamite"));
-        Assert.assertFalse(test.validFor("com.acme.Anvil"));
-        Assert.assertFalse(test.validFor("com.acme.Spring"));
+        Assert.assertFalse(test.validFor("com/acme/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/oops/Dynamite.class"));
+        Assert.assertFalse(test.validFor("com/acme/Anvil.class"));
+        Assert.assertFalse(test.validFor("com/acme/Spring.class"));
     }
 
     @Before

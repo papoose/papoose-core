@@ -29,12 +29,22 @@ import org.papoose.core.UrlUtils;
  * been registered w/ URL.
  *
  * @version $Revision$ $Date$
- * @see org.papoose.core.framework.ServiceURLStreamHandlerFactory
+ * @see org.papoose.core.ServiceURLStreamHandlerFactory
  */
 public class Handler extends URLStreamHandler
 {
     protected URLConnection openConnection(URL url) throws IOException
     {
         return UrlUtils.allocatEntryConnection(url);
+    }
+
+    @Override
+    protected int hashCode(URL url)
+    {
+        int hash = super.hashCode(url);
+
+        hash += url.getUserInfo().hashCode();
+
+        return hash;
     }
 }

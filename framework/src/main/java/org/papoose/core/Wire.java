@@ -79,10 +79,10 @@ public class Wire
      */
     public boolean validFor(String resource)
     {
-        int packageIndex = resource.lastIndexOf('.');
+        int packageIndex = resource.lastIndexOf('/');
         packageIndex = (packageIndex < 0 ? 0 : packageIndex);
-        String packageName = resource.substring(0, packageIndex);
-        resource = resource.substring(packageIndex + 1);
+        String packageName = resource.substring(0, packageIndex).replace('/', '.');
+        resource = resource.substring(Math.min(resource.length(), packageIndex + 1));
 
         if (this.packageName.equals(packageName))
         {

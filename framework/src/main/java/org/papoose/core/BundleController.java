@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
@@ -527,7 +528,9 @@ public class BundleController implements Bundle
                         bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
                     }
 
-                    return bundleGeneration.getClassLoader().findResources(name);
+                    Enumeration enumeration =  bundleGeneration.getClassLoader().findResources(name);
+
+                    return enumeration;
                 }
             }
             catch (InterruptedException ie)
