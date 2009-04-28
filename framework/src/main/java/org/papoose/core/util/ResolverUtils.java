@@ -136,14 +136,18 @@ public class ResolverUtils
 
                 if (requireDescription.getSymbolName().equals(bundleGeneration.getSymbolicName()))
                 {
-                    if (prameters.containsKey(Constants.VERSION_ATTRIBUTE))
+                    if (prameters.containsKey(Constants.BUNDLE_VERSION_ATTRIBUTE))
                     {
-                        VersionRange range = (VersionRange) prameters.get(Constants.VERSION_ATTRIBUTE);
+                        VersionRange range = (VersionRange) prameters.get(Constants.BUNDLE_VERSION_ATTRIBUTE);
 
                         if (range.includes(bundleGeneration.getVersion()))
                         {
                             result.add(candidate);
                         }
+                    }
+                    else
+                    {
+                        result.add(candidate);
                     }
                 }
             }
@@ -158,14 +162,18 @@ public class ResolverUtils
 
                 if (requireDescription.getSymbolName().equals(bundleGeneration.getSymbolicName()))
                 {
-                    if (prameters.containsKey(Constants.VERSION_ATTRIBUTE))
+                    if (prameters.containsKey(Constants.BUNDLE_VERSION_ATTRIBUTE))
                     {
-                        VersionRange range = (VersionRange) prameters.get(Constants.VERSION_ATTRIBUTE);
+                        VersionRange range = (VersionRange) prameters.get(Constants.BUNDLE_VERSION_ATTRIBUTE);
 
                         if (range.includes(bundleGeneration.getVersion()))
                         {
                             result.add(candidate);
                         }
+                    }
+                    else
+                    {
+                        result.add(candidate);
                     }
                 }
             }
@@ -188,14 +196,18 @@ public class ResolverUtils
 
                 if (requireDescription.getSymbolName().equals(bundleGeneration.getSymbolicName()))
                 {
-                    if (prameters.containsKey(Constants.VERSION_ATTRIBUTE))
+                    if (prameters.containsKey(Constants.BUNDLE_VERSION_ATTRIBUTE))
                     {
-                        VersionRange range = (VersionRange) prameters.get(Constants.VERSION_ATTRIBUTE);
+                        VersionRange range = (VersionRange) prameters.get(Constants.BUNDLE_VERSION_ATTRIBUTE);
 
                         if (range.includes(bundleGeneration.getVersion()))
                         {
                             result.add(candidate);
                         }
+                    }
+                    else
+                    {
+                        result.add(candidate);
                     }
                 }
             }
@@ -206,14 +218,18 @@ public class ResolverUtils
 
                 if (requireDescription.getSymbolName().equals(bundleGeneration.getSymbolicName()))
                 {
-                    if (prameters.containsKey(Constants.VERSION_ATTRIBUTE))
+                    if (prameters.containsKey(Constants.BUNDLE_VERSION_ATTRIBUTE))
                     {
-                        VersionRange range = (VersionRange) prameters.get(Constants.VERSION_ATTRIBUTE);
+                        VersionRange range = (VersionRange) prameters.get(Constants.BUNDLE_VERSION_ATTRIBUTE);
 
                         if (range.includes(bundleGeneration.getVersion()))
                         {
                             result.add(candidate);
                         }
+                    }
+                    else
+                    {
+                        result.add(candidate);
                     }
                 }
             }

@@ -557,7 +557,7 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 
     protected static List<RequireDescription> obtainBundleRequireBundle(Attributes headers) throws BundleException
     {
-        List<RequireDescription> result = Collections.emptyList();
+        List<RequireDescription> result = new ArrayList<RequireDescription>();
 
         if (headers.containsKey(Constants.REQUIRE_BUNDLE))
         {

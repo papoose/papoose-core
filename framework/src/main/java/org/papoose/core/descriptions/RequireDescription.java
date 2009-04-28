@@ -23,6 +23,8 @@ import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Version;
 
 import org.papoose.core.VersionRange;
+import org.papoose.core.Generation;
+import org.papoose.core.util.ToStringCreator;
 
 
 /**
@@ -71,5 +73,17 @@ public class RequireDescription
     void setResolution(Resolution resolution)
     {
         this.resolution = resolution;
+    }
+
+    @Override
+    public String toString()
+    {
+        ToStringCreator creator = new ToStringCreator(this);
+
+        creator.append("symbolicName", symbolName);
+        creator.append("visibility", visibility);
+        creator.append("resolution", resolution);
+
+        return creator.toString();
     }
 }

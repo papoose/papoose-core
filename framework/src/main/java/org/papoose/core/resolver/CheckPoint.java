@@ -29,6 +29,7 @@ import org.papoose.core.Wire;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.RequireDescription;
+import org.papoose.core.descriptions.Visibility;
 import org.papoose.core.util.ToStringCreator;
 
 
@@ -178,18 +179,40 @@ public class CheckPoint
         }
     }
 
-    public CheckPoint newCheckPoint(Resolved resolvedHost, RequireDescription requiredBundle)
+    public CheckPoint newCheckPointUsed(Resolved resolvedHost, RequireDescription requireDescription) throws IncompatibleException
     {
         CheckPoint checkPoint = new CheckPoint(this);
 
-        return checkPoint;  //Todo: change body of created methods use File | Settings | File Templates.
+        checkPoint.getResolving().addCandidateRequiredBundle(new RequiredBundleWrapper(resolvedHost, requireDescription.getVisibility() == Visibility.REEXPORT));
+
+        return checkPoint;
     }
 
-    public CheckPoint newCheckPoint(BoundHost bound, RequireDescription requiredBundle)
+    public CheckPoint newCheckPointUnused(Resolved resolvedHost, RequireDescription requireDescription) throws IncompatibleException
     {
         CheckPoint checkPoint = new CheckPoint(this);
 
-        return checkPoint;  //Todo: change body of created methods use File | Settings | File Templates.
+        checkPoint.getResolving().addCandidateRequiredBundle(new RequiredBundleWrapper(resolvedHost, requireDescription.getVisibility() == Visibility.REEXPORT));
+        assert checkPoint.getUsed().add(resolvedHost);
+        assert checkPoint.getUnused().remove(resolvedHost);
+
+        return checkPoint;
+    }
+
+    public CheckPoint newCheckPoint(BoundHost bound, RequireDescription requireDescription) throws IncompatibleException
+    {
+        CheckPoint checkPoint = new CheckPoint(this);
+
+        for (CandidateBundle candidateBundle : checkPoint.getUsed())
+        {
+            if (candidateBundle.equals(bound))
+            {
+                BoundHost boundHost = (BoundHost) candidateBundle;
+                boundHost.addCandidateRequiredBundle(new RequiredBundleWrapper(boundHost, requireDescription.getVisibility() == Visibility.REEXPORT));
+            }
+        }
+
+        return checkPoint;
     }
 
     public CheckPoint newCheckPoint(UnBound unBound, RequireDescription requiredBundle)

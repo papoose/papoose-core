@@ -228,7 +228,7 @@ public class DefaultResolver implements Resolver
 
             CheckPoint result = doResolve(new CheckPoint(generation, canonicalSet));
 
-            if (result == null) throw new BundleException("No consistent solution set found");
+            if (result == null) throw new BundleException("No consistent solution set found for " + generation.getBundleController());
 
             Set<Solution> solutions = extractSolutions(result);
 
@@ -312,7 +312,6 @@ public class DefaultResolver implements Resolver
      *
      * @param checkPoint current state in search space
      * @return a checkpoint with a set of solutions
-     * @throws BundleException if there is no solution
      */
     private CheckPoint doResolve(CheckPoint checkPoint)
     {
@@ -322,7 +321,7 @@ public class DefaultResolver implements Resolver
 
         List<UnBound> unResolved = checkPoint.getUnResolved();
 
-        CheckPoint result = null;
+        CheckPoint result = checkPoint;
         if (!unResolved.isEmpty())
         {
             UnBound unbound = unResolved.remove(0);
@@ -401,7 +400,7 @@ public class DefaultResolver implements Resolver
             {
             }
 
-            result.resolveCompleted();
+            if (result != null) result.resolveCompleted();
         }
 
         LOGGER.exiting(CLASS_NAME, "doResolve", result);
@@ -430,19 +429,26 @@ public class DefaultResolver implements Resolver
 
     private CheckPoint resolveRequiredBundles(CheckPoint checkPoint)
     {
-        List<RequireDescription> requiredBundles = ((BoundHost) checkPoint.getResolving()).getRequireDescriptions();
+        List<RequireDescription> requireDescriptions = checkPoint.getResolving().getRequireDescriptions();
 
-        if (!requiredBundles.isEmpty())
+        if (!requireDescriptions.isEmpty())
         {
             CheckPoint result = null;
-            RequireDescription requiredBundle = requiredBundles.remove(0);
+            RequireDescription requireDescription = requireDescriptions.remove(0);
 
-            for (CandidateBundle candidate : ResolverUtils.collectEligibleBundlesFromUsed(requiredBundle, checkPoint))
+            for (CandidateBundle candidate : ResolverUtils.collectEligibleBundlesFromUsed(requireDescription, checkPoint))
             {
                 if (candidate instanceof Resolved)
                 {
-                    Resolved resolvedHost = (Resolved) candidate;
-                    result = doResolve(checkPoint.newCheckPoint(resolvedHost, requiredBundle));
+                    try
+                    {
+                        Resolved resolvedHost = (Resolved) candidate;
+                        result = doResolve(checkPoint.newCheckPointUsed(resolvedHost, requireDescription));
+                    }
+                    catch (IncompatibleException ie)
+                    {
+                        LOGGER.log(Level.FINEST, "Incompatible collection of host and required bundle", ie);
+                    }
                 }
                 else if (candidate instanceof UnBound)
                 {
@@ -450,24 +456,38 @@ public class DefaultResolver implements Resolver
                 }
                 else
                 {
-                    BoundHost bound = (BoundHost) candidate;
-                    result = doResolve(checkPoint.newCheckPoint(bound, requiredBundle));
+                    try
+                    {
+                        BoundHost bound = (BoundHost) candidate;
+                        result = doResolve(checkPoint.newCheckPoint(bound, requireDescription));
+                    }
+                    catch (IncompatibleException ie)
+                    {
+                        LOGGER.log(Level.FINEST, "Incompatible collection of host and required bundle", ie);
+                    }
                 }
 
                 if (result != null) return result;
             }
 
-            for (Candidate candidate : ResolverUtils.collectEligibleBundlesFromUnused(requiredBundle, checkPoint))
+            for (Candidate candidate : ResolverUtils.collectEligibleBundlesFromUnused(requireDescription, checkPoint))
             {
                 if (candidate instanceof Resolved)
                 {
-                    Resolved resolvedHost = (Resolved) candidate;
-                    result = doResolve(checkPoint.newCheckPoint(resolvedHost, requiredBundle));
+                    try
+                    {
+                        Resolved resolvedHost = (Resolved) candidate;
+                        result = doResolve(checkPoint.newCheckPointUnused(resolvedHost, requireDescription));
+                    }
+                    catch (IncompatibleException ie)
+                    {
+                        LOGGER.log(Level.FINEST, "Incompatible collection of host and required bundle", ie);
+                    }
                 }
                 else if (candidate instanceof UnBound)
                 {
                     UnBound unBound = (UnBound) candidate;
-                    result = doResolve(checkPoint.newCheckPoint(unBound, requiredBundle));
+                    result = doResolve(checkPoint.newCheckPoint(unBound, requireDescription));
                 }
                 else
                 {
@@ -477,7 +497,7 @@ public class DefaultResolver implements Resolver
                 if (result != null) return result;
             }
 
-            if (requiredBundle.getResolution() == Resolution.MANDATORY) return null;
+            if (requireDescription.getResolution() == Resolution.MANDATORY) return null;
         }
 
         return resolveWires(checkPoint);
