@@ -17,7 +17,6 @@
 package org.papoose.core;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -40,9 +39,9 @@ import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServicePermission;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
-
 import org.papoose.core.filter.Expr;
 import org.papoose.core.util.SecurityUtils;
+
 
 /**
  * @version $Revision$ $Date$
@@ -192,7 +191,7 @@ public class ServiceRegistry
         return bundleGeneration.getClassLoader();
     }
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({"unchecked"})
     public ServiceRegistration registerService(BundleController bundleController, String[] clazzes, Object service, Dictionary properties)
     {
         ServiceRegistrationImpl serviceRegistration;
@@ -287,7 +286,7 @@ public class ServiceRegistry
                 result.add(reference);
             }
 
-            return result.isEmpty() ? null : result.toArray(new ServiceReference[result.size()]);
+            return sortedReferences(result);
         }
     }
 
@@ -339,8 +338,34 @@ public class ServiceRegistry
                 result.add(reference);
             }
 
-            return result.isEmpty() ? null : result.toArray(new ServiceReference[result.size()]);
+            return sortedReferences(result);
         }
+    }
+
+    private  static ServiceReference[] sortedReferences(List<ServiceReference> references)
+    {
+        if (references.isEmpty()) return null;
+
+        SortedSet<ServiceReference> sorted = new TreeSet<ServiceReference>(new Comparator<ServiceReference>()
+        {
+            public int compare(ServiceReference o1, ServiceReference o2)
+            {
+                Integer ranking1 = (Integer) o1.getProperty(Constants.SERVICE_RANKING);
+                Integer ranking2 = (Integer) o2.getProperty(Constants.SERVICE_RANKING);
+
+                int result = -ranking1.compareTo(ranking2);
+
+                if (result != 0) return result;
+
+                Long id1 = (Long) o1.getProperty(Constants.SERVICE_ID);
+                Long id2 = (Long) o2.getProperty(Constants.SERVICE_ID);
+
+                return id1.compareTo(id2);
+            }
+        });
+        sorted.addAll(references);
+
+        return sorted.toArray(new ServiceReference[sorted.size()]);
     }
 
     public ServiceReference getServiceReference(BundleController bundleController, String clazz)
@@ -353,26 +378,7 @@ public class ServiceRegistry
 
                 if (references == null) return null;
 
-                SortedSet<ServiceReference> sorted = new TreeSet<ServiceReference>(new Comparator<ServiceReference>()
-                {
-                    public int compare(ServiceReference o1, ServiceReference o2)
-                    {
-                        Integer ranking1 = (Integer) o1.getProperty(Constants.SERVICE_RANKING);
-                        Integer ranking2 = (Integer) o2.getProperty(Constants.SERVICE_RANKING);
-
-                        int result = -ranking1.compareTo(ranking2);
-
-                        if (result != 0) return result;
-
-                        Long id1 = (Long) o1.getProperty(Constants.SERVICE_ID);
-                        Long id2 = (Long) o2.getProperty(Constants.SERVICE_ID);
-
-                        return id1.compareTo(id2);
-                    }
-                });
-                sorted.addAll(Arrays.asList(references));
-
-                return sorted.first();
+                return references[0];
             }
             catch (InvalidSyntaxException neverHappens)
             {
@@ -436,7 +442,7 @@ public class ServiceRegistry
     {
         synchronized (lock)
         {
-            @SuppressWarnings({ "SuspiciousMethodCalls" }) ServiceEntry entry = serviceEntries.get(serviceReference.getProperty(Constants.SERVICE_ID));
+            @SuppressWarnings({"SuspiciousMethodCalls"}) ServiceEntry entry = serviceEntries.get(serviceReference.getProperty(Constants.SERVICE_ID));
 
             if (entry == null) return false;
 
