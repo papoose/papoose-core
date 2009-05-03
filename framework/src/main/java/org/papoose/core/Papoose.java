@@ -652,13 +652,6 @@ public final class Papoose
         {
             try
             {
-                /**
-                 * Keep this redundant cast in place.  It's a kludgy workaround due
-                 * to the fact that Equinox bundles v4.0 OSGi R4 spec classes in
-                 * with its framework.  This breaks the Spring OSGi integration
-                 * tests.
-                 */
-                //noinspection RedundantCast
                 Class bootLevelServiceClass = getSystemBundleContext().getBundle().loadClass(bootLevelServiceClassName);
                 Object pojo = bootLevelServiceClass.newInstance();
                 Util.callStart(pojo, this);
