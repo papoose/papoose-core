@@ -270,7 +270,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         ResourceLocation resourceLocation = resourceLocations.get(location);
         ResourceHandle handle = resourceLocation.getResourceHandle(path);
 
-        if (handle == null) throw new IOException("Path  does not correspond to a resource");
+        if (handle == null) throw new IOException("Path does not correspond to a resource");
 
         return handle.getInputStream();
     }
@@ -310,13 +310,25 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
 
             if (resourceName.length() == 0)
             {
-                return new BundleRootResourceHandle(UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), path + "/", getGeneration(), location));
+                return new BundleRootResourceHandle(UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), "/", getGeneration(), location));
             }
 
-            ZipEntry entry = archive.getEntry(path + resourceName);
+            String entryName = path + resourceName;
+            ZipEntry entry = archive.getEntry(entryName);
             if (entry != null)
             {
-                return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), path + "/" + entry.getName(), getGeneration(), location));
+                return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), resourceName, getGeneration(), location));
+            }
+            else if (entryName.endsWith("/"))
+            {
+                Enumeration<JarEntry> enumeration = archive.entries();
+                while (enumeration.hasMoreElements())
+                {
+                    if (enumeration.nextElement().getName().startsWith(entryName))
+                    {
+                        return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), resourceName, getGeneration(), location));
+                    }
+                }
             }
 
             return null;
