@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
@@ -528,7 +527,7 @@ public class BundleController implements Bundle
                         bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
                     }
 
-                    Enumeration enumeration =  bundleGeneration.getClassLoader().findResources(name);
+                    Enumeration enumeration = bundleGeneration.getClassLoader().findResources(name);
 
                     return enumeration;
                 }
@@ -813,11 +812,17 @@ public class BundleController implements Bundle
     {
         if (serviceListener instanceof AllServiceListener)
         {
-            allServiceListeners.add(new ServiceListenerWithFilter(serviceListener, filter));
+            if (!allServiceListeners.add(new ServiceListenerWithFilter(serviceListener, filter)))
+            {
+                LOGGER.warning("Listener collided with previously registered listener with filter " + filter);
+            }
         }
         else
         {
-            serviceListeners.add(new ServiceListenerWithFilter(serviceListener, filter));
+            if (!serviceListeners.add(new ServiceListenerWithFilter(serviceListener, filter)))
+            {
+                LOGGER.warning("Listener collided with previously registered listener with filter " + filter);
+            }
         }
     }
 
@@ -874,6 +879,7 @@ public class BundleController implements Bundle
             if (filter.match(event.getServiceReference())) delegate.serviceChanged(event);
         }
 
+        @Override
         public boolean equals(Object o)
         {
             if (this == o) return true;
@@ -881,9 +887,10 @@ public class BundleController implements Bundle
 
             ServiceListenerWithFilter that = (ServiceListenerWithFilter) o;
 
-            return delegate.equals(that.delegate);
+            return delegate == that.delegate;
         }
 
+        @Override
         public int hashCode()
         {
             return delegate.hashCode();
