@@ -122,9 +122,9 @@ public class MockArchiveStore implements ArchiveStore
         return Collections.emptyList();
     }
 
-    public Set<DynamicDescription> getDynamicDescriptions()
+    public List<DynamicDescription> getDynamicDescriptions()
     {
-        return Collections.emptySet();
+        return Collections.emptyList();
     }
 
     public FragmentDescription getFragmentDescription()

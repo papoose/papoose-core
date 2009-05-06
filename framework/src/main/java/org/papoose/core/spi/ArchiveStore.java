@@ -71,7 +71,7 @@ public interface ArchiveStore extends Comparable
 
     List<RequireDescription> getRequireDescriptions();
 
-    Set<DynamicDescription> getDynamicDescriptions();
+    List<DynamicDescription> getDynamicDescriptions();
 
     FragmentDescription getFragmentDescription();
 

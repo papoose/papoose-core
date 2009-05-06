@@ -64,7 +64,7 @@ public class UrlUtils
         }
         catch (MalformedURLException mue)
         {
-            LOGGER.log(Level.WARNING, "Unable to generate bundle code source URL", mue);
+            LOGGER.log(Level.WARNING, "Unable to generate bundle code source URL codesource://" + bundleId + "@" + frameworkName, mue);
         }
         return result;
     }

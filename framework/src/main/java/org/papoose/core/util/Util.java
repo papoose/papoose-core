@@ -312,6 +312,16 @@ public final class Util
 
             String token = state.eatToken();
 
+            if ("*".equals(token))
+            {
+                token = "";
+            }
+            else if (token.endsWith(".*"))
+            {
+                token = token.substring(0, token.length() - 1);
+            }
+            if (token.contains("*")) throw new BundleException("Package name not properly wildcarded");
+
             state.eatWhitespace();
 
             if (state.isComplete())
@@ -687,7 +697,7 @@ public final class Util
 
         private boolean isValidTokenChar(char c)
         {
-            return Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '.' || c == ',';
+            return Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '.' || c == ',' || c == '*';
         }
 
         private boolean isValidArgumentChar(char c)

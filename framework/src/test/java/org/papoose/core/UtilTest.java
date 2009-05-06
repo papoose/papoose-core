@@ -145,6 +145,36 @@ public class UtilTest
         Assert.assertEquals("*Foo", Util.encodeName(pojo.getInclude().get(2)));
         Assert.assertEquals("*", Util.encodeName(pojo.getInclude().get(3)));
         Assert.assertEquals("*Baf*", Util.encodeName(pojo.getInclude().get(4)));
+
+        parameters = new HashMap<String, Object>();
+        paths = new HashSet<String>();
+        pojo = new MockPOJO();
+
+        Util.parseParameters("com.acme.*;com.*", pojo, parameters, true, paths);
+
+        Assert.assertEquals(pojo.getFoo(), null);
+        Assert.assertEquals(parameters.size(), 0);
+        Assert.assertEquals(paths.size(), 2);
+        Assert.assertTrue(paths.contains("com.acme."));
+        Assert.assertTrue(paths.contains("com."));
+
+        try
+        {
+            Util.parseParameters("**", pojo, parameters, true, paths);
+            Assert.fail("Should have thrown a parse exception");
+        }
+        catch (BundleException ignore)
+        {
+        }
+
+        try
+        {
+            Util.parseParameters("com.*.*", pojo, parameters, true, paths);
+            Assert.fail("Should have thrown a parse exception");
+        }
+        catch (BundleException ignore)
+        {
+        }
     }
 
     @Test

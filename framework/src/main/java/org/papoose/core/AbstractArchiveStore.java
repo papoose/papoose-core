@@ -75,7 +75,7 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     private final URL bundleUpdateLocation;
     private final String bundleVendor;
     private final Version bundleVersion;
-    private final Set<DynamicDescription> bundleDynamicImportSet;
+    private final List<DynamicDescription> bundleDynamicImportList;
     private final List<ExportDescription> bundleExportList;
     private final List<String> bundleExportService;
     private final FragmentDescription bundleFragmentHost;
@@ -108,7 +108,7 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         this.bundleUpdateLocation = obtainBundleUpdateLocation(this.attributes);
         this.bundleVendor = this.attributes.getValue(Constants.BUNDLE_VENDOR);
         this.bundleVersion = Version.parseVersion(this.attributes.getValue(Constants.BUNDLE_VERSION));
-        this.bundleDynamicImportSet = obtainBundleDynamicImportSet(this.attributes);
+        this.bundleDynamicImportList = obtainBundleDynamicImportList(this.attributes);
         this.bundleExportList = obtainBundleExportList(this.attributes, bundleSymbolicName, bundleVersion);
         this.bundleExportService = obtainBundleExportService(this.attributes);
         this.bundleFragmentHost = obtainBundleFragementHost(this.attributes);
@@ -194,9 +194,9 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         return bundleRequireBundle;
     }
 
-    public Set<DynamicDescription> getDynamicDescriptions()
+    public List<DynamicDescription> getDynamicDescriptions()
     {
-        return bundleDynamicImportSet;
+        return bundleDynamicImportList;
     }
 
     public FragmentDescription getFragmentDescription()
@@ -349,14 +349,14 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         }
     }
 
-    protected static Set<DynamicDescription> obtainBundleDynamicImportSet(Attributes headers) throws BundleException
+    protected static List<DynamicDescription> obtainBundleDynamicImportList(Attributes headers) throws BundleException
     {
-        Set<DynamicDescription> result = Collections.emptySet();
+        List<DynamicDescription> result = Collections.emptyList();
 
         if (headers.containsKey("DynamicImport-Package"))
         {
             String[] dynamicDescriptions = headers.getValue("DynamicImport-Package").split(",");
-            result = new HashSet<DynamicDescription>(dynamicDescriptions.length);
+            result = new ArrayList<DynamicDescription>(dynamicDescriptions.length);
 
             for (String dynamicDescription : dynamicDescriptions)
             {

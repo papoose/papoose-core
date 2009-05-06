@@ -36,7 +36,6 @@ import org.apache.xbean.classloader.NamedClassLoader;
 import org.apache.xbean.classloader.ResourceHandle;
 import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
-
 import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.spi.ArchiveStore;
@@ -53,7 +52,7 @@ public class BundleClassLoader extends NamedClassLoader
     private final Set<Wire> wires;
     private final List<Wire> requiredBundles;
     private final String[] exportedPackages;
-    private final Set<DynamicDescription> dynamicImports;
+    private final List<DynamicDescription> dynamicImports;
     private final List<ResourceLocation> boundClassPath;
     private final Set<ArchiveStore> archiveStores;
 
@@ -65,7 +64,7 @@ public class BundleClassLoader extends NamedClassLoader
                       List<Wire> requiredBundles,
                       String[] bootDelegates,
                       String[] exportedPackages,
-                      Set<DynamicDescription> dynamicImports,
+                      List<DynamicDescription> dynamicImports,
                       List<ResourceLocation> boundClassPath,
                       Set<ArchiveStore> archiveStores) throws BundleException
     {
@@ -83,7 +82,7 @@ public class BundleClassLoader extends NamedClassLoader
         this.wires = new HashSet<Wire>(wires);
         this.requiredBundles = requiredBundles;
         this.exportedPackages = exportedPackages;
-        this.dynamicImports = Collections.synchronizedSet(dynamicImports);
+        this.dynamicImports = Collections.unmodifiableList(dynamicImports);
         this.boundClassPath = boundClassPath;
         this.archiveStores = archiveStores;
     }
@@ -104,7 +103,7 @@ public class BundleClassLoader extends NamedClassLoader
         return exportedPackages;
     }
 
-    @SuppressWarnings({ "EmptyCatchBlock" })
+    @SuppressWarnings({"EmptyCatchBlock"})
     public Class<?> loadClass(String className) throws ClassNotFoundException
     {
         if (className.startsWith("java.")) return getParent().loadClass(className);
@@ -209,37 +208,27 @@ public class BundleClassLoader extends NamedClassLoader
 
         synchronized (dynamicImports)
         {
-            DynamicDescription used = null;
-
-            try
+            for (DynamicDescription dynamicDescription : dynamicImports)
             {
-                for (DynamicDescription dynamicDescription : dynamicImports)
+                for (String packagePattern : dynamicDescription.getPackagePatterns())
                 {
-                    for (String packagePattern : dynamicDescription.getPackagePatterns())
+                    if (packagePattern.length() == 0
+                        || (packagePattern.endsWith("/") && packageName.startsWith(packagePattern))
+                        || packageName.equals(packagePattern))
                     {
-                        if (packagePattern.length() == 0
-                            || (packagePattern.endsWith("/") && packageName.startsWith(packagePattern))
-                            || packageName.equals(packagePattern))
+                        BundleController bundleController = bundle.getBundleController();
+                        ImportDescription importDescription = new ImportDescription(Collections.singleton(packageName), dynamicDescription.getParameters());
+
+                        Wire wire = bundleController.getFramework().getBundleManager().resolve(bundleController, importDescription);
+
+                        if (wire != null)
                         {
-                            BundleController bundleController = bundle.getBundleController();
-                            ImportDescription importDescription = new ImportDescription(Collections.singleton(packageName), dynamicDescription.getParameters());
+                            wires.add(wire);
 
-                            Wire wire = bundleController.getFramework().getBundleManager().resolve(bundleController, importDescription);
-
-                            if (wire != null)
-                            {
-                                used = dynamicDescription;
-                                wires.add(wire);
-
-                                return wire.getBundleClassLoader().delegateHuntResources(resourceName, stopAtFirst);
-                            }
+                            return wire.getBundleClassLoader().delegateHuntResources(resourceName, stopAtFirst);
                         }
                     }
                 }
-            }
-            finally
-            {
-                if (used != null) assert dynamicImports.remove(used);
             }
         }
 
@@ -256,7 +245,7 @@ public class BundleClassLoader extends NamedClassLoader
         return path;
     }
 
-    @SuppressWarnings({ "EmptyCatchBlock" })
+    @SuppressWarnings({"EmptyCatchBlock"})
     protected synchronized Class<?> delegateLoadClass(String className) throws ClassNotFoundException
     {
         Class clazz = findLoadedClass(className);
@@ -301,39 +290,26 @@ public class BundleClassLoader extends NamedClassLoader
             if (exportedPackage.equals(packageName)) throw new ClassNotFoundException();
         }
 
-        synchronized (dynamicImports)
+        for (DynamicDescription dynamicDescription : dynamicImports)
         {
-            DynamicDescription used = null;
-
-            try
+            for (String packagePattern : dynamicDescription.getPackagePatterns())
             {
-                for (DynamicDescription dynamicDescription : dynamicImports)
+                if (packagePattern.length() == 0
+                    || (packagePattern.endsWith(".") && packageName.startsWith(packagePattern))
+                    || packageName.equals(packagePattern))
                 {
-                    for (String packagePattern : dynamicDescription.getPackagePatterns())
+                    BundleController bundleController = bundle.getBundleController();
+                    ImportDescription importDescription = new ImportDescription(Collections.singleton(packageName), dynamicDescription.getParameters());
+
+                    Wire wire = bundleController.getFramework().getBundleManager().resolve(bundleController, importDescription);
+
+                    if (wire != null)
                     {
-                        if (packagePattern.length() == 0
-                            || (packagePattern.endsWith(".") && packageName.startsWith(packagePattern))
-                            || packageName.equals(packagePattern))
-                        {
-                            BundleController bundleController = bundle.getBundleController();
-                            ImportDescription importDescription = new ImportDescription(Collections.singleton(packageName), dynamicDescription.getParameters());
+                        wires.add(wire);
 
-                            Wire wire = bundleController.getFramework().getBundleManager().resolve(bundleController, importDescription);
-
-                            if (wire != null)
-                            {
-                                used = dynamicDescription;
-                                wires.add(wire);
-
-                                return wire.getBundleClassLoader().delegateLoadClass(className);
-                            }
-                        }
+                        return wire.getBundleClassLoader().delegateLoadClass(className);
                     }
                 }
-            }
-            finally
-            {
-                if (used != null) assert dynamicImports.remove(used);
             }
         }
 
