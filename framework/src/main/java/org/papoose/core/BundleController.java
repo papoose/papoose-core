@@ -33,6 +33,7 @@ import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.jcip.annotations.GuardedBy;
 import org.osgi.framework.AdminPermission;
 import org.osgi.framework.AllServiceListener;
 import org.osgi.framework.Bundle;
@@ -66,15 +67,16 @@ public class BundleController implements Bundle
 {
     private final static String CLASS_NAME = BundleController.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
-    private final Set<BundleListener> bundleListeners = new CopyOnWriteArraySet<BundleListener>();
-    private final Set<SynchronousBundleListener> syncBundleListeners = new CopyOnWriteArraySet<SynchronousBundleListener>();
-    private final Set<FrameworkListener> frameworkListeners = new CopyOnWriteArraySet<FrameworkListener>();
-    private final Set<ServiceListener> serviceListeners = new CopyOnWriteArraySet<ServiceListener>();
-    private final Set<ServiceListener> allServiceListeners = new CopyOnWriteArraySet<ServiceListener>();
+    private final Object lock = new Object();
     private final Papoose framework;
     private final BundleStore bundleStore;
-    private final Executor serialExecutor;
     private final Map<Integer, Generation> generations = new HashMap<Integer, Generation>();
+    @GuardedBy("lock") private Executor serialExecutor;
+    @GuardedBy("lock") private Set<BundleListener> bundleListeners;
+    @GuardedBy("lock") private Set<SynchronousBundleListener> syncBundleListeners;
+    @GuardedBy("lock") private Set<FrameworkListener> frameworkListeners;
+    @GuardedBy("lock") private Set<ServiceListener> serviceListeners;
+    @GuardedBy("lock") private Set<ServiceListener> allServiceListeners;
     private volatile BundleContextImpl bundleContext;
     private volatile Generation currentGeneration;
     private volatile BundleActivator bundleActivator;
@@ -87,32 +89,46 @@ public class BundleController implements Bundle
 
         this.framework = framework;
         this.bundleStore = bundleStore;
-        this.serialExecutor = new SerialExecutor(framework.getExecutorService());
     }
 
     Set<BundleListener> getBundleListeners()
     {
-        return bundleListeners;
+        synchronized (lock)
+        {
+            return bundleListeners;
+        }
     }
 
     Set<SynchronousBundleListener> getSyncBundleListeners()
     {
-        return syncBundleListeners;
+        synchronized (lock)
+        {
+            return syncBundleListeners;
+        }
     }
 
     Set<FrameworkListener> getFrameworkListeners()
     {
-        return frameworkListeners;
+        synchronized (lock)
+        {
+            return frameworkListeners;
+        }
     }
 
     Set<ServiceListener> getServiceListeners()
     {
-        return serviceListeners;
+        synchronized (lock)
+        {
+            return serviceListeners;
+        }
     }
 
     Set<ServiceListener> getAllServiceListeners()
     {
-        return allServiceListeners;
+        synchronized (lock)
+        {
+            return allServiceListeners;
+        }
     }
 
     Papoose getFramework()
@@ -127,6 +143,11 @@ public class BundleController implements Bundle
 
     Executor getSerialExecutor()
     {
+        synchronized (lock)
+        {
+            if (serialExecutor == null) serialExecutor = new SerialExecutor(framework.getExecutorService());
+        }
+
         return serialExecutor;
     }
 
@@ -770,37 +791,54 @@ public class BundleController implements Bundle
 
     void addBundleListener(BundleListener bundleListener)
     {
-        if (bundleListener instanceof SynchronousBundleListener)
+        synchronized (lock)
         {
-            syncBundleListeners.add((SynchronousBundleListener) bundleListener);
-        }
-        else
-        {
-            bundleListeners.add(bundleListener);
-        }
+            if (bundleListener instanceof SynchronousBundleListener)
+            {
+                if (syncBundleListeners == null) syncBundleListeners = new CopyOnWriteArraySet<SynchronousBundleListener>();
 
+                syncBundleListeners.add((SynchronousBundleListener) bundleListener);
+            }
+            else
+            {
+                if (bundleListeners == null) bundleListeners = new CopyOnWriteArraySet<BundleListener>();
+
+                bundleListeners.add(bundleListener);
+            }
+        }
     }
 
     void removeBundleListener(BundleListener bundleListener)
     {
-        if (bundleListener instanceof SynchronousBundleListener)
+        synchronized (lock)
         {
-            syncBundleListeners.remove(bundleListener);
-        }
-        else
-        {
-            bundleListeners.remove(bundleListener);
+            if (bundleListener instanceof SynchronousBundleListener)
+            {
+                if (syncBundleListeners != null) syncBundleListeners.remove(bundleListener);
+            }
+            else
+            {
+                if (bundleListeners != null) bundleListeners.remove(bundleListener);
+            }
         }
     }
 
     void addFrameworkListener(FrameworkListener frameworkListener)
     {
-        frameworkListeners.add(frameworkListener);
+        synchronized (lock)
+        {
+            if (frameworkListeners == null) frameworkListeners = new CopyOnWriteArraySet<FrameworkListener>();
+
+            frameworkListeners.add(frameworkListener);
+        }
     }
 
     void removeFrameworkListener(FrameworkListener frameworkListener)
     {
-        frameworkListeners.remove(frameworkListener);
+        synchronized (lock)
+        {
+            if (frameworkListeners != null) frameworkListeners.remove(frameworkListener);
+        }
     }
 
     void addServiceListener(ServiceListener serviceListener)
@@ -810,44 +848,58 @@ public class BundleController implements Bundle
 
     void addServiceListener(ServiceListener serviceListener, Filter filter)
     {
-        if (serviceListener instanceof AllServiceListener)
+        synchronized (lock)
         {
-            if (!allServiceListeners.add(new ServiceListenerWithFilter(serviceListener, filter)))
+            if (serviceListener instanceof AllServiceListener)
             {
-                LOGGER.warning("Listener collided with previously registered listener with filter " + filter);
+                if (allServiceListeners == null) allServiceListeners = new CopyOnWriteArraySet<ServiceListener>();
+
+                if (!allServiceListeners.add(new ServiceListenerWithFilter(serviceListener, filter)))
+                {
+                    LOGGER.warning("Listener collided with previously registered listener with filter " + filter);
+                }
             }
-        }
-        else
-        {
-            if (!serviceListeners.add(new ServiceListenerWithFilter(serviceListener, filter)))
+            else
             {
-                LOGGER.warning("Listener collided with previously registered listener with filter " + filter);
+                if (serviceListeners == null) serviceListeners = new CopyOnWriteArraySet<ServiceListener>();
+
+                if (!serviceListeners.add(new ServiceListenerWithFilter(serviceListener, filter)))
+                {
+                    LOGGER.warning("Listener collided with previously registered listener with filter " + filter);
+                }
             }
         }
     }
 
     void removeServiceListener(ServiceListener serviceListener)
     {
-        if (serviceListener instanceof AllServiceListener)
+        synchronized (lock)
         {
-            allServiceListeners.remove(new ServiceListenerWithFilter(serviceListener));
+            if (serviceListener instanceof AllServiceListener)
+            {
+                if (allServiceListeners != null) allServiceListeners.remove(new ServiceListenerWithFilter(serviceListener));
+            }
+            else
+            {
+                if (serviceListeners != null) serviceListeners.remove(new ServiceListenerWithFilter(serviceListener));
+            }
+
+            if (serviceListeners != null) serviceListeners.remove(new ServiceListenerWithFilter(serviceListener, DefaultFilter.TRUE));
         }
-        else
-        {
-            serviceListeners.remove(new ServiceListenerWithFilter(serviceListener));
-        }
-        serviceListeners.remove(new ServiceListenerWithFilter(serviceListener, DefaultFilter.TRUE));
     }
 
     void clearListeners()
     {
-        syncBundleListeners.clear();
-        bundleListeners.clear();
+        synchronized (lock)
+        {
+            if (syncBundleListeners != null) syncBundleListeners.clear();
+            if (bundleListeners != null) bundleListeners.clear();
 
-        frameworkListeners.clear();
+            if (frameworkListeners != null) frameworkListeners.clear();
 
-        allServiceListeners.clear();
-        serviceListeners.clear();
+            if (serviceListeners != null) serviceListeners.clear();
+            if (allServiceListeners != null) allServiceListeners.clear();
+        }
     }
 
     public static class ServiceListenerWithFilter implements AllServiceListener

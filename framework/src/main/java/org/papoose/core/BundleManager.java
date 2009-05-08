@@ -49,6 +49,7 @@ import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServicePermission;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
 
 import org.papoose.core.descriptions.ExportDescription;
@@ -953,15 +954,19 @@ public class BundleManager
 
         for (BundleController bundle : bundles)
         {
-            for (BundleListener listener : bundle.getSyncBundleListeners())
+            Set<SynchronousBundleListener> syncBundleListeners = bundle.getSyncBundleListeners();
+            if (syncBundleListeners != null)
             {
-                try
+                for (BundleListener listener : syncBundleListeners)
                 {
-                    SecurityUtils.bundleChanged(listener, event, framework.getAcc());
-                }
-                catch (Throwable throwable)
-                {
-                    fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+                    try
+                    {
+                        SecurityUtils.bundleChanged(listener, event, framework.getAcc());
+                    }
+                    catch (Throwable throwable)
+                    {
+                        fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+                    }
                 }
             }
         }
@@ -970,24 +975,27 @@ public class BundleManager
         {
             for (final BundleController bundle : bundles)
             {
-                for (final BundleListener listener : bundle.getBundleListeners())
+                Set<BundleListener> bundleListeners = bundle.getBundleListeners();
+                if (bundleListeners != null)
                 {
-                    bundle.getSerialExecutor().execute(new Runnable()
+                    for (final BundleListener listener : bundleListeners)
                     {
-                        public void run()
+                        bundle.getSerialExecutor().execute(new Runnable()
                         {
-                            try
+                            public void run()
                             {
-                                SecurityUtils.bundleChanged(listener, event, framework.getAcc());
+                                try
+                                {
+                                    SecurityUtils.bundleChanged(listener, event, framework.getAcc());
+                                }
+                                catch (Throwable throwable)
+                                {
+                                    fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+                                }
                             }
-                            catch (Throwable throwable)
-                            {
-                                fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
-                            }
-                        }
-                    });
+                        });
+                    }
                 }
-
             }
         }
     }
@@ -996,25 +1004,29 @@ public class BundleManager
     {
         for (final BundleController bundle : installedbundles.values())
         {
-            for (final FrameworkListener listener : bundle.getFrameworkListeners())
+            Set<FrameworkListener> frameworkListeners = bundle.getFrameworkListeners();
+            if (frameworkListeners != null)
             {
-                bundle.getSerialExecutor().execute(new Runnable()
+                for (final FrameworkListener listener : frameworkListeners)
                 {
-                    public void run()
+                    bundle.getSerialExecutor().execute(new Runnable()
                     {
-                        try
+                        public void run()
                         {
-                            SecurityUtils.frameworkEvent(listener, event, framework.getAcc());
-                        }
-                        catch (Throwable throwable)
-                        {
-                            if (event.getType() != FrameworkEvent.ERROR)
+                            try
                             {
-                                fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+                                SecurityUtils.frameworkEvent(listener, event, framework.getAcc());
+                            }
+                            catch (Throwable throwable)
+                            {
+                                if (event.getType() != FrameworkEvent.ERROR)
+                                {
+                                    fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                }
             }
         }
     }
@@ -1030,11 +1042,11 @@ public class BundleManager
             {
                 if (!bundle.hasPermission(new ServicePermission(clazz, ServicePermission.GET))) continue;
 
-                fireServiceEvent(event, bundle.getAllServiceListeners(), bundle);
+                if (bundle.getAllServiceListeners() != null) fireServiceEvent(event, bundle.getAllServiceListeners(), bundle);
 
                 if (!reference.isAssignableTo(bundle, clazz)) continue;
 
-                fireServiceEvent(event, bundle.getServiceListeners(), bundle);
+                if (bundle.getServiceListeners() != null) fireServiceEvent(event, bundle.getServiceListeners(), bundle);
             }
         }
     }
