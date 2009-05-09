@@ -72,6 +72,8 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     private final boolean bundleNativeCodeListOptional;
     private final List<String> bundleRequiredExecutionEnvironment;
     private final String bundleSymbolicName;
+    private final boolean singleton;
+    private final FragmentAttachment fragmentAttachment;
     private final URL bundleUpdateLocation;
     private final String bundleVendor;
     private final Version bundleVersion;
@@ -92,6 +94,21 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 
         this.attributes = new AttributesWrapper(attributes);
 
+        String[] tokens = this.attributes.getValue(Constants.BUNDLE_SYMBOLICNAME).split(";");
+
+        this.bundleSymbolicName = tokens[0];
+
+        String singletonString = "false";
+        String fragmentAttachmentString = Constants.FRAGMENT_ATTACHMENT_ALWAYS;
+        for (int i=1; i<tokens.length; i++)
+        {
+            String[] assignment = tokens[i].split("=:");
+            if (Constants.SINGLETON_DIRECTIVE.equals(assignment[0])) singletonString = assignment[1];
+            else if (Constants.FRAGMENT_ATTACHMENT_DIRECTIVE.equals(assignment[0])) fragmentAttachmentString = assignment[1];
+        }
+        this.singleton = Boolean.parseBoolean(singletonString);
+        this.fragmentAttachment = FragmentAttachment.parseFragmentDescription(fragmentAttachmentString);
+
         this.bundleActivatorClass = this.attributes.getValue(Constants.BUNDLE_ACTIVATOR);
         this.bundleCategories = obtainBundleCategories(this.attributes);
         this.bundleClassPath = obtainBundleClasspath(this.attributes);
@@ -104,7 +121,6 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         this.bundleName = this.attributes.getValue(Constants.BUNDLE_NAME);
         this.bundleNativeCodeList = obtainBundleNativeCodeList(this.attributes);
         this.bundleRequiredExecutionEnvironment = obtainBundleExecutionEnvironment(this.attributes);
-        this.bundleSymbolicName = this.attributes.getValue(Constants.BUNDLE_SYMBOLICNAME);
         this.bundleUpdateLocation = obtainBundleUpdateLocation(this.attributes);
         this.bundleVendor = this.attributes.getValue(Constants.BUNDLE_VENDOR);
         this.bundleVersion = Version.parseVersion(this.attributes.getValue(Constants.BUNDLE_VERSION));
@@ -122,6 +138,11 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         if (bundleManifestVersion != 2) throw new BundleException("Bundle-ManifestVersion must be 2");
 
         assert this.lazyActivationDescription != null;
+    }
+
+    public Papoose getFramework()
+    {
+        return framework;
     }
 
     public String getFrameworkName()
@@ -152,6 +173,16 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     public String getBundleSymbolicName()
     {
         return bundleSymbolicName;
+    }
+
+    public boolean isSingleton()
+    {
+        return singleton;
+    }
+
+    public FragmentAttachment getFragmentAttachment()
+    {
+        return fragmentAttachment;
     }
 
     public Version getBundleVersion()

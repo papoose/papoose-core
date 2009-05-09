@@ -91,7 +91,7 @@ public class Resolved extends Candidate implements CandidateBundle
     {
         return candidateWirings.remove(candidateWiring) && candidateWirings.add(candidateWiring);
     }
-    
+
     public Set<CandidateWiring> getWirings()
     {
         Set<CandidateWiring> result = new HashSet<CandidateWiring>();
@@ -109,6 +109,6 @@ public class Resolved extends Candidate implements CandidateBundle
 
     public void addCandidateRequiredBundle(RequiredBundleWrapper requiredBundleWrapper)
     {
-            //Todo: change body of created methods use File | Settings | File Templates.
+        //Todo: change body of created methods use File | Settings | File Templates.
     }
 }

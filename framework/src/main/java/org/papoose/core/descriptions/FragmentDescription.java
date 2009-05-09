@@ -22,6 +22,7 @@ import java.util.Map;
 import org.osgi.framework.Version;
 
 import org.papoose.core.VersionRange;
+import org.papoose.core.FragmentAttachment;
 
 
 /**

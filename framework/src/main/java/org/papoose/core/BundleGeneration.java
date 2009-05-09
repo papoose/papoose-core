@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.SortedSet;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.osgi.framework.Bundle;

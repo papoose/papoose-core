@@ -17,8 +17,10 @@
 package org.papoose.core.resolver;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.papoose.core.BundleClassLoader;
@@ -44,24 +46,43 @@ public class CheckPoint
 
     private final Set<CandidateBundle> used = new HashSet<CandidateBundle>();
     private final Set<Candidate> unused = new HashSet<Candidate>();
+    private final Map<String, Candidate> singletons = new HashMap<String, Candidate>();
 
 
-    public CheckPoint(Generation generation, Set<Candidate> canonicalSet)
+    public CheckPoint(Generation generation, Set<Candidate> canonicalSet) throws IncompatibleException
     {
         assert generation != null;
         assert canonicalSet != null;
 
         unResolved.add(new UnBound(generation));
         unused.addAll(canonicalSet);
+
+        for (Candidate candidate : unused)
+        {
+            Generation g = candidate.getGeneration();
+            if (g.getArchiveStore().isSingleton())
+            {
+                singletons.put(g.getSymbolicName(), candidate);
+            }
+        }
     }
 
-    public CheckPoint(BundleGeneration bundleGeneration, ImportDescription importDescription, Set<Candidate> canonicalSet)
+    public CheckPoint(BundleGeneration bundleGeneration, ImportDescription importDescription, Set<Candidate> canonicalSet) throws IncompatibleException
     {
         assert bundleGeneration != null;
         assert importDescription != null;
         assert canonicalSet != null;
 
         unused.addAll(canonicalSet);
+
+        for (Candidate candidate : unused)
+        {
+            Generation g = candidate.getGeneration();
+            if (g.getArchiveStore().isSingleton())
+            {
+                singletons.put(g.getSymbolicName(), candidate);
+            }
+        }
 
         try
         {
@@ -88,6 +109,8 @@ public class CheckPoint
 
         unused.remove(resolving);
         for (FragmentGeneration fragmentGeneration : resolving.getFragments()) unused.remove(new Candidate(fragmentGeneration));
+
+        checkSingltonViolation(bundleGeneration);
     }
 
     private Candidate findCandidate(BundleGeneration bundleGeneration)
@@ -105,6 +128,7 @@ public class CheckPoint
         unResolved.addAll(checkPoint.unResolved);
         used.addAll(checkPoint.used);
         unused.addAll(checkPoint.unused);
+        singletons.putAll(checkPoint.singletons);
 
         if (checkPoint.resolving != null)
         {
@@ -278,6 +302,8 @@ public class CheckPoint
         checkPoint.unused.remove(checkPoint.resolving);
         for (FragmentGeneration fragmentGeneration : fragments) checkPoint.unused.remove(new Candidate(fragmentGeneration));
 
+        checkSingltonViolation(host);
+
         return checkPoint;
     }
 
@@ -310,6 +336,11 @@ public class CheckPoint
         CheckPoint checkPoint = new CheckPoint(this);
 
         return checkPoint;  //Todo: change body of created methods use File | Settings | File Templates.
+    }
+
+    private void checkSingltonViolation(BundleGeneration bundleGeneration) throws IncompatibleException
+    {
+        if (bundleGeneration.getArchiveStore().isSingleton() && singletons.containsKey(bundleGeneration.getSymbolicName())) throw new IncompatibleException("Singleton already exists for symbolic name " + bundleGeneration.getSymbolicName());
     }
 
     @Override

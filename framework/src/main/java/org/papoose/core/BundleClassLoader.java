@@ -36,6 +36,7 @@ import org.apache.xbean.classloader.NamedClassLoader;
 import org.apache.xbean.classloader.ResourceHandle;
 import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
+
 import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.spi.ArchiveStore;
@@ -103,7 +104,7 @@ public class BundleClassLoader extends NamedClassLoader
         return exportedPackages;
     }
 
-    @SuppressWarnings({"EmptyCatchBlock"})
+    @SuppressWarnings({ "EmptyCatchBlock" })
     public Class<?> loadClass(String className) throws ClassNotFoundException
     {
         if (className.startsWith("java.")) return getParent().loadClass(className);
@@ -154,7 +155,7 @@ public class BundleClassLoader extends NamedClassLoader
         }
     }
 
-    protected Enumeration<URL> huntResources(String resourceName, boolean stopAtFirst) throws IOException
+    private Enumeration<URL> huntResources(String resourceName, boolean stopAtFirst) throws IOException
     {
         if (resourceName.startsWith("/")) resourceName = resourceName.substring(1, resourceName.length());
 
@@ -245,7 +246,7 @@ public class BundleClassLoader extends NamedClassLoader
         return path;
     }
 
-    @SuppressWarnings({"EmptyCatchBlock"})
+    @SuppressWarnings({ "EmptyCatchBlock" })
     protected synchronized Class<?> delegateLoadClass(String className) throws ClassNotFoundException
     {
         Class clazz = findLoadedClass(className);

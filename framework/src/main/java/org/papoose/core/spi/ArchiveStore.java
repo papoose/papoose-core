@@ -19,10 +19,10 @@ package org.papoose.core.spi;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.security.cert.Certificate;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
 
@@ -31,6 +31,7 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 
 import org.papoose.core.L18nResourceBundle;
+import org.papoose.core.FragmentAttachment;
 import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.FragmentDescription;
@@ -56,6 +57,10 @@ public interface ArchiveStore extends Comparable
     String getBundleActivatorClass();
 
     String getBundleSymbolicName();
+
+    boolean isSingleton();
+
+    FragmentAttachment getFragmentAttachment();
 
     Version getBundleVersion();
 
@@ -92,6 +97,8 @@ public interface ArchiveStore extends Comparable
     InputStream getInputStreamForEntry(String path) throws IOException;
 
     InputStream getInputStreamForResource(int location, String path) throws IOException;
+
+    public Certificate[] getCertificates();
 
     /**
      * Set the native code descriptions that the bundle store is to use

@@ -18,13 +18,13 @@ package org.papoose.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
 import java.util.logging.Level;
@@ -336,6 +336,21 @@ public class SystemBundleController extends BundleController
         public InputStream getInputStreamForResource(int location, String path) throws IOException
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public Certificate[] getCertificates()
+        {
+            return new Certificate[0];  //Todo: change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public boolean isSingleton()
+        {
+            return false;  //Todo: change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public FragmentAttachment getFragmentAttachment()
+        {
+            return null;  //Todo: change body of implemented methods use File | Settings | File Templates.
         }
 
         public void assignNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException

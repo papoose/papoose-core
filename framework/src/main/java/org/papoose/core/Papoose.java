@@ -47,6 +47,7 @@ import org.papoose.core.spi.LocationMapper;
 import org.papoose.core.spi.Resolver;
 import org.papoose.core.spi.SecurityAdmin;
 import org.papoose.core.spi.Store;
+import org.papoose.core.spi.TrustManager;
 import org.papoose.core.util.ToStringCreator;
 import org.papoose.core.util.Util;
 
@@ -84,6 +85,7 @@ public final class Papoose
     private volatile long waitPeriod;
     private volatile String[] bootDelegates;
     @GuardedBy("lock") private volatile Parser parser = new Parser();
+    @GuardedBy("lock") private volatile TrustManager trustManager = new DefaultTrustManager();
     @GuardedBy("lock") private volatile Resolver resolver = new DefaultResolver();
     private volatile SecurityAdmin securityAdmin;
     private final List<Object> bootServices = new ArrayList<Object>();
@@ -314,6 +316,25 @@ public final class Papoose
             this.parser = parser;
 
             if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("Framework parser: " + parser);
+        }
+    }
+
+    public TrustManager getTrustManager()
+    {
+        return trustManager;
+    }
+
+    public void setTrustManager(TrustManager trustManager)
+    {
+        if (trustManager == null) throw new IllegalArgumentException("Trust manager cannot be null");
+
+        synchronized (lock)
+        {
+            if (running) throw new IllegalStateException("Cannot change trust manager after framework has started");
+
+            this.trustManager = trustManager;
+
+            if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("Trust manager: " + trustManager);
         }
     }
 

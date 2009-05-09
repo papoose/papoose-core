@@ -50,6 +50,23 @@ public class DefaultFilter implements Filter
             return true;
         }
     };
+    public static final Filter FALSE = new Filter()
+    {
+        public boolean match(ServiceReference serviceReference)
+        {
+            return false;
+        }
+
+        public boolean match(Dictionary dictionary)
+        {
+            return false;
+        }
+
+        public boolean matchCase(Dictionary dictionary)
+        {
+            return false;
+        }
+    };
     private final Expr expr;
 
     public DefaultFilter(Expr expr)
@@ -96,6 +113,7 @@ public class DefaultFilter implements Filter
                 return Collections.enumeration(map.values());
             }
 
+            @SuppressWarnings({ "SuspiciousMethodCalls" })
             public Object get(Object key)
             {
                 return map.get(key);
@@ -115,6 +133,7 @@ public class DefaultFilter implements Filter
         return expr.match(caseInsensitive);
     }
 
+    @SuppressWarnings({ "unchecked" })
     public boolean matchCase(Dictionary dictionary)
     {
         return expr.match(dictionary);

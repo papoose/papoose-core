@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.Permission;
+import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -22,6 +23,7 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 
 import org.papoose.core.L18nResourceBundle;
+import org.papoose.core.FragmentAttachment;
 import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.FragmentDescription;
@@ -209,6 +211,21 @@ public class MockArchiveStore implements ArchiveStore
     public InputStream getInputStreamForResource(int location, String path) throws IOException
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public Certificate[] getCertificates()
+    {
+        return new Certificate[0];  //Todo: change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public boolean isSingleton()
+    {
+        return false;  //Todo: change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public FragmentAttachment getFragmentAttachment()
+    {
+        return null;  //Todo: change body of implemented methods use File | Settings | File Templates.
     }
 
     public void assignNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException

@@ -26,8 +26,6 @@ import java.util.Set;
 
 import org.papoose.core.BundleGeneration;
 import org.papoose.core.FragmentGeneration;
-import org.papoose.core.Wire;
-import org.papoose.core.BundleClassLoader;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.RequireDescription;

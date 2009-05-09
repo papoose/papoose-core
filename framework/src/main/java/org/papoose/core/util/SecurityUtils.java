@@ -18,9 +18,21 @@ package org.papoose.core.util;
 
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.CodeSigner;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.security.cert.CertPath;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.osgi.framework.AdminPermission;
@@ -32,6 +44,8 @@ import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServicePermission;
+
+import org.papoose.core.spi.TrustManager;
 
 
 /**
@@ -131,8 +145,7 @@ public class SecurityUtils
 
     public static <T> T doPrivilegedExceptionAction(PrivilegedExceptionAction<T> action, AccessControlContext context) throws Exception
     {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
+        if (System.getSecurityManager() == null)
         {
             try
             {
@@ -147,6 +160,158 @@ public class SecurityUtils
         {
             return action.run();
         }
+    }
+
+    public static Certificate[] getCertificates(JarFile archive, TrustManager trustManager)
+    {
+        int numberOfChainsEncountered = 0;
+
+        // This is tricky: jdk1.3 doesn't say anything about what is happening
+        // if a bad sig is detected on an entry - later jdk's do say that they
+        // will throw a security Exception. The below should cater for both
+        // behaviors.
+        List<List<Certificate>> certificateChains = new ArrayList<List<Certificate>>();
+
+        Enumeration<JarEntry> enumeration = archive.entries();
+        JarEntry entry;
+        while (enumeration.hasMoreElements())
+        {
+            entry = enumeration.nextElement();
+
+            if (entry.isDirectory() || entry.getName().startsWith("META-INF")) continue;
+
+            Certificate[] certificates = entry.getCertificates();
+
+            // Workaround stupid bug in the sun jdk 1.5.x - getCertificates()
+            // returns null there even if there are valid certificates.
+            // This is a regression bug that has been fixed in 1.6.
+            //
+            // We use reflection to see whether we have a SignerCertPath
+            // for the entry (available >= 1.5) and if so check whether
+            // there are valid certificates - don't try this at home.
+            if (certificates == null)
+            {
+                try
+                {
+                    CodeSigner[] signers = entry.getCodeSigners();
+
+                    if (signers != null)
+                    {
+                        List<Certificate> certificateList = new ArrayList<Certificate>();
+
+                        for (CodeSigner signer : signers)
+                        {
+                            CertPath path = signer.getSignerCertPath();
+
+                            certificateList.addAll(path.getCertificates());
+                        }
+
+                        certificates = certificateList.toArray(new Certificate[certificateList.size()]);
+                    }
+                }
+                catch (Exception e)
+                {
+                    LOGGER.log(Level.WARNING, "Unable to obtain certificates", e);
+                }
+            }
+
+            if (certificates == null || certificates.length == 0) return null;
+
+            List<List<Certificate>> chains = getRootChains(certificates, trustManager);
+
+            if (certificateChains.isEmpty())
+            {
+                certificateChains.addAll(chains);
+                numberOfChainsEncountered = certificateChains.size();
+            }
+            else
+            {
+                for (Iterator<List<Certificate>> iter2 = certificateChains.iterator(); iter2.hasNext();)
+                {
+                    X509Certificate cert = (X509Certificate) ((List<Certificate>) iter2.next()).get(0);
+                    boolean found = false;
+                    for (List<Certificate> chain : chains)
+                    {
+                        X509Certificate cert2 = (X509Certificate) ((List) chain).get(0);
+
+                        if (cert.getSubjectDN().equals(cert2.getSubjectDN()) && cert.equals(cert2))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) iter2.remove();
+                }
+            }
+
+            if (certificateChains.isEmpty())
+            {
+                if (numberOfChainsEncountered > 0) LOGGER.warning("Bad signers for " + archive.getName());
+
+                return null;
+            }
+        }
+
+        List<Certificate> result = new ArrayList<Certificate>();
+
+        for (List<Certificate> chain : certificateChains)
+        {
+            result.addAll(chain);
+        }
+
+        return result.toArray(new Certificate[result.size()]);
+    }
+
+    private static List<List<Certificate>> getRootChains(Certificate[] certificates, TrustManager trustManager)
+    {
+        List<List<Certificate>> chains = new ArrayList<List<Certificate>>();
+        List<Certificate> chain = new ArrayList<Certificate>();
+
+        boolean revoked = false;
+
+        for (int i = 0; i < certificates.length - 1; i++)
+        {
+            X509Certificate certificate = (X509Certificate) certificates[i];
+
+            if (!revoked && trustManager.revoked(certificate))
+            {
+                revoked = true;
+            }
+            else if (!revoked)
+            {
+                try
+                {
+                    certificate.checkValidity();
+
+                    chain.add(certificate);
+                }
+                catch (CertificateException e)
+                {
+                    LOGGER.log(Level.FINEST, "Certificate is invalid " + certificate, e);
+
+                    revoked = true;
+                }
+            }
+
+            if (!((X509Certificate) certificates[i + 1]).getSubjectDN().equals(certificate.getIssuerDN()))
+            {
+                if (!revoked && trustManager.trusted(certificate)) chains.add(chain);
+
+                revoked = false;
+
+                if (!chain.isEmpty()) chain = new ArrayList<Certificate>();
+            }
+        }
+
+        if (!revoked)
+        {
+            chain.add(certificates[certificates.length - 1]);
+
+            if (trustManager.trusted(certificates[certificates.length - 1])) chains.add(chain);
+        }
+
+        return chains;
     }
 
     private SecurityUtils()

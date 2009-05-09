@@ -226,7 +226,15 @@ public class DefaultResolver implements Resolver
 
             Set<Candidate> canonicalSet = ResolverUtils.collectCanonicalSet(bundles);
 
-            CheckPoint result = doResolve(new CheckPoint(generation, canonicalSet));
+            CheckPoint result = null;
+            try
+            {
+                result = doResolve(new CheckPoint(generation, canonicalSet));
+            }
+            catch (IncompatibleException ie)
+            {
+                LOGGER.log(Level.FINEST, "Incompatible collection of host and fragments", ie);
+            }
 
             if (result == null) throw new BundleException("No consistent solution set found for " + generation.getBundleController());
 
@@ -252,8 +260,16 @@ public class DefaultResolver implements Resolver
             if (framework == null) throw new IllegalStateException("Framework has not started");
 
             Set<Candidate> canonicalSet = ResolverUtils.collectCanonicalSet(bundles);
+            CheckPoint result = null;
 
-            CheckPoint result = doResolveBundle(new CheckPoint(bundleGeneration, importDescription, canonicalSet));
+            try
+            {
+                result = doResolveBundle(new CheckPoint(bundleGeneration, importDescription, canonicalSet));
+            }
+            catch (IncompatibleException ie)
+            {
+                LOGGER.log(Level.FINEST, "Incompatible collection of host and fragments", ie);
+            }
 
             if (result == null) throw new BundleException("No consistent solution set found");
 

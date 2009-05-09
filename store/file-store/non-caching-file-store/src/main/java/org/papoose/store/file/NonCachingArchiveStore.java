@@ -23,10 +23,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.security.CodeSigner;
+import java.security.cert.CertPath;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -52,6 +58,7 @@ import org.papoose.core.UrlUtils;
 import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.util.FileUtils;
 import org.papoose.core.util.Util;
+import org.papoose.core.util.SecurityUtils;
 
 
 /**
@@ -69,6 +76,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
     private final JarFile archive;
     private final URL codeSource;
     private SortedSet<NativeCodeDescription> nativeCodeDescriptions;
+    private transient Certificate[] certificates;
 
     public NonCachingArchiveStore(Papoose framework, long bundleId, int generaton, File archiveRoot) throws BundleException
     {
@@ -275,6 +283,16 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
         return handle.getInputStream();
     }
 
+    public Certificate[] getCertificates()
+    {
+        if (certificates == null)
+        {
+            certificates = SecurityUtils.getCertificates(archive, getFramework().getTrustManager());
+        }
+
+        return certificates;
+    }
+
     @SuppressWarnings({ "EmptyCatchBlock" })
     public void close()
     {
@@ -361,6 +379,18 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             public InputStream getInputStream() throws IOException { return archive.getInputStream(entry); }
 
             public int getContentLength() { return (int) entry.getSize(); }
+
+            @Override
+            public Manifest getManifest() throws IOException
+            {
+                return BundleDirectoryResourceLocation.this.getManifest();
+            }
+
+            @Override
+            public Certificate[] getCertificates()
+            {
+                return NonCachingArchiveStore.this.getCertificates();
+            }
         }
 
         private class BundleRootResourceHandle extends AbstractResourceHandle
@@ -389,6 +419,18 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             }
 
             public int getContentLength() { return 0; }
+
+            @Override
+            public Manifest getManifest() throws IOException
+            {
+                return BundleDirectoryResourceLocation.this.getManifest();
+            }
+
+            @Override
+            public Certificate[] getCertificates()
+            {
+                return NonCachingArchiveStore.this.getCertificates();
+            }
         }
     }
 
@@ -457,6 +499,18 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             public InputStream getInputStream() throws IOException { return jarFile.getInputStream(entry); }
 
             public int getContentLength() { return (int) entry.getSize(); }
+
+            @Override
+            public Manifest getManifest() throws IOException
+            {
+                return BundleJarResourceLocation.this.getManifest();
+            }
+
+            @Override
+            public Certificate[] getCertificates()
+            {
+                return NonCachingArchiveStore.this.getCertificates();
+            }
         }
     }
 

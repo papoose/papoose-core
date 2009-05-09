@@ -23,7 +23,6 @@ import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Version;
 
 import org.papoose.core.VersionRange;
-import org.papoose.core.Generation;
 import org.papoose.core.util.ToStringCreator;
 
 

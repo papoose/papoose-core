@@ -50,6 +50,7 @@ public class Candidate
 
     /**
      * TODO: Not sure if code should have access to this
+     *
      * @return the generation that is to be used to identify this instance
      */
     public Generation getGeneration()

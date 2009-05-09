@@ -39,6 +39,7 @@ import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServicePermission;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+
 import org.papoose.core.filter.Expr;
 import org.papoose.core.util.SecurityUtils;
 
@@ -191,7 +192,7 @@ public class ServiceRegistry
         return bundleGeneration.getClassLoader();
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     public ServiceRegistration registerService(BundleController bundleController, String[] clazzes, Object service, Dictionary properties)
     {
         ServiceRegistrationImpl serviceRegistration;
@@ -342,7 +343,7 @@ public class ServiceRegistry
         }
     }
 
-    private  static ServiceReference[] sortedReferences(List<ServiceReference> references)
+    private static ServiceReference[] sortedReferences(List<ServiceReference> references)
     {
         if (references.isEmpty()) return null;
 
@@ -442,7 +443,7 @@ public class ServiceRegistry
     {
         synchronized (lock)
         {
-            @SuppressWarnings({"SuspiciousMethodCalls"}) ServiceEntry entry = serviceEntries.get(serviceReference.getProperty(Constants.SERVICE_ID));
+            @SuppressWarnings({ "SuspiciousMethodCalls" }) ServiceEntry entry = serviceEntries.get(serviceReference.getProperty(Constants.SERVICE_ID));
 
             if (entry == null) return false;
 
