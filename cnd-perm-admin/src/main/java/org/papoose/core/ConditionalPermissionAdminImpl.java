@@ -16,14 +16,13 @@
  */
 package org.papoose.core;
 
-import java.util.Enumeration;
 import java.security.AccessControlContext;
+import java.util.Enumeration;
 
+import org.osgi.service.condpermadmin.ConditionInfo;
 import org.osgi.service.condpermadmin.ConditionalPermissionAdmin;
 import org.osgi.service.condpermadmin.ConditionalPermissionInfo;
-import org.osgi.service.condpermadmin.ConditionInfo;
 import org.osgi.service.permissionadmin.PermissionInfo;
-import org.papoose.core.Papoose;
 
 
 /**

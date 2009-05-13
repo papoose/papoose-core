@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
 
@@ -22,8 +21,8 @@ import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 
-import org.papoose.core.L18nResourceBundle;
 import org.papoose.core.FragmentAttachment;
+import org.papoose.core.L18nResourceBundle;
 import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.FragmentDescription;

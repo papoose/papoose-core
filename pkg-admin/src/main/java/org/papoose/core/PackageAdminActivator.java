@@ -16,13 +16,12 @@
  */
 package org.papoose.core;
 
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.packageadmin.PackageAdmin;
-import org.papoose.core.BundleContextImpl;
 
 
 /**

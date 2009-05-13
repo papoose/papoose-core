@@ -18,7 +18,6 @@ package org.papoose.core;
 
 import org.osgi.service.permissionadmin.PermissionAdmin;
 import org.osgi.service.permissionadmin.PermissionInfo;
-import org.papoose.core.Papoose;
 
 
 /**

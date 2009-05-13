@@ -23,8 +23,6 @@ import java.util.logging.Logger;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkEvent;
-import org.papoose.core.BundleManager;
-import org.papoose.core.Papoose;
 
 
 /**

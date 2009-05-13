@@ -17,7 +17,6 @@
 package org.papoose.core.spi;
 
 import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 
 /**
  * @version $Revision$ $Date$

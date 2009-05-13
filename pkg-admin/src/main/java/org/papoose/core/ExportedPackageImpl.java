@@ -21,7 +21,6 @@ import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 import org.osgi.service.packageadmin.ExportedPackage;
-import org.papoose.core.VersionRange;
 
 
 /**

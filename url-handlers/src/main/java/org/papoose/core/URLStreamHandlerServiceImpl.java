@@ -16,10 +16,10 @@
  */
 package org.papoose.core;
 
-import java.net.URLConnection;
-import java.net.URL;
-import java.net.InetAddress;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.URL;
+import java.net.URLConnection;
 
 import org.osgi.service.url.URLStreamHandlerService;
 import org.osgi.service.url.URLStreamHandlerSetter;

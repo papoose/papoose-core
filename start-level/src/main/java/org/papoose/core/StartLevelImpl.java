@@ -16,8 +16,8 @@
  */
 package org.papoose.core;
 
-import org.osgi.service.startlevel.StartLevel;
 import org.osgi.framework.Bundle;
+import org.osgi.service.startlevel.StartLevel;
 
 /**
  * @version $Revision$ $Date$

@@ -145,7 +145,7 @@ public class BundleContextImplTest
             }
 
             Assert.assertEquals(5, count);
-            
+
             url = bundle.getResource("com/acme/fuse/dynamite.xml");
 
             Assert.assertNotNull(url);

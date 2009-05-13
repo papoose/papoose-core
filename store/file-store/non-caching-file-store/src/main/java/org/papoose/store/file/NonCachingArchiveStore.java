@@ -23,16 +23,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
-import java.security.CodeSigner;
-import java.security.cert.CertPath;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -57,8 +52,8 @@ import org.papoose.core.Papoose;
 import org.papoose.core.UrlUtils;
 import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.util.FileUtils;
-import org.papoose.core.util.Util;
 import org.papoose.core.util.SecurityUtils;
+import org.papoose.core.util.Util;
 
 
 /**

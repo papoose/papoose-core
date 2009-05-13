@@ -30,8 +30,8 @@ import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 
-import org.papoose.core.L18nResourceBundle;
 import org.papoose.core.FragmentAttachment;
+import org.papoose.core.L18nResourceBundle;
 import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.FragmentDescription;
