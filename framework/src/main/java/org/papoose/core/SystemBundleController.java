@@ -29,6 +29,7 @@ import java.util.SortedSet;
 import java.util.jar.Attributes;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
 
 import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
@@ -246,6 +247,11 @@ public class SystemBundleController extends BundleController
         public String getBundleSymbolicName()
         {
             return "org.papoose.system-bundle." + Papoose.FRAMEWORK_VERSION;
+        }
+
+        public URL getBundleUpdateLocation()
+        {
+            return null;
         }
 
         public Version getBundleVersion()

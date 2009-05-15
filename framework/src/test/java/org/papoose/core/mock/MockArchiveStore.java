@@ -88,6 +88,11 @@ public class MockArchiveStore implements ArchiveStore
         return "org.papoose.test.papoose-test-bundle";
     }
 
+    public URL getBundleUpdateLocation()
+    {
+        return null;
+    }
+
     public Version getBundleVersion()
     {
         return new Version(1, 0, 0, "SNAPSHOT");

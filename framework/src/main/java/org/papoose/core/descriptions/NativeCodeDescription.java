@@ -32,6 +32,7 @@ import org.papoose.core.util.ToStringCreator;
 @ThreadSafe
 public class NativeCodeDescription implements Comparable
 {
+    public final static NativeCodeDescription WILDCARD = new NativeCodeDescription(Collections.<String>emptySet(), Collections.<String, Object>emptyMap(), 0);
     private final Set<String> paths;
     private final Map<String, Object> parameters;
     private final int ordinal;

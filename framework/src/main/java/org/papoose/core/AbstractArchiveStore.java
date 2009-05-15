@@ -59,30 +59,19 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     private final int generation;
     private final Attributes attributes;
     private final String bundleActivatorClass;
-    private final List<String> bundleCategories;
     private final List<String> bundleClassPath;
-    private final String bundleContactAddress;
-    private final String bundleCopyright;
-    private final String bundleDescription;
-    private final String bundleDocUrl;
     private final String bundleLocalization;
-    private final short bundleManifestVersion;
-    private final String bundleName;
     private final List<NativeCodeDescription> bundleNativeCodeList;
-    private final boolean bundleNativeCodeListOptional;
     private final List<String> bundleRequiredExecutionEnvironment;
     private final String bundleSymbolicName;
     private final boolean singleton;
     private final FragmentAttachment fragmentAttachment;
     private final URL bundleUpdateLocation;
-    private final String bundleVendor;
     private final Version bundleVersion;
     private final List<DynamicDescription> bundleDynamicImportList;
     private final List<ExportDescription> bundleExportList;
-    private final List<String> bundleExportService;
     private final FragmentDescription bundleFragmentHost;
     private final List<ImportDescription> bundleImportList;
-    private final List<String> bundleImportService;
     private final List<RequireDescription> bundleRequireBundle;
     private final LazyActivationDescription lazyActivationDescription;
 
@@ -113,31 +102,20 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         this.fragmentAttachment = FragmentAttachment.parseFragmentDescription(fragmentAttachmentString);
 
         this.bundleActivatorClass = this.attributes.getValue(Constants.BUNDLE_ACTIVATOR);
-        this.bundleCategories = obtainBundleCategories(this.attributes);
         this.bundleClassPath = obtainBundleClasspath(this.attributes);
-        this.bundleContactAddress = this.attributes.getValue(Constants.BUNDLE_CONTACTADDRESS);
-        this.bundleCopyright = this.attributes.getValue(Constants.BUNDLE_COPYRIGHT);
-        this.bundleDescription = this.attributes.getValue(Constants.BUNDLE_DESCRIPTION);
-        this.bundleDocUrl = this.attributes.getValue(Constants.BUNDLE_DOCURL);
         this.bundleLocalization = this.attributes.getValue(Constants.BUNDLE_LOCALIZATION);
-        this.bundleManifestVersion = obtainBundleManifestVersion(this.attributes.getValue(Constants.BUNDLE_MANIFESTVERSION));
-        this.bundleName = this.attributes.getValue(Constants.BUNDLE_NAME);
         this.bundleNativeCodeList = obtainBundleNativeCodeList(this.attributes);
         this.bundleRequiredExecutionEnvironment = obtainBundleExecutionEnvironment(this.attributes);
         this.bundleUpdateLocation = obtainBundleUpdateLocation(this.attributes);
-        this.bundleVendor = this.attributes.getValue(Constants.BUNDLE_VENDOR);
         this.bundleVersion = Version.parseVersion(this.attributes.getValue(Constants.BUNDLE_VERSION));
         this.bundleDynamicImportList = obtainBundleDynamicImportList(this.attributes);
         this.bundleExportList = obtainBundleExportList(this.attributes, bundleSymbolicName, bundleVersion);
-        this.bundleExportService = obtainBundleExportService(this.attributes);
         this.bundleFragmentHost = obtainBundleFragementHost(this.attributes);
         this.bundleImportList = obtainBundleImportList(this.attributes);
-        this.bundleImportService = obtainBundleImportService(this.attributes);
         this.bundleRequireBundle = obtainBundleRequireBundle(this.attributes);
         this.lazyActivationDescription = obtainLazyActivationDescription(this.attributes);
 
-        this.bundleNativeCodeListOptional = bundleNativeCodeList.size() > 0 && "*".equals(bundleNativeCodeList.get(bundleNativeCodeList.size() - 1));
-
+        short bundleManifestVersion = obtainBundleManifestVersion(this.attributes.getValue(Constants.BUNDLE_MANIFESTVERSION));
         if (bundleManifestVersion != 2) throw new BundleException("Bundle-ManifestVersion must be 2");
 
         assert this.lazyActivationDescription != null;
@@ -186,6 +164,11 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     public FragmentAttachment getFragmentAttachment()
     {
         return fragmentAttachment;
+    }
+
+    public URL getBundleUpdateLocation()
+    {
+        return bundleUpdateLocation;
     }
 
     public Version getBundleVersion()
@@ -262,6 +245,7 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         return result;
     }
 
+    @SuppressWarnings({ "SimplifiableIfStatement" })
     @Override
     public boolean equals(Object o)
     {
@@ -272,21 +256,6 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 
         if (bundleId != that.bundleId) return false;
         return generation == that.generation;
-    }
-
-    protected static List<String> obtainBundleCategories(Attributes headers)
-    {
-        List<String> result = Collections.emptyList();
-
-        if (headers.containsKey(Constants.BUNDLE_CATEGORY))
-        {
-            String[] tokens = headers.getValue(Constants.BUNDLE_CATEGORY).split(",");
-            result = new ArrayList<String>(tokens.length);
-
-            for (String token : tokens) result.add(token.trim());
-        }
-
-        return result;
     }
 
     protected static List<String> obtainBundleClasspath(Attributes headers) throws BundleException
@@ -490,22 +459,6 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         return fragmentDescription;
     }
 
-    @SuppressWarnings({ "deprecation" })
-    protected static List<String> obtainBundleExportService(Attributes headers)
-    {
-        List<String> result = Collections.emptyList();
-
-        if (headers.containsKey(Constants.EXPORT_SERVICE))
-        {
-            String[] tokens = headers.getValue(Constants.EXPORT_SERVICE).split(",");
-            result = new ArrayList<String>(tokens.length);
-
-            for (String token : tokens) result.add(token.trim());
-        }
-
-        return result;
-    }
-
     protected static List<ImportDescription> obtainBundleImportList(Attributes headers) throws BundleException
     {
         List<ImportDescription> result = Collections.emptyList();
@@ -568,22 +521,6 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 
                 result.add(description);
             }
-        }
-
-        return result;
-    }
-
-    @SuppressWarnings({ "deprecation" })
-    protected static List<String> obtainBundleImportService(Attributes headers)
-    {
-        List<String> result = Collections.emptyList();
-
-        if (headers.containsKey(Constants.IMPORT_SERVICE))
-        {
-            String[] tokens = headers.getValue(Constants.IMPORT_SERVICE).split(",");
-            result = new ArrayList<String>(tokens.length);
-
-            for (String token : tokens) result.add(token.trim());
         }
 
         return result;

@@ -62,6 +62,8 @@ public interface ArchiveStore extends Comparable
 
     FragmentAttachment getFragmentAttachment();
 
+    URL getBundleUpdateLocation();
+
     Version getBundleVersion();
 
     List<String> getBundleClassPath();
