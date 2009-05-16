@@ -188,7 +188,7 @@ public class DefaultResolver implements Resolver
 
             if (generation instanceof BundleGeneration)
             {
-                LOGGER.finest("Bundle is an regular bundleGeneration");
+                LOGGER.finest("Bundle is a regular bundleGeneration");
 
                 BundleGeneration bundle = (BundleGeneration) generation;
                 for (ExportDescription exportDescription : bundle.getArchiveStore().getExportDescriptions())
@@ -700,8 +700,10 @@ public class DefaultResolver implements Resolver
      * @param candidate         the starting bundle
      * @return the set of implied constraints
      */
-    private static Set<CandidateWiring> collectImpliedConstraints(ExportDescription exportDescription, Candidate candidate)
+    private Set<CandidateWiring> collectImpliedConstraints(ExportDescription exportDescription, Candidate candidate)
     {
+        assert Thread.holdsLock(lock);
+
         try
         {
             return doCollectImpliedConstraints(exportDescription, candidate);
@@ -712,8 +714,10 @@ public class DefaultResolver implements Resolver
         }
     }
 
-    private static Set<CandidateWiring> doCollectImpliedConstraints(ExportDescription exportDescription, Candidate candidate)
+    private Set<CandidateWiring> doCollectImpliedConstraints(ExportDescription exportDescription, Candidate candidate)
     {
+        assert Thread.holdsLock(lock);
+
         Set<CandidateWiring> result = new HashSet<CandidateWiring>();
 
         if (candidate instanceof CandidateBundle) return result;
