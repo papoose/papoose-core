@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+    <parent>
+        <groupId>org.papoose.core.iandt</groupId>
+        <artifactId>integration-tests-module</artifactId>
+        <version>1.0.0.SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>integration-tests-bundles</artifactId>
+    <packaging>pom</packaging>
+    <name>Papoose :: OSGi Integration Tests :: Bundles</name>
+
+    <modules>
+    </modules>
+
+</project>
+

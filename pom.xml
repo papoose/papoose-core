@@ -92,7 +92,6 @@
                 <groupId>net.jcip</groupId>
                 <artifactId>jcip-annotations</artifactId>
                 <version>1.0</version>
-                <!-- scope>provided</scope -->
             </dependency>
 
             <dependency>
@@ -152,6 +151,7 @@
 
 
     <repositories>
+
         <repository>
             <id>papoose-dist-m2</id>
             <name>Papoose Repository</name>
@@ -177,6 +177,22 @@
         <developerConnection>scm:svn:https://osgi.svn.sourceforge.net/svnroot/osgi/osgi-R4-spec/trunk</developerConnection>
         <url>https://osgi.svn.sourceforge.net/svnroot/osgi/osgi-R4-spec/trunk</url>
     </scm>
+
+    <profiles>
+        <!-- integration testing profile -->
+        <profile>
+            <id>it</id>
+            <activation>
+                <property>
+                    <name>env-test</name>
+                </property>
+            </activation>
+            <modules>
+                <module>integration-tests</module>
+            </modules>
+        </profile>
+
+    </profiles>
 
 </project>
 
