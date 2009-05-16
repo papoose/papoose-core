@@ -3,14 +3,14 @@
 
     <parent>
         <groupId>org.papoose.core.iandt</groupId>
-        <artifactId>integration-tests-module</artifactId>
+        <artifactId>compatibility-tests-module</artifactId>
         <version>1.0.0.SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>integration-tests-support</artifactId>
+    <artifactId>compatibility-tests-support</artifactId>
     <packaging>jar</packaging>
-    <name>Papoose :: OSGi Integration Tests :: Support</name>
+    <name>Papoose :: OSGi Compatibility Tests :: Support</name>
 
     <build>
         <plugins>
@@ -41,12 +41,6 @@
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.papoose.test</groupId>
-            <artifactId>papoose-test-util</artifactId>
-            <scope>test</scope>
         </dependency>
 
     </dependencies>

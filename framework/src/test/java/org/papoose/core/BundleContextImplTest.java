@@ -34,9 +34,9 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import org.papoose.core.mock.MockStore;
+import org.papoose.core.mock.MockURLStreamHandlerFactory;
+import org.papoose.core.mock.MockURLStreamHandlerProvider;
 import org.papoose.core.spi.Store;
-import org.papoose.framework.mock.MockURLStreamHandlerFactory;
-import org.papoose.framework.mock.MockURLStreamHandlerProvider;
 
 /**
  * @version $Revision$ $Date$

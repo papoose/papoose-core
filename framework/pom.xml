@@ -75,12 +75,6 @@
             <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.papoose.test</groupId>
-            <artifactId>papoose-test-util</artifactId>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 
 </project>

@@ -125,18 +125,6 @@
                 <version>${papooseVersion}</version>
             </dependency>
 
-            <dependency>
-                <groupId>org.papoose.test</groupId>
-                <artifactId>papoose-test-bundle</artifactId>
-                <version>${papooseTestVersion}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.papoose.test</groupId>
-                <artifactId>papoose-test-util</artifactId>
-                <version>${papooseTestVersion}</version>
-            </dependency>
-
         </dependencies>
     </dependencyManagement>
 
@@ -179,16 +167,16 @@
     </scm>
 
     <profiles>
-        <!-- integration testing profile -->
+        <!-- testing profile -->
         <profile>
-            <id>it</id>
+            <id>tests</id>
             <activation>
                 <property>
                     <name>env-test</name>
                 </property>
             </activation>
             <modules>
-                <module>integration-tests</module>
+                <module>tests</module>
             </modules>
         </profile>
 
