@@ -66,7 +66,7 @@ public final class Papoose
 
     private final static Properties DEFAULTS = new Properties();
 
-    private static volatile int FRAMEWORK_COUNTER = 0;
+    private static int FRAMEWORK_COUNTER = 0;
     private final static Map<Integer, Reference<Papoose>> FRAMEWORKS_BY_ID = new HashMap<Integer, Reference<Papoose>>();
     private final static Map<String, Reference<Papoose>> FRAMEWORKS_BY_NAME = new HashMap<String, Reference<Papoose>>();
 
@@ -180,21 +180,25 @@ public final class Papoose
         ensureUrlHandling();
 
         this.timestamp = System.currentTimeMillis();
-        this.frameworkId = FRAMEWORK_COUNTER++;
 
-        if (frameworkName == null)
+        synchronized (FRAMEWORKS_BY_NAME)
         {
-            this.frameworkName = "org.papoose.framework-" + frameworkId;
-        }
-        else
-        {
-            this.frameworkName = frameworkName;
-        }
+            this.frameworkId = FRAMEWORK_COUNTER++;
 
-        if (FRAMEWORKS_BY_NAME.containsKey(this.frameworkName)) throw new IllegalArgumentException("Papoose instance with framework name " + this.frameworkName + " already registered");
+            if (frameworkName == null)
+            {
+                this.frameworkName = "org.papoose.framework-" + frameworkId;
+            }
+            else
+            {
+                this.frameworkName = frameworkName;
+            }
 
-        FRAMEWORKS_BY_ID.put(this.frameworkId, new WeakReference<Papoose>(this));
-        FRAMEWORKS_BY_NAME.put(this.frameworkName, new WeakReference<Papoose>(this));
+            if (FRAMEWORKS_BY_NAME.containsKey(this.frameworkName)) throw new IllegalArgumentException("Papoose instance with framework name " + this.frameworkName + " already registered");
+
+            FRAMEWORKS_BY_ID.put(this.frameworkId, new WeakReference<Papoose>(this));
+            FRAMEWORKS_BY_NAME.put(this.frameworkName, new WeakReference<Papoose>(this));
+        }
 
         this.bundleManager = new BundleManager(this, store);
         this.serviceRegistry = new ServiceRegistry(this);
