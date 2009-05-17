@@ -267,17 +267,6 @@ public final class Papoose
         this.waitPeriod = waitPeriod;
     }
 
-    public void appendBootDelegates(String[] delegates)
-    {
-        if (delegates == null) throw new IllegalArgumentException("delegates is null");
-        String[] temp = new String[bootDelegates.length + delegates.length];
-
-        System.arraycopy(bootDelegates, 0, temp, 0, bootDelegates.length);
-        System.arraycopy(delegates, 0, temp, bootDelegates.length, delegates.length);
-
-        bootDelegates = temp;
-    }
-
     public String[] getBootDelegates()
     {
         String[] result = new String[bootDelegates.length];

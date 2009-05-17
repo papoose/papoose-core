@@ -162,6 +162,11 @@ public class SecurityUtils
         }
     }
 
+    public static Certificate[] getCertificates(byte[] archive, TrustManager trustManager)
+    {
+        return null; //todo
+    }
+
     public static Certificate[] getCertificates(JarFile archive, TrustManager trustManager)
     {
         int numberOfChainsEncountered = 0;
