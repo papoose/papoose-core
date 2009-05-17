@@ -177,12 +177,12 @@ public final class Papoose
         if (store == null) throw new IllegalArgumentException("store is null");
         if (executorService == null) throw new IllegalArgumentException("threadPool is null");
 
-        ensureUrlHandling();
-
         this.timestamp = System.currentTimeMillis();
 
         synchronized (FRAMEWORKS_BY_NAME)
         {
+            ensureUrlHandling();
+
             this.frameworkId = FRAMEWORK_COUNTER++;
 
             if (frameworkName == null)
@@ -538,7 +538,7 @@ public final class Papoose
 
         try
         {
-            URL url = new URL("codesource://1:0@org.papoose.framework.0");
+            new URL("codesource://1:0@org.papoose.framework.0");
         }
         catch (MalformedURLException e)
         {
@@ -556,6 +556,17 @@ public final class Papoose
             }
 
             System.setProperty("java.protocol.handler.pkgs", prefixes);
+
+            try
+            {
+                new URL("codesource://1:0@org.papoose.framework-0");
+            }
+            catch (MalformedURLException mue)
+            {
+                LOGGER.severe("Unable to pick up Papoose protocol handlers");
+
+                throw new FatalError("Unable to pick up Papoose protocol handlers", mue);
+            }
         }
 
         LOGGER.exiting(CLASS_NAME, "ensureUrlHandling");
