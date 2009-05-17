@@ -3,12 +3,12 @@
 
     <parent>
         <groupId>org.papoose.core</groupId>
-        <artifactId>papoose-file-store</artifactId>
+        <artifactId>store-file</artifactId>
         <version>1.0.0.SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>non-caching-file-store</artifactId>
+    <artifactId>store-file-non-caching</artifactId>
     <packaging>jar</packaging>
     <name>Papoose :: Store :: File :: Non-Caching</name>
     <description>OSGi R4 Core Framework</description>

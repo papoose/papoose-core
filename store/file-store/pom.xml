@@ -9,7 +9,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.papoose.core</groupId>
-    <artifactId>papoose-file-store</artifactId>
+    <artifactId>store-file</artifactId>
     <name>Papoose :: Store :: File</name>
     <packaging>pom</packaging>
 
