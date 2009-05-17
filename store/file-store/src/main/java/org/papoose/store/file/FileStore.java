@@ -45,9 +45,9 @@ import org.papoose.core.util.Util;
 /**
  * @version $Revision$ $Date$
  */
-public class NonCachingFileStore implements Store
+public class FileStore implements Store
 {
-    private final static String CLASS_NAME = NonCachingFileStore.class.getName();
+    private final static String CLASS_NAME = FileStore.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final static String PROPERTIES_FILE = "store.properties";
     private final static String GENERATION_KEY = "generation.";
@@ -57,9 +57,9 @@ public class NonCachingFileStore implements Store
     private final Properties properties = new Properties();
     private final File root;
 
-    public NonCachingFileStore(File root)
+    public FileStore(File root)
     {
-        LOGGER.entering(CLASS_NAME, "NonCachingFileStore");
+        LOGGER.entering(CLASS_NAME, "FileStore");
 
         if (root == null) throw new IllegalArgumentException("Root file for file store cannot be null");
 
@@ -80,7 +80,7 @@ public class NonCachingFileStore implements Store
 
         if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("root: " + root);
 
-        LOGGER.exiting(CLASS_NAME, "NonCachingFileStore");
+        LOGGER.exiting(CLASS_NAME, "FileStore");
     }
 
     public File getRoot()
@@ -101,7 +101,7 @@ public class NonCachingFileStore implements Store
 
             try
             {
-                result.add(new NonCachingBundleFileStore(new File(bundlesRoot, bundleId), Long.valueOf(bundleId)));
+                result.add(new BundleFileStore(new File(bundlesRoot, bundleId), Long.valueOf(bundleId)));
             }
             catch (BundleException be)
             {
@@ -142,7 +142,7 @@ public class NonCachingFileStore implements Store
         if (bundleRoot.exists()) throw new BundleException("Bundle store location " + bundleRoot + " already exists");
         if (!bundleRoot.mkdirs()) throw new FatalError("Unable to create bundle store location: " + bundleRoot);
 
-        NonCachingBundleFileStore result = new NonCachingBundleFileStore(bundleRoot, bundleId, location);
+        BundleFileStore result = new BundleFileStore(bundleRoot, bundleId, location);
 
         LOGGER.exiting(CLASS_NAME, "allocateBundleStore", result);
 
@@ -175,7 +175,7 @@ public class NonCachingFileStore implements Store
     {
         LOGGER.entering(CLASS_NAME, "allocateArchiveStore", new Object[]{ framework, bundleId, inputStream });
 
-        NonCachingArchiveStore result;
+        ArchiveFileStore result;
         try
         {
             int generation = Integer.parseInt(properties.getProperty(GENERATION_KEY + bundleId)) + 1;
@@ -187,7 +187,7 @@ public class NonCachingFileStore implements Store
             if (archiveRoot.exists()) throw new FatalError("Archive store location " + archiveRoot + " already exists");
             if (!archiveRoot.mkdirs()) throw new FatalError("Unable to create archive store location: " + archiveRoot);
 
-            result = new NonCachingArchiveStore(framework, bundleId, generation, archiveRoot, inputStream);
+            result = new ArchiveFileStore(framework, bundleId, generation, archiveRoot, inputStream);
 
             save();
         }
@@ -237,7 +237,7 @@ public class NonCachingFileStore implements Store
                 Util.delete(new File(archivesRoot, Integer.toString(generation)));
             }
 
-            result = new NonCachingArchiveStore(framework, bundleId, current, new File(archivesRoot, Integer.toString(current)));
+            result = new ArchiveFileStore(framework, bundleId, current, new File(archivesRoot, Integer.toString(current)));
         }
 
         if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASS_NAME, "loadArchiveStore", result);

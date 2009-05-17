@@ -59,7 +59,7 @@ import org.papoose.core.util.Util;
 /**
  * @version $Revision$ $Date$
  */
-public class NonCachingArchiveStore extends AbstractArchiveStore
+public class ArchiveFileStore extends AbstractArchiveStore
 {
     private final static String ARCHIVE_JAR_NAME = "archive.jar";
     private final static String ARCHIVE_NAME = "archive";
@@ -73,12 +73,12 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
     private SortedSet<NativeCodeDescription> nativeCodeDescriptions;
     private transient Certificate[] certificates;
 
-    public NonCachingArchiveStore(Papoose framework, long bundleId, int generaton, File archiveRoot) throws BundleException
+    public ArchiveFileStore(Papoose framework, long bundleId, int generaton, File archiveRoot) throws BundleException
     {
         this(framework, bundleId, generaton, archiveRoot, Util.safeStream(new File(archiveRoot, ARCHIVE_JAR_NAME)));
     }
 
-    public NonCachingArchiveStore(Papoose framework, long bundleId, int generaton, File archiveRoot, InputStream inputStream) throws BundleException
+    public ArchiveFileStore(Papoose framework, long bundleId, int generaton, File archiveRoot, InputStream inputStream) throws BundleException
     {
         super(framework, bundleId, generaton, loadAndProvideAttributes(archiveRoot, inputStream));
 
@@ -319,18 +319,18 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
 
         public ResourceHandle getResourceHandle(String resourceName)
         {
-            NonCachingArchiveStore archiveStore = NonCachingArchiveStore.this;
+            ArchiveFileStore archiveFileStore = ArchiveFileStore.this;
 
             if (resourceName.length() == 0)
             {
-                return new BundleRootResourceHandle(UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), "/", getGeneration(), location));
+                return new BundleRootResourceHandle(UrlUtils.generateResourceUrl(archiveFileStore.getFrameworkName(), archiveFileStore.getBundleId(), "/", getGeneration(), location));
             }
 
             String entryName = path + resourceName;
             ZipEntry entry = archive.getEntry(entryName);
             if (entry != null)
             {
-                return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), resourceName, getGeneration(), location));
+                return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveFileStore.getFrameworkName(), archiveFileStore.getBundleId(), resourceName, getGeneration(), location));
             }
             else if (entryName.endsWith("/"))
             {
@@ -339,7 +339,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
                 {
                     if (enumeration.nextElement().getName().startsWith(entryName))
                     {
-                        return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveStore.getFrameworkName(), archiveStore.getBundleId(), resourceName, getGeneration(), location));
+                        return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveFileStore.getFrameworkName(), archiveFileStore.getBundleId(), resourceName, getGeneration(), location));
                     }
                 }
             }
@@ -384,7 +384,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             @Override
             public Certificate[] getCertificates()
             {
-                return NonCachingArchiveStore.this.getCertificates();
+                return ArchiveFileStore.this.getCertificates();
             }
         }
 
@@ -424,7 +424,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             @Override
             public Certificate[] getCertificates()
             {
-                return NonCachingArchiveStore.this.getCertificates();
+                return ArchiveFileStore.this.getCertificates();
             }
         }
     }
@@ -504,7 +504,7 @@ public class NonCachingArchiveStore extends AbstractArchiveStore
             @Override
             public Certificate[] getCertificates()
             {
-                return NonCachingArchiveStore.this.getCertificates();
+                return ArchiveFileStore.this.getCertificates();
             }
         }
     }

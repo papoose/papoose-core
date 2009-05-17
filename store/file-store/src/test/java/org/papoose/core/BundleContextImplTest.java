@@ -32,7 +32,7 @@ import org.osgi.framework.BundleContext;
 
 import org.papoose.core.spi.Store;
 import org.papoose.core.util.Util;
-import org.papoose.store.file.NonCachingFileStore;
+import org.papoose.store.file.FileStore;
 
 
 /**
@@ -50,7 +50,7 @@ public class BundleContextImplTest
         try
         {
             final long earlyTimestamp = System.currentTimeMillis();
-            Store fileStore = new NonCachingFileStore(fileStoreRoot);
+            Store fileStore = new FileStore(fileStoreRoot);
             Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new ScheduledThreadPoolExecutor(10), new Properties());
 
             papoose.start();
