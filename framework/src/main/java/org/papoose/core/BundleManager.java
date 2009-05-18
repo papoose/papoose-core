@@ -306,6 +306,9 @@ public class BundleManager
 
             if (nameVersions.containsKey(key)) throw new BundleException("Bundle already registered with name " + key.getSymbolicName() + " and version " + key.getVersion());
 
+            SecurityUtils.checkAdminPermission(bundle, AdminPermission.LIFECYCLE);
+            if (generation instanceof ExtensionGeneration) SecurityUtils.checkAdminPermission(bundle, AdminPermission.EXTENSIONLIFECYCLE);
+
             nameVersions.put(key, bundle);
             locations.put(location, bundle);
             installedbundles.put(bundleId, bundle);
@@ -325,12 +328,38 @@ public class BundleManager
         }
         catch (BundleException be)
         {
-            store.removeBundleStore(bundleId);
+            try
+            {
+                store.removeBundleStore(bundleId);
+            }
+            catch (BundleException e)
+            {
+                throw new FatalError("Unable to remove bundle at location " + location, e);
+            }
             throw be;
+        }
+        catch (SecurityException se)
+        {
+            try
+            {
+                store.removeBundleStore(bundleId);
+            }
+            catch (BundleException be)
+            {
+                throw new FatalError("Unable to remove bundle at location " + location, be);
+            }
+            throw se;
         }
         catch (Exception e)
         {
-            store.removeBundleStore(bundleId);
+            try
+            {
+                store.removeBundleStore(bundleId);
+            }
+            catch (BundleException be)
+            {
+                throw new FatalError("Unable to remove bundle at location " + location, be);
+            }
             throw new BundleException("Error occured while loading location " + location, e);
         }
     }
@@ -703,6 +732,7 @@ public class BundleManager
                 final BundleActivator bundleActivator = (BundleActivator) bundleActivatorClass.newInstance();
 
                 bundleController.setBundleActivator(bundleActivator);
+
 
                 SecurityUtils.doPrivilegedExceptionAction(new PrivilegedExceptionAction<Void>()
                 {
