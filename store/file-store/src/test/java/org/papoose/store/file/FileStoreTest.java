@@ -92,9 +92,11 @@ public class FileStoreTest
 
         bundle.start();
 
+        long bundleId = bundle.getBundleId();
+
         papoose.stop();
 
-        fileStore.removeBundleStore(1);
+        fileStore.removeBundleStore(bundleId);
     }
 
     @Before

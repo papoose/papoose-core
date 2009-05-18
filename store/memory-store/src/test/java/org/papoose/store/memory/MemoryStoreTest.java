@@ -90,9 +90,11 @@ public class MemoryStoreTest
 
         bundle.start();
 
+        long bundleId = bundle.getBundleId();
+
         papoose.stop();
 
-        memoryStore.removeBundleStore(1);
+        memoryStore.removeBundleStore(bundleId);
     }
 
     @Before
