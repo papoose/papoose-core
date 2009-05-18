@@ -24,6 +24,14 @@ import net.jcip.annotations.Immutable;
 @Immutable
 class Equal extends CompareExpr
 {
+    private final static Object FALSE = new Object()
+    {
+        public boolean equals(Object obj)
+        {
+            return false;
+        }
+    };
+
     private transient volatile String string;
 
     public Equal(String attribute, String value)
@@ -40,14 +48,6 @@ class Equal extends CompareExpr
     {
         return FALSE;
     }
-
-    private final static Object FALSE = new Object()
-    {
-        public boolean equals(Object obj)
-        {
-            return false;
-        }
-    };
 
     public String toString()
     {

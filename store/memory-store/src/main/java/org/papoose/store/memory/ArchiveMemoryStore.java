@@ -18,7 +18,6 @@ package org.papoose.store.memory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -67,9 +66,9 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
     private final URL codeSource;
     private transient Certificate[] certificates;
 
-    public ArchiveMemoryStore(Papoose framework, long bundleId, int generaton, File archiveRoot, InputStream inputStream) throws BundleException
+    public ArchiveMemoryStore(Papoose framework, long bundleId, int generaton, InputStream inputStream) throws BundleException
     {
-        super(framework, bundleId, generaton, loadAndProvideAttributes(archiveRoot, inputStream));
+        super(framework, bundleId, generaton, loadAndProvideAttributes(inputStream));
 
         try
         {
@@ -78,7 +77,7 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
 
             assert this.archiveBytes != null;
 
-            JarInputStream jarInputStream = new JarInputStream(new ByteArrayInputStream(threadLocalArchive.get()));
+            JarInputStream jarInputStream = new JarInputStream(new ByteArrayInputStream(archiveBytes));
 
             this.manifest = jarInputStream.getManifest();
 
@@ -491,7 +490,7 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
         }
     }
 
-    private static Attributes loadAndProvideAttributes(File bundleRoot, InputStream inputStream) throws BundleException
+    private static Attributes loadAndProvideAttributes(InputStream inputStream) throws BundleException
     {
         try
         {

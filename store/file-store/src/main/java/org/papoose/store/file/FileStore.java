@@ -72,7 +72,15 @@ public class FileStore implements Store
         }
         else
         {
-            load();
+            File propertiesFile = new File(this.root, PROPERTIES_FILE);
+            if (propertiesFile.exists())
+            {
+                load();
+            }
+            else
+            {
+                save();
+            }
         }
 
         File bundlesRoot = new File(root, BUNDLES_DIR);

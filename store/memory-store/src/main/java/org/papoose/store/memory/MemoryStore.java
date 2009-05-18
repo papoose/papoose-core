@@ -16,28 +16,20 @@
  */
 package org.papoose.store.memory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
 
-import org.papoose.core.FatalError;
 import org.papoose.core.Papoose;
 import org.papoose.core.PapooseException;
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.spi.BundleStore;
 import org.papoose.core.spi.Store;
-import org.papoose.core.util.FileUtils;
 import org.papoose.core.util.ToStringCreator;
-import org.papoose.core.util.Util;
 
 /**
  * @version $Revision$ $Date$
@@ -46,43 +38,14 @@ public class MemoryStore implements Store
 {
     private final static String CLASS_NAME = MemoryStore.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
-    private final static String PROPERTIES_FILE = "store.properties";
     private final static String GENERATION_KEY = "generation.";
-    private final static String SYSTEM_DIR = "system";
-    private final static String BUNDLES_DIR = "bundles";
-    private final static String GENERATIONS_DIR = "generations";
     private final Properties properties = new Properties();
-    private final File root;
 
-    public MemoryStore(File root)
+    public MemoryStore()
     {
         LOGGER.entering(CLASS_NAME, "FileStore");
 
-        if (root == null) throw new IllegalArgumentException("Root file for file store cannot be null");
-
-        this.root = root;
-
-        if (!root.exists())
-        {
-            if (!root.mkdirs()) throw new FatalError("Unable to create non-existant root: " + root);
-            save();
-        }
-        else
-        {
-            load();
-        }
-
-        File bundlesRoot = new File(root, BUNDLES_DIR);
-        if (!bundlesRoot.exists() && !bundlesRoot.mkdirs()) throw new FatalError("Unable to create bundles root: " + bundlesRoot);
-
-        if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("root: " + root);
-
         LOGGER.exiting(CLASS_NAME, "FileStore");
-    }
-
-    public File getRoot()
-    {
-        return root;
     }
 
     public synchronized List<BundleStore> loadBundleStores() throws PapooseException
@@ -102,22 +65,7 @@ public class MemoryStore implements Store
 
         assert location != null;
 
-        File bundleRoot;
-        if (bundleId == 0)
-        {
-            bundleRoot = new File(root, SYSTEM_DIR);
-        }
-        else
-        {
-            bundleRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId);
-
-            properties.setProperty(GENERATION_KEY + bundleId, "-1");
-
-            save();
-        }
-
-        if (bundleRoot.exists()) throw new BundleException("Bundle store location " + bundleRoot + " already exists");
-        if (!bundleRoot.mkdirs()) throw new FatalError("Unable to create bundle store location: " + bundleRoot);
+        properties.setProperty(GENERATION_KEY + bundleId, "-1");
 
         BundleMemoryStore result = new BundleMemoryStore(bundleId, location);
 
@@ -130,20 +78,7 @@ public class MemoryStore implements Store
     {
         LOGGER.entering(CLASS_NAME, "removeBundleStore", bundleId);
 
-        File bundleRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId);
-
-        if (bundleRoot.exists())
-        {
-            Util.delete(bundleRoot);
-
-            properties.remove(GENERATION_KEY + bundleId);
-
-            save();
-        }
-        else
-        {
-            LOGGER.warning("Bundle root: " + bundleRoot + " never existed");
-        }
+        properties.remove(GENERATION_KEY + bundleId);
 
         LOGGER.exiting(CLASS_NAME, "removeBundleStore");
     }
@@ -152,27 +87,11 @@ public class MemoryStore implements Store
     {
         LOGGER.entering(CLASS_NAME, "allocateArchiveStore", new Object[]{ framework, bundleId, inputStream });
 
-        ArchiveMemoryStore result;
-        try
-        {
-            int generation = Integer.parseInt(properties.getProperty(GENERATION_KEY + bundleId)) + 1;
+        int generation = Integer.parseInt(properties.getProperty(GENERATION_KEY + bundleId)) + 1;
 
-            properties.setProperty(GENERATION_KEY + bundleId, Integer.toString(generation));
+        properties.setProperty(GENERATION_KEY + bundleId, Integer.toString(generation));
 
-            File archiveRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId, GENERATIONS_DIR, generation);
-
-            if (archiveRoot.exists()) throw new FatalError("Archive store location " + archiveRoot + " already exists");
-            if (!archiveRoot.mkdirs()) throw new FatalError("Unable to create archive store location: " + archiveRoot);
-
-            result = new ArchiveMemoryStore(framework, bundleId, generation, archiveRoot, inputStream);
-
-            save();
-        }
-        catch (NumberFormatException nfe)
-        {
-            LOGGER.log(Level.SEVERE, "Unable to obtain last generation", nfe);
-            throw new FatalError("Unable to obtain last generation", nfe);
-        }
+        ArchiveMemoryStore result = new ArchiveMemoryStore(framework, bundleId, generation, inputStream);
 
         LOGGER.exiting(CLASS_NAME, "allocateArchiveStore", result);
 
@@ -184,46 +103,11 @@ public class MemoryStore implements Store
         throw new UnsupportedOperationException("Memory based store does not support loading persisted archive");
     }
 
-    private void load()
-    {
-        LOGGER.entering(CLASS_NAME, "load");
-
-        try
-        {
-            properties.load(new FileInputStream(new File(this.root, PROPERTIES_FILE)));
-        }
-        catch (IOException ioe)
-        {
-            LOGGER.log(Level.SEVERE, "Unable to load bundle store state", ioe);
-            throw new FatalError("Unable to save bundle store state", ioe);
-        }
-
-        LOGGER.exiting(CLASS_NAME, "load");
-    }
-
-    private void save()
-    {
-        LOGGER.entering(CLASS_NAME, "save");
-
-        try
-        {
-            properties.store(new FileOutputStream(new File(this.root, PROPERTIES_FILE)), " bundle store state");
-        }
-        catch (IOException ioe)
-        {
-            LOGGER.log(Level.SEVERE, "Unable to save bundle store state", ioe);
-            throw new FatalError("Unable to save bundle store state", ioe);
-        }
-
-        LOGGER.exiting(CLASS_NAME, "save");
-    }
-
     @Override
     public String toString()
     {
         ToStringCreator creator = new ToStringCreator(this);
 
-        creator.append("root", root);
         creator.append("properties", properties);
 
         return creator.toString();

@@ -291,7 +291,7 @@ public class BundleManager
 
             ArchiveStore archiveStore = store.allocateArchiveStore(framework, bundleId, inputStream);
 
-            archiveStore.assignNativeCodeDescriptions(resolveNativeCodeDependencies(archiveStore.getBundleNativeCodeList()));
+            if (!archiveStore.getBundleNativeCodeList().isEmpty()) archiveStore.assignNativeCodeDescriptions(resolveNativeCodeDependencies(archiveStore.getBundleNativeCodeList()));
 
             confirmRequiredExecutionEnvironment(archiveStore.getBundleRequiredExecutionEnvironment());
 

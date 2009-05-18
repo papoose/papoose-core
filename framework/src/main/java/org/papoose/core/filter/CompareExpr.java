@@ -80,7 +80,6 @@ abstract class CompareExpr implements Expr
                 return false;
             }
 
-
             return testPair(object, test);
         }
         catch (NumberFormatException doNothing)
@@ -219,5 +218,4 @@ abstract class CompareExpr implements Expr
             }
         }
     }
-
 }

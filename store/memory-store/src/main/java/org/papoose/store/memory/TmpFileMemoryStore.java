@@ -50,7 +50,6 @@ public class TmpFileMemoryStore implements Store
     private final static String GENERATION_KEY = "generation.";
     private final static String SYSTEM_DIR = "system";
     private final static String BUNDLES_DIR = "bundles";
-    private final static String GENERATIONS_DIR = "generations";
     private final Properties properties = new Properties();
     private final File root;
 
@@ -159,12 +158,7 @@ public class TmpFileMemoryStore implements Store
 
             properties.setProperty(GENERATION_KEY + bundleId, Integer.toString(generation));
 
-            File archiveRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId, GENERATIONS_DIR, generation);
-
-            if (archiveRoot.exists()) throw new FatalError("Archive store location " + archiveRoot + " already exists");
-            if (!archiveRoot.mkdirs()) throw new FatalError("Unable to create archive store location: " + archiveRoot);
-
-            result = new ArchiveMemoryStore(framework, bundleId, generation, archiveRoot, inputStream);
+            result = new ArchiveMemoryStore(framework, bundleId, generation, inputStream);
 
             save();
         }
