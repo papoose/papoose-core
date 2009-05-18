@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.store.file;
+package org.papoose.store.memory;
 
 import java.io.File;
 import java.util.Dictionary;
@@ -31,22 +31,20 @@ import org.osgi.framework.BundleContext;
 
 import org.papoose.core.Papoose;
 import org.papoose.core.spi.Store;
-import org.papoose.core.util.Util;
 
 /**
  * @version $Revision$ $Date$
  */
-public class BundleContextImplTest
+public class MemoryStoreTest
 {
-    private File testDirectory;
     private Locale savedLocale;
 
     @Test
     public void test() throws Exception
     {
         final long earlyTimestamp = System.currentTimeMillis();
-        Store fileStore = new FileStore(testDirectory);
-        Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new ScheduledThreadPoolExecutor(10), new Properties());
+        Store memoryStore = new MemoryStore();
+        Papoose papoose = new Papoose("org.acme.osgi.0", memoryStore, new ScheduledThreadPoolExecutor(10), new Properties());
 
         papoose.start();
 
@@ -94,17 +92,13 @@ public class BundleContextImplTest
 
         papoose.stop();
 
-        fileStore.removeBundleStore(1);
+        memoryStore.removeBundleStore(1);
     }
 
     @Before
-    @SuppressWarnings({ "EmptyCatchBlock", "ResultOfMethodCallIgnored" })
+    @SuppressWarnings({ "EmptyCatchBlock" })
     public void setUp() throws Exception
     {
-        testDirectory = File.createTempFile("papoose", "test");
-        testDirectory.delete();
-        testDirectory.mkdir();
-
         savedLocale = Locale.getDefault();
         Locale.setDefault(new Locale("en", "US"));
     }
@@ -114,7 +108,5 @@ public class BundleContextImplTest
     {
         Locale.setDefault(savedLocale);
         savedLocale = null;
-
-        Util.delete(testDirectory);
     }
 }
