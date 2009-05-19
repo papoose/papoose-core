@@ -31,10 +31,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.apache.xbean.classloader.AbstractResourceHandle;
 import org.apache.xbean.classloader.AbstractUrlResourceLocation;
@@ -56,12 +58,14 @@ import org.papoose.core.util.Util;
  */
 public class ArchiveMemoryStore extends AbstractArchiveStore
 {
+    private final static String CLASS_NAME = ArchiveMemoryStore.class.getName();
+    private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final List<ResourceLocation> resourceLocations = new ArrayList<ResourceLocation>();
     private final Map<String, ResourceLocation> path2locations = new HashMap<String, ResourceLocation>();
     private final static ThreadLocal<byte[]> threadLocalArchive = new ThreadLocal<byte[]>();
     private byte[] archiveBytes;
-    private final List<JarEntry> jarEntries = new ArrayList<JarEntry>();
-    private final Map<JarEntry, byte[]> jarContents = new HashMap<JarEntry, byte[]>();
+    private final List<ZipEntry> zipEntries = new ArrayList<ZipEntry>();
+    private final Map<ZipEntry, byte[]> jarContents = new HashMap<ZipEntry, byte[]>();
     private final Manifest manifest;
     private final URL codeSource;
     private transient Certificate[] certificates;
@@ -81,18 +85,22 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
 
             this.manifest = jarInputStream.getManifest();
 
-            JarEntry jarEntry;
+            ZipInputStream zipInputStream = new ZipInputStream(new ByteArrayInputStream(archiveBytes));
+            ZipEntry jarEntry;
             byte[] buffer = new byte[4096];
-            while ((jarEntry = jarInputStream.getNextJarEntry()) != null)
+            while ((jarEntry = zipInputStream.getNextEntry()) != null)
             {
-                jarEntries.add(jarEntry);
+                zipEntries.add(jarEntry);
 
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                Util.copy(jarInputStream, outputStream);
+                if (!jarEntry.isDirectory())
+                {
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    Util.copy(zipInputStream, outputStream);
 
-                outputStream.close();
+                    outputStream.close();
 
-                jarContents.put(jarEntry, outputStream.toByteArray());
+                    jarContents.put(jarEntry, outputStream.toByteArray());
+                }
             }
 
             this.codeSource = UrlUtils.generateCodeSourceUrl(getFrameworkName(), getBundleId());
@@ -125,8 +133,8 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
         }
         else
         {
-            JarEntry entry = getJarEntry(path + "/");
-            if (entry == null) entry = getJarEntry(path);
+            ZipEntry entry = getZipEntry(path + "/");
+            if (entry == null) entry = getZipEntry(path);
             if (entry != null)
             {
                 if (entry.isDirectory())
@@ -174,24 +182,24 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
 
         List<URL> result = new ArrayList<URL>();
 
-        for (JarEntry jarEntry : jarEntries)
+        for (ZipEntry zipEntry : zipEntries)
         {
-            String entryName = jarEntry.getName();
+            String entryName = zipEntry.getName();
             if (entryName.startsWith(path) && (entryName.length() != path.length() || filePattern.length() == 0))
             {
                 int count = 0;
                 entryName = entryName.substring(path.length());
                 for (int i = 0; i < entryName.length(); i++) if (entryName.charAt(i) == '/') count++;
 
-                if (!jarEntry.isDirectory())
+                if (!zipEntry.isDirectory())
                 {
                     if (count == 0 && Util.match(targets, entryName))
                     {
-                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), jarEntry.getName(), getGeneration()));
+                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), zipEntry.getName(), getGeneration()));
                     }
                     else if (recurse && Util.match(targets, entryName.substring(entryName.lastIndexOf('/') + 1)))
                     {
-                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), jarEntry.getName(), getGeneration()));
+                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), zipEntry.getName(), getGeneration()));
                     }
                 }
                 else if (includeDirectory)
@@ -200,11 +208,11 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
 
                     if (count == 0 && Util.match(targets, entryName))
                     {
-                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), jarEntry.getName(), getGeneration()));
+                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), zipEntry.getName(), getGeneration()));
                     }
                     else if ((recurse || count <= 1) && Util.match(targets, entryName.substring(entryName.lastIndexOf('/') + 1)))
                     {
-                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), jarEntry.getName(), getGeneration()));
+                        result.add(UrlUtils.generateEntryUrl(getFrameworkName(), getBundleId(), zipEntry.getName(), getGeneration()));
                     }
                 }
             }
@@ -221,7 +229,7 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
             String path = this.getBundleLocalization();
             if (path == null) path = "OSGI-INF/l10n/bundle";
             path += (locale != null ? "_" + locale : "") + ".properties";
-            JarEntry entry = getJarEntry(path);
+            ZipEntry entry = getZipEntry(path);
             if (entry != null) return new L18nResourceBundle(getInputStream(entry));
         }
         catch (IOException ioe)
@@ -237,7 +245,7 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
 
     public InputStream getInputStreamForEntry(String path) throws IOException
     {
-        ZipEntry zipEntry = getJarEntry(path);
+        ZipEntry zipEntry = getZipEntry(path);
 
         if (zipEntry == null)
         {
@@ -245,7 +253,7 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
         }
         else
         {
-            return getInputStream(getJarEntry(path));
+            return getInputStream(getZipEntry(path));
         }
     }
 
@@ -302,14 +310,14 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
             }
 
             String entryName = path + resourceName;
-            JarEntry entry = getJarEntry(entryName);
+            ZipEntry entry = getZipEntry(entryName);
             if (entry != null)
             {
                 return new BundleDirectoryResourceHandle(entry, UrlUtils.generateResourceUrl(archiveFileStore.getFrameworkName(), archiveFileStore.getBundleId(), resourceName, getGeneration(), location));
             }
             else if (entryName.endsWith("/"))
             {
-                for (JarEntry jarEntry : jarEntries)
+                for (ZipEntry jarEntry : zipEntries)
                 {
                     if (jarEntry.getName().startsWith(entryName))
                     {
@@ -328,10 +336,10 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
 
         private class BundleDirectoryResourceHandle extends AbstractResourceHandle
         {
-            private final JarEntry entry;
+            private final ZipEntry entry;
             private final URL url;
 
-            public BundleDirectoryResourceHandle(JarEntry entry, URL url)
+            public BundleDirectoryResourceHandle(ZipEntry entry, URL url)
             {
                 this.entry = entry;
                 this.url = url;
@@ -405,38 +413,51 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
 
     private class BundleJarResourceLocation extends AbstractUrlResourceLocation
     {
-        private final String path;
+        private final ZipEntry jarEntry;
         private final int location;
 
-        public BundleJarResourceLocation(JarEntry entry, int location) throws BundleException
+        public BundleJarResourceLocation(ZipEntry jarEntry, int location) throws BundleException
         {
             super(codeSource);
 
-            this.path = entry.getName();
+            this.jarEntry = jarEntry;
             this.location = location;
         }
 
         public ResourceHandle getResourceHandle(String resourceName)
         {
-            JarEntry entry = getJarEntry(resourceName);
-            if (entry != null)
+            ZipInputStream zipInputStream = new ZipInputStream(ArchiveMemoryStore.this.getInputStream(jarEntry));
+            ZipEntry entry;
+            try
             {
-                return new BundleJarResourceHandle(entry, UrlUtils.generateResourceUrl(getFrameworkName(), getBundleId(), "/" + resourceName, getGeneration(), location));
+                while ((entry = zipInputStream.getNextEntry()) != null)
+                {
+                    if (entry.getName().equals(resourceName))
+                    {
+                        return new BundleJarResourceHandle(entry, UrlUtils.generateResourceUrl(getFrameworkName(), getBundleId(), "/" + resourceName, getGeneration(), location));
+                    }
+                }
+            }
+            catch (IOException ioe)
+            {
+                LOGGER.log(Level.WARNING, "Embedded Jar " + jarEntry.getName() + " is unreadable", ioe);
             }
             return null;
         }
 
         public Manifest getManifest() throws IOException
         {
-            return ArchiveMemoryStore.this.manifest;
+            JarInputStream jarInputStream = new JarInputStream(ArchiveMemoryStore.this.getInputStream(jarEntry));
+
+            return jarInputStream.getManifest();
         }
 
         private class BundleJarResourceHandle extends AbstractResourceHandle
         {
-            private final JarEntry entry;
+            private final ZipEntry entry;
             private final URL url;
 
-            public BundleJarResourceHandle(JarEntry entry, URL url)
+            public BundleJarResourceHandle(ZipEntry entry, URL url)
             {
                 this.entry = entry;
                 this.url = url;
@@ -450,7 +471,30 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
 
             public URL getCodeSourceUrl() { return codeSource; }
 
-            public InputStream getInputStream() throws IOException { return ArchiveMemoryStore.this.getInputStream(entry); }
+            public InputStream getInputStream() throws IOException
+            {
+                ZipInputStream zipInputStream = new ZipInputStream(ArchiveMemoryStore.this.getInputStream(jarEntry));
+                ZipEntry zipEntry;
+                while ((zipEntry = zipInputStream.getNextEntry()) != null)
+                {
+                    if (entry.getName().equals(zipEntry.getName()))
+                    {
+                        byte[] buffer = new byte[4096];
+                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                        Util.copy(zipInputStream, outputStream);
+
+                        outputStream.close();
+
+                        return new ByteArrayInputStream(outputStream.toByteArray());
+                    }
+                }
+
+                LOGGER.warning("Jar entry " + entry.getName() + " in " + jarEntry.getName() + " should have been found");
+
+                assert false;
+
+                return null;
+            }
 
             public int getContentLength() { return (int) entry.getSize(); }
 
@@ -468,16 +512,16 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
         }
     }
 
-    private JarEntry getJarEntry(String path)
+    private ZipEntry getZipEntry(String path)
     {
-        for (JarEntry jarEntry : jarEntries)
+        for (ZipEntry zipEntry : zipEntries)
         {
-            if (jarEntry.getName().equals(path)) return jarEntry;
+            if (zipEntry.getName().equals(path)) return zipEntry;
         }
         return null;
     }
 
-    private InputStream getInputStream(JarEntry entry)
+    private InputStream getInputStream(ZipEntry entry)
     {
         byte[] contents = jarContents.get(entry);
         if (contents != null)
