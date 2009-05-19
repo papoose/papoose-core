@@ -49,22 +49,26 @@ public class UrlUtils
      * <p/>
      * This URL can be used to access the JAR that was loaded.
      * <p/>
-     * <code>codesource://bundle@framework</code>
+     * <code>codesource://bundle:generation@framework/file</code>
      *
      * @param frameworkName the name of the particular framework instance
      * @param bundleId      the id of the Bundle
+     * @param path          the path inside the resource
+     * @param generation    the generation of the the Bundle
      * @return a URL that represents a particular Bundle's code source.
      */
-    public static URL generateCodeSourceUrl(String frameworkName, long bundleId)
+    public static URL generateCodeSourceUrl(String frameworkName, long bundleId, String path, int generation)
     {
+        if (path.length() == 0 || path.charAt(0) != '/') path = "/" + path;
+
         URL result = null;
         try
         {
-            result = new URL("codesource://" + bundleId + "@" + frameworkName);
+            result = new URL("codesource://" + bundleId + ":" + generation + "@" + frameworkName + path);
         }
         catch (MalformedURLException mue)
         {
-            LOGGER.log(Level.WARNING, "Unable to generate bundle code source URL codesource://" + bundleId + "@" + frameworkName, mue);
+            LOGGER.log(Level.WARNING, "Unable to generate bundle code source URL codesource://" + bundleId + ":" + generation + "@" + frameworkName + path, mue);
         }
         return result;
     }

@@ -103,7 +103,7 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
                 }
             }
 
-            this.codeSource = UrlUtils.generateCodeSourceUrl(getFrameworkName(), getBundleId());
+            this.codeSource = UrlUtils.generateCodeSourceUrl(getFrameworkName(), getBundleId(), "", getGeneration());
 
             assert this.codeSource != null;
 
@@ -418,7 +418,7 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
 
         public BundleJarResourceLocation(ZipEntry jarEntry, int location) throws BundleException
         {
-            super(codeSource);
+            super(UrlUtils.generateCodeSourceUrl(getFrameworkName(), getBundleId(), jarEntry.getName(), getGeneration()));
 
             this.jarEntry = jarEntry;
             this.location = location;
@@ -469,7 +469,7 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
 
             public boolean isDirectory() { return entry.isDirectory(); }
 
-            public URL getCodeSourceUrl() { return codeSource; }
+            public URL getCodeSourceUrl() { return BundleJarResourceLocation.this.getCodeSource(); }
 
             public InputStream getInputStream() throws IOException
             {

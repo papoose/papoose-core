@@ -87,7 +87,7 @@ public class ArchiveFileStore extends AbstractArchiveStore
         try
         {
             this.archive = new JarFile(new File(archiveRoot, ARCHIVE_JAR_NAME));
-            this.codeSource = UrlUtils.generateCodeSourceUrl(getFrameworkName(), getBundleId());
+            this.codeSource = UrlUtils.generateCodeSourceUrl(getFrameworkName(), getBundleId(), "", generaton);
 
             assert this.codeSource != null;
 
@@ -437,7 +437,7 @@ public class ArchiveFileStore extends AbstractArchiveStore
 
         public BundleJarResourceLocation(JarEntry entry, int location) throws BundleException
         {
-            super(codeSource);
+            super(UrlUtils.generateCodeSourceUrl(getFrameworkName(), getBundleId(), entry.getName(), getGeneration()));
 
             this.path = entry.getName();
             this.location = location;
@@ -485,11 +485,11 @@ public class ArchiveFileStore extends AbstractArchiveStore
 
             public String getName() { return entry.getName(); }
 
-            public URL getUrl() { return url; }
+            public URL getUrl() { return UrlUtils.generateResourceUrl(getFrameworkName(), getBundleId(), "/" + entry.getName(), getGeneration(), location); }
 
             public boolean isDirectory() { return entry.isDirectory(); }
 
-            public URL getCodeSourceUrl() { return codeSource; }
+            public URL getCodeSourceUrl() { return BundleJarResourceLocation.this.getCodeSource(); }
 
             public InputStream getInputStream() throws IOException { return jarFile.getInputStream(entry); }
 
