@@ -36,17 +36,14 @@ public class ExportDescriptionWrapper implements Comparable<ExportDescriptionWra
 {
     private final ExportDescription exportDescription;
     private final Candidate candidate;
-    private final long bundleId;
     private final Version version;
 
     public ExportDescriptionWrapper(ExportDescription exportDescription, Candidate candidate)
     {
         this.exportDescription = exportDescription;
         this.candidate = candidate;
-        this.bundleId = candidate.getGeneration().getBundleId();
         this.version = (Version) exportDescription.getParameters().get("version");
 
-        assert bundleId >= 0;
         assert version != null;
     }
 
@@ -63,7 +60,8 @@ public class ExportDescriptionWrapper implements Comparable<ExportDescriptionWra
     public int compareTo(ExportDescriptionWrapper o)
     {
         int result = version.compareTo(o.version);
-        if (result == 0) result = (int) (bundleId - o.bundleId);
+        if (result == 0) result = (int) (candidate.getGeneration().getBundleId() - o.getCandidate().getGeneration().getBundleId());
+        if (result == 0) result = candidate.getGeneration().getState() - o.getCandidate().getGeneration().getState();
         return result;
     }
 
