@@ -34,7 +34,7 @@ import org.papoose.core.spi.BundleStore;
 /**
  * @version $Revision$ $Date$
  */
-public class BundleFileStore implements BundleStore
+class BundleFileStore implements BundleStore
 {
     private final static String CLASS_NAME = BundleFileStore.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
@@ -48,7 +48,7 @@ public class BundleFileStore implements BundleStore
     private long lastModified;
     private AutostartSetting setting;
 
-    public BundleFileStore(File bundleRoot, long bundleId, String location) throws BundleException
+    BundleFileStore(File bundleRoot, long bundleId, String location) throws BundleException
     {
         assert bundleRoot != null;
         assert bundleId >= 0;

@@ -59,7 +59,7 @@ import org.papoose.core.util.Util;
 /**
  * @version $Revision$ $Date$
  */
-public class ArchiveFileStore extends AbstractArchiveStore
+class ArchiveFileStore extends AbstractArchiveStore
 {
     private final static String ARCHIVE_JAR_NAME = "archive.jar";
     private final static String ARCHIVE_NAME = "archive";
@@ -73,12 +73,12 @@ public class ArchiveFileStore extends AbstractArchiveStore
     private SortedSet<NativeCodeDescription> nativeCodeDescriptions;
     private transient Certificate[] certificates;
 
-    public ArchiveFileStore(Papoose framework, long bundleId, int generaton, File archiveRoot) throws BundleException
+    ArchiveFileStore(Papoose framework, long bundleId, int generaton, File archiveRoot) throws BundleException
     {
         this(framework, bundleId, generaton, archiveRoot, Util.safeStream(new File(archiveRoot, ARCHIVE_JAR_NAME)));
     }
 
-    public ArchiveFileStore(Papoose framework, long bundleId, int generaton, File archiveRoot, InputStream inputStream) throws BundleException
+    ArchiveFileStore(Papoose framework, long bundleId, int generaton, File archiveRoot, InputStream inputStream) throws BundleException
     {
         super(framework, bundleId, generaton, loadAndProvideAttributes(archiveRoot, inputStream));
 

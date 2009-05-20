@@ -56,7 +56,7 @@ import org.papoose.core.util.Util;
 /**
  * @version $Revision$ $Date$
  */
-public class ArchiveMemoryStore extends AbstractArchiveStore
+class ArchiveMemoryStore extends AbstractArchiveStore
 {
     private final static String CLASS_NAME = ArchiveMemoryStore.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
@@ -70,7 +70,7 @@ public class ArchiveMemoryStore extends AbstractArchiveStore
     private final URL codeSource;
     private transient Certificate[] certificates;
 
-    public ArchiveMemoryStore(Papoose framework, long bundleId, int generaton, InputStream inputStream) throws BundleException
+    ArchiveMemoryStore(Papoose framework, long bundleId, int generaton, InputStream inputStream) throws BundleException
     {
         super(framework, bundleId, generaton, loadAndProvideAttributes(inputStream));
 
