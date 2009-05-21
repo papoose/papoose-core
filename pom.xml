@@ -21,6 +21,7 @@
         <module>pkg-admin</module>
         <module>start-level</module>
         <module>store</module>
+        <module>test-support</module>
         <module>url-handlers</module>
     </modules>
 
@@ -169,14 +170,14 @@
     <profiles>
         <!-- testing profile -->
         <profile>
-            <id>tests</id>
+            <id>tck</id>
             <activation>
                 <property>
                     <name>env-test</name>
                 </property>
             </activation>
             <modules>
-                <module>tests</module>
+                <module>tck</module>
             </modules>
         </profile>
 
