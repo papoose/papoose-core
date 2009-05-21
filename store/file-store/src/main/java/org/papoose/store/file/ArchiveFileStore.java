@@ -132,7 +132,7 @@ class ArchiveFileStore extends AbstractArchiveStore
         }
         else
         {
-            JarEntry entry = archive.getJarEntry(path + "/");
+            JarEntry entry = archive.getJarEntry(path);
             if (entry == null) entry = archive.getJarEntry(path);
             if (entry != null)
             {

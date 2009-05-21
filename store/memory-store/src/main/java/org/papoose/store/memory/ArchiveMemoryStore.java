@@ -133,8 +133,7 @@ class ArchiveMemoryStore extends AbstractArchiveStore
         }
         else
         {
-            ZipEntry entry = getZipEntry(path + "/");
-            if (entry == null) entry = getZipEntry(path);
+            ZipEntry entry = getZipEntry(path);
             if (entry != null)
             {
                 if (entry.isDirectory())
@@ -516,7 +515,14 @@ class ArchiveMemoryStore extends AbstractArchiveStore
     {
         for (ZipEntry zipEntry : zipEntries)
         {
-            if (zipEntry.getName().equals(path)) return zipEntry;
+            String name = zipEntry.getName();
+
+            if (name.equals(path)) return zipEntry;
+
+            if (path.charAt(path.length() - 1) != '/')
+            {
+                if (name.equals(path + "/")) return zipEntry;
+            }
         }
         return null;
     }
