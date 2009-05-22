@@ -36,7 +36,6 @@
                         <Bundle-Copyright>Copyright 2008-2009 (C) The original author or authors</Bundle-Copyright>
                         <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.packageadmin;version=1.2,org.papoose.core.spi;version=${project.version},org.papoose.core.descriptions;version=${project.version},net.jcip.annotations;version=1.0;resolution=optional</Import-Package>
                         <Export-Service>org.osgi.service.packageadmin.PackageAdmin</Export-Service>
-                        <Bundle-Activator>org.papoose.core.PackageAdminActivator</Bundle-Activator>
                         <Private-Package>org.papoose.core.*</Private-Package>
                         <Implementation-Title>${name}</Implementation-Title>
                         <Implementation-Version>${project.version}</Implementation-Version>
