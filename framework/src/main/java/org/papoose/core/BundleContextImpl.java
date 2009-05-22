@@ -54,11 +54,6 @@ class BundleContextImpl implements BundleContext
         bundle = null;
     }
 
-    Papoose getFramework()
-    {
-        return getBundle().getFramework();
-    }
-
     public String getProperty(String key)
     {
         Object result = getFramework().getProperty(key);
@@ -189,5 +184,10 @@ class BundleContextImpl implements BundleContext
         creator.append("bundle", bundle);
 
         return creator.toString();
+    }
+
+    private Papoose getFramework()
+    {
+        return getBundle().getFramework();
     }
 }
