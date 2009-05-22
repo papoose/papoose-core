@@ -7,15 +7,16 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.papoose.core.test-support</groupId>
+    <groupId>org.papoose.test-support</groupId>
     <artifactId>test-support</artifactId>
     <packaging>pom</packaging>
     <name>Papoose :: Test Support</name>
 
     <modules>
-        <module>bundles</module>
-        <module>test-support</module>
-        <module>tests</module>
+        <module>optional</module>
+        <module>test-bundle</module>
+        <module>test-jar</module>
+        <module>test-util</module>
     </modules>
 
 </project>

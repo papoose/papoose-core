@@ -2,15 +2,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
-        <groupId>org.papoose.test</groupId>
-        <artifactId>papoose-test</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <groupId>org.papoose.test-support</groupId>
+        <artifactId>test-support</artifactId>
+        <version>1.0.0.SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>papoose-test-jar</artifactId>
+    <artifactId>test-support-jar</artifactId>
     <packaging>jar</packaging>
-    <name>Papoose :: Test :: Jar</name>
+    <name>Papoose :: Test Support :: Jar</name>
     <description>Test jar for fragments</description>
 
     <build/>

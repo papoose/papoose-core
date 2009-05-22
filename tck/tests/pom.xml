@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project>
     <parent>
-        <groupId>org.papoose.core.iandt</groupId>
-        <artifactId>compatibility-tests-module</artifactId>
+        <groupId>org.papoose.core.tck</groupId>
+        <artifactId>tck</artifactId>
         <version>1.0.0.SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>compatibility-tests</artifactId>
+    <artifactId>tck-tests</artifactId>
     <packaging>pom</packaging>
     <name>Papoose :: OSGi Compatibility Tests :: Tests</name>
 

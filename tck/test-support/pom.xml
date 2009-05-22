@@ -2,13 +2,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
-        <groupId>org.papoose.core.iandt</groupId>
-        <artifactId>compatibility-tests-module</artifactId>
+        <groupId>org.papoose.core.tck</groupId>
+        <artifactId>tck</artifactId>
         <version>1.0.0.SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>compatibility-tests-support</artifactId>
+    <artifactId>tck-support</artifactId>
     <packaging>jar</packaging>
     <name>Papoose :: OSGi Compatibility Tests :: Support</name>
 
