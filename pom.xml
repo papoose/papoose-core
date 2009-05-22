@@ -132,12 +132,6 @@
                 <scope>test</scope>
             </dependency>
 
-            <dependency>
-                <groupId>org.papoose.test-support</groupId>
-                <artifactId>test-support-jar</artifactId>
-                <version>${papooseVersion}</version>
-            </dependency>
-
         </dependencies>
     </dependencyManagement>
 
@@ -184,12 +178,29 @@
         <profile>
             <id>tck</id>
             <activation>
+                <activeByDefault>false</activeByDefault>
                 <property>
                     <name>env-test</name>
                 </property>
             </activation>
             <modules>
                 <module>tck</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>deploy</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <modules>
+                <module>cnd-perm-admin</module>
+                <module>framework</module>
+                <module>perm-admin</module>
+                <module>pkg-admin</module>
+                <module>start-level</module>
+                <module>store</module>
+                <module>url-handlers</module>
             </modules>
         </profile>
 
