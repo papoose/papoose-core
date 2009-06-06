@@ -686,21 +686,21 @@ public class BundleManager
 
             if (lazyActivationDescription.isLazyActivation())
             {
-                if (bundleGeneration.getState() == Bundle.STARTING)
-                {
-                    return;
-                }
-                else
+                if (bundleGeneration.getState() != Bundle.STARTING)
                 {
                     bundleGeneration.setState(Bundle.STARTING);
+
+                    fireBundleEvent(new BundleEvent(BundleEvent.LAZY_ACTIVATION, bundleController));
+
+                    return;
                 }
 
-                fireBundleEvent(new BundleEvent(BundleEvent.LAZY_ACTIVATION, bundleController));
+                if (options == Bundle.START_ACTIVATION_POLICY) return;
             }
-            else
-            {
-                performStart(bundleGeneration);
-            }
+
+            bundleGeneration.setState(Bundle.STARTING);
+
+            performActivation(bundleGeneration);
         }
         catch (InterruptedException ie)
         {
@@ -713,68 +713,89 @@ public class BundleManager
         }
     }
 
-    public void performStart(BundleGeneration bundleGeneration) throws BundleException
+    public void performActivation(BundleGeneration bundleGeneration) throws BundleException
     {
-        final BundleController bundleController = bundleGeneration.getBundleController();
-        ArchiveStore archiveStore = bundleGeneration.getArchiveStore();
-
-        fireBundleEvent(new BundleEvent(BundleEvent.STARTING, bundleController));
-
         try
         {
-            String bundleActivatorClassName = archiveStore.getBundleActivatorClass();
-            if (bundleActivatorClassName != null)
+            if (!bundleGeneration.getStarting().tryLock(10000, TimeUnit.MILLISECONDS)) throw new BundleException("Timeout waiting for bundle to start");
+
+            if (bundleGeneration.getState() != Bundle.STARTING) return;
+
+            final BundleController bundleController = bundleGeneration.getBundleController();
+            ArchiveStore archiveStore = bundleGeneration.getArchiveStore();
+
+            fireBundleEvent(new BundleEvent(BundleEvent.STARTING, bundleController));
+
+            bundleGeneration.getClassLoader().setLazyActivation(false);
+
+            try
             {
-                Class bundleActivatorClass = bundleGeneration.getClassLoader().loadClass(bundleActivatorClassName);
-
-                if (bundleActivatorClass == null) throw new BundleException("Bundle activator class " + bundleActivatorClassName + " not found");
-
-                final BundleActivator bundleActivator = (BundleActivator) bundleActivatorClass.newInstance();
-
-                bundleController.setBundleActivator(bundleActivator);
-
-
-                SecurityUtils.doPrivilegedExceptionAction(new PrivilegedExceptionAction<Void>()
+                String bundleActivatorClassName = archiveStore.getBundleActivatorClass();
+                if (bundleActivatorClassName != null)
                 {
-                    public Void run() throws Exception
+                    Class bundleActivatorClass = bundleGeneration.getClassLoader().loadClass(bundleActivatorClassName);
+
+                    if (bundleActivatorClass == null) throw new BundleException("Bundle activator class " + bundleActivatorClassName + " not found");
+
+                    final BundleActivator bundleActivator = (BundleActivator) bundleActivatorClass.newInstance();
+
+                    bundleController.setBundleActivator(bundleActivator);
+
+                    SecurityUtils.doPrivilegedExceptionAction(new PrivilegedExceptionAction<Void>()
                     {
-                        bundleActivator.start(bundleController.getBundleContext());
-                        return null;
-                    }
-                },
-                                                          framework.getAcc());
+                        public Void run() throws Exception
+                        {
+                            bundleActivator.start(bundleController.getBundleContext());
+                            return null;
+                        }
+                    },
+                                                              framework.getAcc());
+                }
+
+                bundleGeneration.setState(Bundle.ACTIVE);
+
+                fireBundleEvent(new BundleEvent(BundleEvent.STARTED, bundleController));
+
+                return;
+            }
+            catch (ClassNotFoundException cnfe)
+            {
+                LOGGER.log(Level.WARNING, "Unable to load bundle activator class", cnfe);
+            }
+            catch (InstantiationException ie)
+            {
+                LOGGER.log(Level.WARNING, "Unable to instantiate bundle activator class", ie);
+            }
+            catch (IllegalAccessException iae)
+            {
+                LOGGER.log(Level.WARNING, "Unable to instantiate bundle activator class", iae);
+            }
+            catch (ClassCastException cce)
+            {
+                LOGGER.log(Level.WARNING, "Bundle activator not an instance of BundleActivator", cce);
+            }
+            catch (Throwable t)
+            {
+                LOGGER.log(Level.WARNING, "Unable to start bundle activator class", t);
             }
 
-            bundleGeneration.setState(Bundle.ACTIVE);
+            bundleGeneration.setState(Bundle.STOPPING);
 
-            fireBundleEvent(new BundleEvent(BundleEvent.STARTED, bundleController));
+            fireBundleEvent(new BundleEvent(BundleEvent.STOPPING, bundleController));
 
-            return;
+            bundleGeneration.setState(Bundle.RESOLVED);
+
+            fireBundleEvent(new BundleEvent(BundleEvent.STOPPED, bundleController));
         }
-        catch (ClassNotFoundException cnfe)
+        catch (InterruptedException ie)
         {
-            LOGGER.log(Level.WARNING, "Unable to load bundle activator class", cnfe);
+            Thread.currentThread().interrupt();
+            throw new BundleException("Interrupted while waiting to start bundle", ie);
         }
-        catch (InstantiationException ie)
+        finally
         {
-            LOGGER.log(Level.WARNING, "Unable to instantiate bundle activator class", ie);
+            bundleGeneration.getStarting().unlock();
         }
-        catch (IllegalAccessException iae)
-        {
-            LOGGER.log(Level.WARNING, "Unable to instantiate bundle activator class", iae);
-        }
-        catch (Exception e)
-        {
-            LOGGER.log(Level.WARNING, "Unable to start bundle activator class", e);
-        }
-
-        bundleGeneration.setState(Bundle.STOPPING);
-
-        fireBundleEvent(new BundleEvent(BundleEvent.STOPPING, bundleController));
-
-        bundleGeneration.setState(Bundle.RESOLVED);
-
-        fireBundleEvent(new BundleEvent(BundleEvent.STOPPED, bundleController));
     }
 
     public void beginStop(BundleGeneration bundleGeneration, int options) throws BundleException
@@ -799,7 +820,7 @@ public class BundleManager
             Throwable throwable = null;
             try
             {
-                performStop(bundleController);
+                performDeactivation(bundleController);
             }
             catch (Throwable t)
             {
@@ -827,7 +848,7 @@ public class BundleManager
         }
     }
 
-    public void performStop(final BundleController bundleController) throws Exception
+    public void performDeactivation(final BundleController bundleController) throws Exception
     {
         final BundleActivator bundleActivator = bundleController.getBundleActivator();
 
@@ -966,16 +987,6 @@ public class BundleManager
         {
             bundleGeneration.getStarting().unlock();
         }
-    }
-
-    public void unregisterServices(Bundle bundle)
-    {
-        //todo: consider this autogenerated code
-    }
-
-    public void releaseServices(Bundle bundle)
-    {
-        //todo: consider this autogenerated code
     }
 
     public void fireBundleEvent(final BundleEvent event)

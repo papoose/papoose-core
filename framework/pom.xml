@@ -77,7 +77,7 @@
         </dependency>
 
         <dependency>
-            <groupId>org.osgi</groupId>
+            <groupId>org.papoose.osgi</groupId>
             <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
         </dependency>
 

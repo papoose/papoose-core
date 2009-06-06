@@ -36,6 +36,7 @@ import org.apache.xbean.classloader.NamedClassLoader;
 import org.apache.xbean.classloader.ResourceHandle;
 import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.FrameworkEvent;
 
 import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ImportDescription;
@@ -56,7 +57,7 @@ public class BundleClassLoader extends NamedClassLoader
     private final List<DynamicDescription> dynamicImports;
     private final List<ResourceLocation> boundClassPath;
     private final Set<ArchiveStore> archiveStores;
-
+    private volatile boolean lazyActivation;
 
     BundleClassLoader(String name, ClassLoader parent,
                       Papoose framework,
@@ -101,7 +102,21 @@ public class BundleClassLoader extends NamedClassLoader
 
     public String[] getExportedPackages()
     {
-        return exportedPackages;
+        String[] result = new String[exportedPackages.length];
+
+        System.arraycopy(exportedPackages, 0, result, 0, result.length);
+
+        return result;
+    }
+
+    boolean isLazyActivation()
+    {
+        return lazyActivation;
+    }
+
+    void setLazyActivation(boolean lazyActivation)
+    {
+        this.lazyActivation = lazyActivation;
     }
 
     @SuppressWarnings({ "EmptyCatchBlock" })
@@ -373,7 +388,23 @@ public class BundleClassLoader extends NamedClassLoader
                     CodeSource codeSource = new CodeSource(codeSourceUrl, certificates);
 
                     // load the class into the vm
-                    return defineClass(className, bytes, 0, bytes.length, codeSource);
+                    Class result = defineClass(className, bytes, 0, bytes.length, codeSource);
+
+                    if (isLazyActivation())
+                    {
+                        BundleManager manager = framework.getBundleManager();
+
+                        try
+                        {
+                            manager.performActivation(BundleClassLoader.this.getBundle());
+                        }
+                        catch (BundleException be)
+                        {
+                            manager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle.getBundleController(), be));
+                        }
+                    }
+
+                    return result;
                 }
             }, bundle.getBundleController().getFramework().getAcc());
         }

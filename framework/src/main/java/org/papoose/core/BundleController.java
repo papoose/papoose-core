@@ -315,17 +315,6 @@ public class BundleController implements Bundle
         return new ServiceReference[0];  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-
-    public void setServiceProperties(ServiceReference reference, Dictionary dictionary)
-    {
-        //Todo: change body of created methods use File | Settings | File Templates.
-    }
-
-    public void unregister(ServiceReference reference)
-    {
-        //Todo: change body of created methods use File | Settings | File Templates.
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -465,6 +454,7 @@ public class BundleController implements Bundle
 
                 if (getState() == Bundle.INSTALLED)
                 {
+                    //noinspection ThrowableInstanceNeverThrown
                     getFramework().getBundleManager().fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, this, new BundleException("Unable to resolve bundle")));
                     throw new ClassNotFoundException("Unable to resolve bundle");
                 }
@@ -548,9 +538,7 @@ public class BundleController implements Bundle
                         bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
                     }
 
-                    Enumeration enumeration = bundleGeneration.getClassLoader().findResources(name);
-
-                    return enumeration;
+                    return bundleGeneration.getClassLoader().findResources(name);
                 }
             }
             catch (InterruptedException ie)
@@ -735,44 +723,38 @@ public class BundleController implements Bundle
 
     ServiceRegistration registerService(String[] clazzes, Object service, Dictionary properties)
     {
-        ServiceRegistration registration = framework.getServiceRegistry().registerService(this, clazzes, service, properties);
 
-        return registration;
+        return framework.getServiceRegistry().registerService(this, clazzes, service, properties);
     }
 
     ServiceReference[] getServiceReferences(String clazz, String filter) throws InvalidSyntaxException
     {
-        ServiceReference[] references = framework.getServiceRegistry().getServiceReferences(this, clazz, filter);
 
-        return references;
+        return framework.getServiceRegistry().getServiceReferences(this, clazz, filter);
     }
 
     ServiceReference[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException
     {
-        ServiceReference[] references = framework.getServiceRegistry().getAllServiceReferences(this, clazz, filter);
 
-        return references;
+        return framework.getServiceRegistry().getAllServiceReferences(this, clazz, filter);
     }
 
     ServiceReference getServiceReference(String clazz)
     {
-        ServiceReference reference = framework.getServiceRegistry().getServiceReference(this, clazz);
 
-        return reference;
+        return framework.getServiceRegistry().getServiceReference(this, clazz);
     }
 
     Object getService(ServiceReference serviceReference)
     {
-        Object reference = framework.getServiceRegistry().getService(this, serviceReference);
 
-        return reference;
+        return framework.getServiceRegistry().getService(this, serviceReference);
     }
 
     boolean ungetService(ServiceReference serviceReference)
     {
-        boolean result = framework.getServiceRegistry().ungetService(this, serviceReference);
 
-        return result;
+        return framework.getServiceRegistry().ungetService(this, serviceReference);
     }
 
     @Override
