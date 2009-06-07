@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.papoose</groupId>
         <artifactId>papoose-root</artifactId>
-        <version>1.1-SNAPSHOT</version>
+        <version>1.1.0</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -14,6 +14,13 @@
     <version>1.0.0.SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+        </license>
+    </licenses>
+
     <modules>
         <module>cnd-perm-admin</module>
         <module>framework</module>
@@ -21,7 +28,6 @@
         <module>pkg-admin</module>
         <module>start-level</module>
         <module>store</module>
-        <module>test-support</module>
         <module>url-handlers</module>
     </modules>
 
@@ -31,43 +37,6 @@
 
     <build>
         <defaultGoal>install</defaultGoal>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                        <source>1.5</source>
-                        <target>1.5</target>
-                        <showDeprecation>true</showDeprecation>
-                        <showWarnings>true</showWarnings>
-                        <compilerArgument>-Xlint:all,-serial,-unchecked</compilerArgument>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-
-        <plugins>
-
-            <plugin>
-                <groupId>org.papoose.plugins</groupId>
-                <artifactId>version-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>validate-java-version</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>require-java-version</goal>
-                        </goals>
-                        <configuration>
-                            <version>1.5+</version>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-        </plugins>
-
     </build>
 
     <dependencyManagement>
@@ -164,6 +133,7 @@
     </scm>
 
     <profiles>
+
         <!-- testing profile -->
         <profile>
             <id>tck</id>
@@ -174,23 +144,8 @@
                 </property>
             </activation>
             <modules>
+                <module>test-support</module>
                 <module>tck</module>
-            </modules>
-        </profile>
-
-        <profile>
-            <id>deploy</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <modules>
-                <module>cnd-perm-admin</module>
-                <module>framework</module>
-                <module>perm-admin</module>
-                <module>pkg-admin</module>
-                <module>start-level</module>
-                <module>store</module>
-                <module>url-handlers</module>
             </modules>
         </profile>
 
