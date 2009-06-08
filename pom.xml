@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.papoose</groupId>
         <artifactId>papoose-root</artifactId>
-        <version>1.1.0</version>
+        <version>1.1.1</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -131,6 +131,20 @@
         <developerConnection>scm:svn:https://osgi.svn.sourceforge.net/svnroot/osgi/osgi-R4-spec/trunk</developerConnection>
         <url>https://osgi.svn.sourceforge.net/svnroot/osgi/osgi-R4-spec/trunk</url>
     </scm>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <aggregate>true</aggregate>
+                    <javadocDirectory>${basedir}/src/main/javadoc</javadocDirectory>
+                    <docfilessubdirs>true</docfilessubdirs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
 
     <profiles>
 
