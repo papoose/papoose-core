@@ -31,6 +31,7 @@ public final class PapooseConstants
     public final static String PAPOOSE_BOOT_LEVEL_SERVICES = "org.papoose.service.boot";
     public final static String PAPOOSE_SERVICE_PACKAGE_ADMIN = "org.papoose.service.boot.packageAdmin";
     public final static String PAPOOSE_SERVICE_START_LEVEL = "org.papoose.service.boot.startLevel";
+    public final static String PAPOOSE_SERVICE_URL_HANDLERS = "org.papoose.service.boot.urlHandlers";
 
     private PapooseConstants() {}
 }

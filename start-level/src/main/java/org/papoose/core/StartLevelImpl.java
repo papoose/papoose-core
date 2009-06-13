@@ -33,6 +33,7 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.service.startlevel.StartLevel;
+
 import org.papoose.core.spi.StartLevelStore;
 import org.papoose.core.spi.StartManager;
 import org.papoose.core.util.SerialExecutor;

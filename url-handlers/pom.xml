@@ -9,7 +9,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>url-handlers</artifactId>
-    <packaging>bundle</packaging>
+    <packaging>jar</packaging>
     <name>Papoose :: OSGi R4 URL Handlers Service</name>
     <description>OSGi R4 URL Handlers Service</description>
 
@@ -23,26 +23,6 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.2.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-Name>${name}</Bundle-Name>
-                        <Bundle-SymbolicName>${groupId}.${artifactId}</Bundle-SymbolicName>
-                        <Bundle-Vendor>Papoose</Bundle-Vendor>
-                        <Bundle-Copyright>Copyright 2008-2009 (C) The original author or authors</Bundle-Copyright>
-                        <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.url;version=1.0,net.jcip.annotations;version=1.0;resolution=optional</Import-Package>
-                        <Export-Service>org.osgi.service.url.URLStreamHandlerService</Export-Service>
-                        <Bundle-Activator>org.papoose.core.URLStreamHandlerServiceActivator</Bundle-Activator>
-                        <Private-Package>org.papoose.core.*</Private-Package>
-                        <Implementation-Title>${name}</Implementation-Title>
-                        <Implementation-Version>${project.version}</Implementation-Version>
-                    </instructions>
-                </configuration>
-            </plugin>
         </plugins>
         <resources>
             <resource>

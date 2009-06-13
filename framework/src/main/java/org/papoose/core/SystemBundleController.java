@@ -206,6 +206,10 @@ public class SystemBundleController extends BundleController
             {
                 exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.startlevel;version=1.1", getBundleSymbolicName(), getBundleVersion()));
             }
+            if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_START_LEVEL) != null)
+            {
+                exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.url;version=1.0", getBundleSymbolicName(), getBundleVersion()));
+            }
 
             Properties p = framework.getProperties();
             Attributes a = new Attributes();
