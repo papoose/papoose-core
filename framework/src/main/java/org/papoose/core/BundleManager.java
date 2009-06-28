@@ -61,6 +61,7 @@ import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.spi.BootClasspathManager;
 import org.papoose.core.spi.BundleStore;
+import org.papoose.core.spi.ProtectionDomainFactory;
 import org.papoose.core.spi.Solution;
 import org.papoose.core.spi.StartManager;
 import org.papoose.core.spi.Store;
@@ -82,7 +83,8 @@ public class BundleManager
     private final Map<Long, BundleController> bundles = new HashMap<Long, BundleController>();
     private final Papoose framework;
     private final Store store;
-    private StartManager startManager;
+    private volatile StartManager startManager;
+    private volatile ProtectionDomainFactory protectionDomainFactory;
     private long bundleCounter = 0;
 
 
@@ -91,6 +93,7 @@ public class BundleManager
         this.framework = framework;
         this.store = store;
         this.startManager = new DefaultStartManager(this);
+        this.protectionDomainFactory = new DefaultProtectionDomainFactory();
     }
 
     public Store getStore()
@@ -98,9 +101,19 @@ public class BundleManager
         return store;
     }
 
-    public void setStartManager(StartManager startManager)
+    void setStartManager(StartManager startManager)
     {
         this.startManager = startManager;
+    }
+
+    void setProtectionDomainFactory(ProtectionDomainFactory protectionDomainFactory)
+    {
+        this.protectionDomainFactory = protectionDomainFactory;
+    }
+
+    ProtectionDomainFactory getProtectionDomainFactory()
+    {
+        return protectionDomainFactory;
     }
 
     public InputStream getInputStreamForCodesource(long bundleId, int generationId) throws IOException

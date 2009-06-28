@@ -45,7 +45,6 @@ import org.papoose.core.filter.Parser;
 import org.papoose.core.resolver.DefaultResolver;
 import org.papoose.core.spi.LocationMapper;
 import org.papoose.core.spi.Resolver;
-import org.papoose.core.spi.SecurityAdmin;
 import org.papoose.core.spi.Store;
 import org.papoose.core.spi.TrustManager;
 import org.papoose.core.util.ToStringCreator;
@@ -87,7 +86,6 @@ public final class Papoose
     @GuardedBy("lock") private volatile Parser parser = new Parser();
     @GuardedBy("lock") private volatile TrustManager trustManager = new DefaultTrustManager();
     @GuardedBy("lock") private volatile Resolver resolver = new DefaultResolver();
-    private volatile SecurityAdmin securityAdmin;
     private final List<Object> bootServices = new ArrayList<Object>();
 
     static
@@ -363,16 +361,6 @@ public final class Papoose
 
             if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("Framework resolver: " + resolver);
         }
-    }
-
-    SecurityAdmin getSecurityAdmin()
-    {
-        return securityAdmin;
-    }
-
-    void setSecurityAdmin(SecurityAdmin securityAdmin)
-    {
-        this.securityAdmin = securityAdmin;
     }
 
     public BundleContext getSystemBundleContext()

@@ -206,9 +206,17 @@ public class SystemBundleController extends BundleController
             {
                 exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.startlevel;version=1.1", getBundleSymbolicName(), getBundleVersion()));
             }
-            if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_START_LEVEL) != null)
+            if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_URL_HANDLERS) != null)
             {
                 exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.url;version=1.0", getBundleSymbolicName(), getBundleVersion()));
+            }
+            if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_PACKAGE_ADMIN) != null)
+            {
+                exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.permissionadmin;version=1.2", getBundleSymbolicName(), getBundleVersion()));
+            }
+            if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_CND_PERM_ADMIN) != null)
+            {
+                exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.condpermadmin;version=1.0", getBundleSymbolicName(), getBundleVersion()));
             }
 
             Properties p = framework.getProperties();

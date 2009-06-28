@@ -9,48 +9,11 @@
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>perm-admin</artifactId>
-    <packaging>bundle</packaging>
+    <packaging>jar</packaging>
     <name>Papoose :: OSGi R4 Permission Admin Service</name>
     <description>OSGi R4 Permission Admin Service</description>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-enableassertions</argLine>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.2.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-Name>${name}</Bundle-Name>
-                        <Bundle-SymbolicName>${groupId}.${artifactId}</Bundle-SymbolicName>
-                        <Bundle-Vendor>Papoose</Bundle-Vendor>
-                        <Bundle-Copyright>Copyright 2008-2009 (C) The original author or authors</Bundle-Copyright>
-                        <Import-Package>org.osgi.framework;version=1.4, org.osgi.service.permissionadmin;version=1.2,net.jcip.annotations;version=1.0;resolution=optional</Import-Package>
-                        <Export-Service>org.osgi.service.permissionadmin.PermissionAdmin</Export-Service>
-                        <Bundle-Activator>org.papoose.core.PermissionAdminActivator</Bundle-Activator>
-                        <Private-Package>org.papoose.core.*</Private-Package>
-                        <Implementation-Title>${name}</Implementation-Title>
-                        <Implementation-Version>${project.version}</Implementation-Version>
-                    </instructions>
-                </configuration>
-            </plugin>
-        </plugins>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-    </build>
+    <build/>
 
     <dependencies>
 

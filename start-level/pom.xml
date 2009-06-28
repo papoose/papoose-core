@@ -13,23 +13,7 @@
     <name>Papoose :: OSGi R4 Start Level Service</name>
     <description>OSGi R4 Start Level Service</description>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-enableassertions</argLine>
-                </configuration>
-            </plugin>
-        </plugins>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-    </build>
+    <build/>
 
     <dependencies>
 

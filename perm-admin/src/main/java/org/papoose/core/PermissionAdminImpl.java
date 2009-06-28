@@ -16,6 +16,8 @@
  */
 package org.papoose.core;
 
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.permissionadmin.PermissionAdmin;
 import org.osgi.service.permissionadmin.PermissionInfo;
 
@@ -25,11 +27,26 @@ import org.osgi.service.permissionadmin.PermissionInfo;
  */
 public class PermissionAdminImpl implements PermissionAdmin
 {
-    private final Papoose framework;
+    private Papoose framework;
+    private ServiceRegistration registration;
 
-    public PermissionAdminImpl(Papoose framework)
+    public void start(Papoose framework)
     {
         this.framework = framework;
+
+        BundleContext context = framework.getSystemBundleContext();
+
+        registration = context.registerService(PermissionAdmin.class.getName(), this, null);
+    }
+
+    public void stop()
+    {
+        BundleContext context = framework.getSystemBundleContext();
+
+        registration.unregister();
+
+        registration = null;
+        framework = null;
     }
 
     public PermissionInfo[] getPermissions(String s)

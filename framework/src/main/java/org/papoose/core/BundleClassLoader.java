@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.CodeSource;
+import java.security.PermissionCollection;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -332,7 +334,7 @@ public class BundleClassLoader extends NamedClassLoader
         throw new ClassNotFoundException();
     }
 
-    protected Class<?> findClass(final ResourceLocation location, final String className) throws ClassNotFoundException
+    private Class<?> findClass(final ResourceLocation location, final String className) throws ClassNotFoundException
     {
         try
         {
@@ -340,6 +342,8 @@ public class BundleClassLoader extends NamedClassLoader
             {
                 public Class run() throws ClassNotFoundException
                 {
+                    BundleManager manager = framework.getBundleManager();
+
                     // first think check if we are allowed to define the package
                     SecurityManager securityManager = System.getSecurityManager();
                     if (securityManager != null)
@@ -387,13 +391,13 @@ public class BundleClassLoader extends NamedClassLoader
                     // this is the security context of the class
                     CodeSource codeSource = new CodeSource(codeSourceUrl, certificates);
 
+                    ProtectionDomain protectionDomain = manager.getProtectionDomainFactory().assignProtectionDomain(bundle, codeSource, getPermissions(codeSource));
+
                     // load the class into the vm
-                    Class result = defineClass(className, bytes, 0, bytes.length, codeSource);
+                    Class result = defineClass(className, bytes, 0, bytes.length, protectionDomain);
 
                     if (isLazyActivation())
                     {
-                        BundleManager manager = framework.getBundleManager();
-
                         try
                         {
                             manager.performActivation(BundleClassLoader.this.getBundle());
@@ -467,6 +471,12 @@ public class BundleClassLoader extends NamedClassLoader
 
             definePackage(packageName, specTitle, specVersion, specVendor, implTitle, implVersion, implVendor, sealBase);
         }
+    }
+
+    @Override
+    protected PermissionCollection getPermissions(CodeSource codesource)
+    {
+        return new BundlePermissionCollection(codesource.getLocation().toExternalForm(), super.getPermissions(codesource));
     }
 
     private String getAttribute(Attributes.Name name, Attributes packageAttributes, Attributes mainAttributes)

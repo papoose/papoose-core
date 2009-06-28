@@ -32,6 +32,8 @@ public final class PapooseConstants
     public final static String PAPOOSE_SERVICE_PACKAGE_ADMIN = "org.papoose.service.boot.packageAdmin";
     public final static String PAPOOSE_SERVICE_START_LEVEL = "org.papoose.service.boot.startLevel";
     public final static String PAPOOSE_SERVICE_URL_HANDLERS = "org.papoose.service.boot.urlHandlers";
+    public final static String PAPOOSE_SERVICE_CND_PERM_ADMIN = "org.papoose.service.boot.conditionalPermissionAdmin";
+    public final static String PAPOOSE_SERVICE_PERM_ADMIN = "org.papoose.service.boot.permissionAdmin";
 
     private PapooseConstants() {}
 }
