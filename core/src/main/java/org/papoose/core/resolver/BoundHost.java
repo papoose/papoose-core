@@ -31,7 +31,7 @@ import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.RequireDescription;
 
 /**
- * @version $Revision: 137 $ $Date: 2009-02-09 20:22:41 -0800 (Mon, 09 Feb 2009) $
+ * @version $Revision$ $Date$
  */
 public class BoundHost extends UnResolved implements CandidateBundle
 {

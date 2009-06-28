@@ -23,7 +23,7 @@
 
     <modules>
         <module>cnd-perm-admin</module>
-        <module>framework</module>
+        <module>core</module>
         <module>perm-admin</module>
         <module>pkg-admin</module>
         <module>start-level</module>
@@ -91,7 +91,7 @@
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
-                <artifactId>framework</artifactId>
+                <artifactId>core</artifactId>
                 <version>${papooseVersion}</version>
             </dependency>
 
