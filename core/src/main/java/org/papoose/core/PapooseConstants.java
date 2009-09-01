@@ -35,5 +35,7 @@ public final class PapooseConstants
     public final static String PAPOOSE_SERVICE_CND_PERM_ADMIN = "org.papoose.service.boot.conditionalPermissionAdmin";
     public final static String PAPOOSE_SERVICE_PERM_ADMIN = "org.papoose.service.boot.permissionAdmin";
 
+    public final static String PAPOOSE_FRAMEWORK_START_LEVEL = "org.osgi.framework.startlevel.beginning";
+
     private PapooseConstants() {}
 }

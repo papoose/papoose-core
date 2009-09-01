@@ -16,6 +16,8 @@
  */
 package org.papoose.core;
 
+import java.util.logging.Logger;
+
 import org.osgi.framework.BundleException;
 
 import org.papoose.core.spi.StartManager;
@@ -28,6 +30,8 @@ import org.papoose.core.spi.StartManager;
  */
 public class DefaultStartManager implements StartManager
 {
+    private final static String CLASS_NAME = DefaultStartManager.class.getName();
+    private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final BundleManager bundleManager;
 
     public DefaultStartManager(BundleManager bundleManager)
@@ -39,11 +43,25 @@ public class DefaultStartManager implements StartManager
 
     public void start(BundleGeneration bundle, int options) throws BundleException
     {
+        LOGGER.entering(CLASS_NAME, "start", new Object[]{ bundle, options });
+
         bundleManager.beginStart(bundle, options);
+
+        LOGGER.exiting(CLASS_NAME, "start");
     }
 
     public void stop(BundleGeneration bundle, int options) throws BundleException
     {
+        LOGGER.entering(CLASS_NAME, "stop", new Object[]{ bundle, options });
+
         bundleManager.beginStop(bundle, options);
+
+        LOGGER.exiting(CLASS_NAME, "stop");
+    }
+
+    public void setStartLevel(int startlevel)
+    {
+        LOGGER.entering(CLASS_NAME, "setStartLevel", startlevel);
+        LOGGER.exiting(CLASS_NAME, "setStartLevel");
     }
 }

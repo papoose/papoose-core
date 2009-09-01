@@ -45,6 +45,7 @@ import org.papoose.core.filter.Parser;
 import org.papoose.core.resolver.DefaultResolver;
 import org.papoose.core.spi.LocationMapper;
 import org.papoose.core.spi.Resolver;
+import org.papoose.core.spi.StartManager;
 import org.papoose.core.spi.Store;
 import org.papoose.core.spi.TrustManager;
 import org.papoose.core.util.ToStringCreator;
@@ -70,7 +71,7 @@ public final class Papoose
     private final static Map<String, Reference<Papoose>> FRAMEWORKS_BY_NAME = new HashMap<String, Reference<Papoose>>();
 
     private final Object lock = new Object();
-    private volatile boolean running = false;
+    private volatile State state = State.TERMINATED;
     private final AccessControlContext acc = AccessController.getContext();
     private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private final BundleManager bundleManager;
@@ -82,6 +83,7 @@ public final class Papoose
     private final long timestamp;
     private volatile Properties properties;
     private volatile long waitPeriod;
+    private volatile int startLevel;
     private volatile String[] bootDelegates;
     @GuardedBy("lock") private volatile Parser parser = new Parser();
     @GuardedBy("lock") private volatile TrustManager trustManager = new DefaultTrustManager();
@@ -224,7 +226,7 @@ public final class Papoose
         return classLoader;
     }
 
-    BundleManager getBundleManager()
+    public BundleManager getBundleManager()
     {
         return bundleManager;
     }
@@ -234,7 +236,7 @@ public final class Papoose
         return serviceRegistry;
     }
 
-    ExecutorService getExecutorService()
+    public ExecutorService getExecutorService()
     {
         return executorService;
     }
@@ -254,9 +256,18 @@ public final class Papoose
         return timestamp;
     }
 
-    public boolean isRunning()
+    public int getStartLevel()
     {
-        return running;
+        return startLevel;
+    }
+
+    public void setStartLevel(int startLevel)
+    {
+        if (startLevel < 1) throw new IllegalArgumentException("Invalid start level");
+
+        if (state == State.STARTED) LOGGER.warning("Framework already started, new start level will be ignored");
+
+        this.startLevel = startLevel;
     }
 
     public long getWaitPeriod()
@@ -302,7 +313,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (running) throw new IllegalStateException("Cannot change parser after framework has started");
+            if (state != State.TERMINATED) throw new IllegalStateException("Cannot change parser after framework has initialzied");
 
             this.parser = parser;
 
@@ -321,7 +332,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (running) throw new IllegalStateException("Cannot change trust manager after framework has started");
+            if (state != State.TERMINATED) throw new IllegalStateException("Cannot change trust manager after framework has initialzied");
 
             this.trustManager = trustManager;
 
@@ -355,7 +366,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (running) throw new IllegalStateException("Cannot change resolver after framework has started");
+            if (state != State.TERMINATED) throw new IllegalStateException("Cannot change trust manager after framework has initialzied");
 
             this.resolver = resolver;
 
@@ -371,7 +382,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (!running) throw new IllegalStateException("Framework has not started");
+            if (state == State.TERMINATED) throw new IllegalStateException("Framework has not been initialzied");
 
             BundleManager manager = getBundleManager();
 
@@ -391,15 +402,15 @@ public final class Papoose
     }
 
     @GuardedBy("lock")
-    public void start() throws PapooseException
+    public void initialize() throws PapooseException
     {
-        LOGGER.entering(CLASS_NAME, "start");
+        LOGGER.entering(CLASS_NAME, "initialize");
 
         synchronized (lock)
         {
-            if (running)
+            if (state != State.TERMINATED)
             {
-                LOGGER.warning("Framework already started");
+                LOGGER.warning("Framework already initialized");
                 return;
             }
 
@@ -435,9 +446,9 @@ public final class Papoose
 
                 serviceRegistry.start();
 
-                running = true;
-
                 startBootLevelServices();
+
+                state = State.INITIALIZED;
             }
             catch (PapooseException pe)
             {
@@ -453,6 +464,35 @@ public final class Papoose
             }
         }
 
+        LOGGER.exiting(CLASS_NAME, "initialize");
+    }
+
+    @GuardedBy("lock")
+    public void start() throws PapooseException
+    {
+        LOGGER.entering(CLASS_NAME, "start");
+
+        synchronized (lock)
+        {
+            if (state == State.STARTED)
+            {
+                LOGGER.warning("Framework already started");
+                return;
+            }
+
+            if (state == State.TERMINATED)
+            {
+                initialize();
+            }
+
+            BundleManager manager = getBundleManager();
+            StartManager startManager = manager.getStartManager();
+
+            startManager.setStartLevel(startLevel);
+
+            state = State.STARTED;
+        }
+
         LOGGER.exiting(CLASS_NAME, "start");
     }
 
@@ -463,16 +503,47 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (!running)
+            if (state != State.STARTED)
             {
                 LOGGER.warning("Framework was not started");
                 return;
             }
 
             BundleManager manager = getBundleManager();
+            StartManager startManager = manager.getStartManager();
+
+            startManager.setStartLevel(0);
+
+            state = State.INITIALIZED;
+        }
+
+        LOGGER.exiting(CLASS_NAME, "stop");
+    }
+
+    @GuardedBy("lock")
+    public void terminate() throws PapooseException
+    {
+        LOGGER.entering(CLASS_NAME, "terminate");
+
+        synchronized (lock)
+        {
+            if (state == State.TERMINATED)
+            {
+                LOGGER.warning("Framework was not started");
+                return;
+            }
+
+            if (state == State.STARTED)
+            {
+                stop();
+            }
+
+            BundleManager manager = getBundleManager();
 
             try
             {
+                stopBootLevelServices();
+
                 SystemBundleController system = (SystemBundleController) manager.getBundle(0);
 
                 system.performStop(0);
@@ -482,11 +553,12 @@ public final class Papoose
                 manager.uninstallSystemBundle();
                 serviceRegistry.stop();
                 resolver.stop();
-                running = false;
+
+                state = State.TERMINATED;
             }
         }
 
-        LOGGER.exiting(CLASS_NAME, "stop");
+        LOGGER.exiting(CLASS_NAME, "terminate");
     }
 
     @Override
@@ -498,6 +570,7 @@ public final class Papoose
         creator.append("frameworkId", frameworkId);
         creator.append("executorService", executorService);
         creator.append("resolver", resolver);
+        creator.append("state", state);
 
         return creator.toString();
     }
@@ -527,6 +600,8 @@ public final class Papoose
         try
         {
             new URL("codesource://1:0@org.papoose.framework.0");
+
+            LOGGER.finest("Handler for codesource protocol found");
         }
         catch (MalformedURLException e)
         {
@@ -543,11 +618,15 @@ public final class Papoose
                 prefixes = prefixes + "|org.papoose.core.protocols";
             }
 
+            if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("java.protocol.handler.pkgs: " + prefixes);
+
             System.setProperty("java.protocol.handler.pkgs", prefixes);
 
             try
             {
                 new URL("codesource://1:0@org.papoose.framework-0");
+
+                LOGGER.finest("Handler for codesource protocol found");
             }
             catch (MalformedURLException mue)
             {
@@ -648,54 +727,87 @@ public final class Papoose
 
     private void startBootLevelServices()
     {
+        LOGGER.entering(CLASS_NAME, "startBootLevelServices");
+
+        assert Thread.holdsLock(lock);
+
         String bootLevelServiceClassKeys = (String) getProperty(PapooseConstants.PAPOOSE_BOOT_LEVEL_SERVICES);
         if (bootLevelServiceClassKeys != null)
         {
+            if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest(PapooseConstants.PAPOOSE_BOOT_LEVEL_SERVICES + ": " + bootLevelServiceClassKeys);
+
             for (String bootLevelServiceClassKey : bootLevelServiceClassKeys.split(","))
             {
                 startBootLevelService(bootLevelServiceClassKey.trim());
             }
         }
+
+        LOGGER.exiting(CLASS_NAME, "startBootLevelServices");
     }
 
     private void startBootLevelService(String bootLevelServiceClassKey)
     {
+        LOGGER.entering(CLASS_NAME, "startBootLevelService", bootLevelServiceClassKey);
+
         String bootLevelServiceClassName = (String) getProperty(bootLevelServiceClassKey);
         if (bootLevelServiceClassName != null)
         {
+            if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("bootLevelServiceClassName: " + bootLevelServiceClassName);
+
             try
             {
                 Class bootLevelServiceClass = getSystemBundleContext().getBundle().loadClass(bootLevelServiceClassName);
                 Object pojo = bootLevelServiceClass.newInstance();
+
+                if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Starting " + pojo);
+
                 Util.callStart(pojo, this);
+
+                if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Starting " + pojo);
 
                 bootServices.add(pojo);
             }
             catch (ClassNotFoundException e)
             {
-                throw new FatalError("Unable to instantiate " + bootLevelServiceClassName, e);
+                FatalError fe = new FatalError("Unable to instantiate " + bootLevelServiceClassName, e);
+                LOGGER.throwing(CLASS_NAME, "startBootLevelService", fe);
+                throw fe;
             }
             catch (IllegalAccessException e)
             {
-                throw new FatalError("Unable to instantiate " + bootLevelServiceClassName, e);
+                FatalError fe = new FatalError("Unable to instantiate " + bootLevelServiceClassName, e);
+                LOGGER.throwing(CLASS_NAME, "startBootLevelService", fe);
+                throw fe;
             }
             catch (InstantiationException e)
             {
-                throw new FatalError("Unable to instantiate " + bootLevelServiceClassName, e);
+                FatalError fe = new FatalError("Unable to instantiate " + bootLevelServiceClassName, e);
+                LOGGER.throwing(CLASS_NAME, "startBootLevelService", fe);
+                throw fe;
             }
             catch (NoSuchMethodException e)
             {
-                throw new FatalError("Unable to start " + bootLevelServiceClassName, e);
+                FatalError fe = new FatalError("Unable to instantiate " + bootLevelServiceClassName, e);
+                LOGGER.throwing(CLASS_NAME, "startBootLevelService", fe);
+                throw fe;
             }
             catch (InvocationTargetException e)
             {
-                throw new FatalError("Unable to start " + bootLevelServiceClassName, e);
+                FatalError fe = new FatalError("Unable to instantiate " + bootLevelServiceClassName, e);
+                LOGGER.throwing(CLASS_NAME, "startBootLevelService", fe);
+                throw fe;
             }
         }
+
+        LOGGER.exiting(CLASS_NAME, "startBootLevelService");
     }
 
     private void stopBootLevelServices()
     {
+        LOGGER.entering(CLASS_NAME, "stopBootLevelServices");
+
+        assert Thread.holdsLock(lock);
+
         Object pojo = null;
 
         try
@@ -704,24 +816,46 @@ public final class Papoose
             {
                 pojo = bootServices.get(i);
 
+                if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Stopping " + pojo);
+
                 Util.callStop(pojo);
+
+                if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Stopped " + pojo);
             }
         }
         catch (NoSuchMethodException e)
         {
-            throw new FatalError("Unable to stop " + pojo, e);
+            FatalError fe = new FatalError("Unable to stop " + pojo, e);
+            LOGGER.throwing(CLASS_NAME, "stopBootLevelServices", fe);
+            throw fe;
         }
         catch (IllegalAccessException e)
         {
-            throw new FatalError("Unable to stop " + pojo, e);
+            FatalError fe = new FatalError("Unable to stop " + pojo, e);
+            LOGGER.throwing(CLASS_NAME, "stopBootLevelServices", fe);
+            throw fe;
         }
         catch (InvocationTargetException e)
         {
-            throw new FatalError("Unable to stop " + pojo, e);
+            FatalError fe = new FatalError("Unable to stop " + pojo, e);
+            LOGGER.throwing(CLASS_NAME, "stopBootLevelServices", fe);
+            throw fe;
         }
         finally
         {
             bootServices.clear();
         }
+
+        LOGGER.exiting(CLASS_NAME, "stopBootLevelServices");
+    }
+
+    /**
+     *
+     */
+    private static enum State
+    {
+        TERMINATED,
+        INITIALIZED,
+        STARTED
     }
 }

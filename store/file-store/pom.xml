@@ -63,7 +63,7 @@
 
         <dependency>
             <groupId>org.papoose.core</groupId>
-            <artifactId>framework</artifactId>
+            <artifactId>core</artifactId>
         </dependency>
 
         <dependency>

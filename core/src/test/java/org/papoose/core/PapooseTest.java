@@ -63,6 +63,8 @@ public class PapooseTest
 
         poo.setWaitPeriod(100);
 
+        poo.terminate();
+
         try
         {
             poo.setParser(new Parser());

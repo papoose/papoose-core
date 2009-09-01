@@ -101,6 +101,11 @@ public class BundleManager
         return store;
     }
 
+    StartManager getStartManager()
+    {
+        return startManager;
+    }
+
     void setStartManager(StartManager startManager)
     {
         this.startManager = startManager;

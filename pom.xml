@@ -24,6 +24,7 @@
     <modules>
         <module>cnd-perm-admin</module>
         <module>core</module>
+        <module>framework</module>
         <module>perm-admin</module>
         <module>pkg-admin</module>
         <module>start-level</module>
@@ -92,6 +93,48 @@
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>core</artifactId>
+                <version>${papooseVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.core</groupId>
+                <artifactId>cnd-perm-admin</artifactId>
+                <version>${papooseVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.core</groupId>
+                <artifactId>perm-admin</artifactId>
+                <version>${papooseVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.core</groupId>
+                <artifactId>pkg-admin</artifactId>
+                <version>${papooseVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.core</groupId>
+                <artifactId>start-level</artifactId>
+                <version>${papooseVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.core</groupId>
+                <artifactId>store-file</artifactId>
+                <version>${papooseVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.core</groupId>
+                <artifactId>store-memory</artifactId>
+                <version>${papooseVersion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.papoose.core</groupId>
+                <artifactId>url-handlers</artifactId>
                 <version>${papooseVersion}</version>
             </dependency>
 
