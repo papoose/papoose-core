@@ -26,7 +26,11 @@ public class FileUtils
 {
     public static boolean buildDirectoriesFromFilePath(File root, String path, char regex)
     {
-        return buildDirectories(root, path.substring(0, path.indexOf(regex)), regex);
+        int lastIndex = path.lastIndexOf(regex);
+
+        lastIndex = lastIndex == -1 ? 0 : lastIndex;
+
+        return buildDirectories(root, path.substring(0, lastIndex), regex);
     }
 
     public static boolean buildDirectories(File root, String path, char regex)

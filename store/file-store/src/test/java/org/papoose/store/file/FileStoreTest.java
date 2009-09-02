@@ -64,7 +64,7 @@ public class FileStoreTest
         Assert.assertTrue(earlyTimestamp < bundle.getLastModified());
 
         Dictionary headers = bundle.getHeaders("en");
-        Assert.assertEquals("org.papoose.test-support.test-support-bundle", headers.get("Bundle-SymbOLicName"));
+        Assert.assertEquals("org.papoose.test-support.bundle", headers.get("Bundle-SymbOLicName"));
 
         headers = bundle.getHeaders("en");
         Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));

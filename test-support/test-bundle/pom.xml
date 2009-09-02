@@ -15,43 +15,16 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.papoose.test-support</groupId>
-                                    <artifactId>test-support-jar</artifactId>
-                                    <version>${papooseVersion}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>src/main/resources/lib</outputDirectory>
-                                    <destFileName>test.jar</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
 
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.0.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Bundle-Classpath>.,lib/test.jar</Bundle-Classpath>
-                        <Export-Package>com.acme.api,com.acme.shared</Export-Package>
-                        <Private-Package>com.acme.*</Private-Package>
+                        <Embed-Dependency>test-support-jar;inline=false</Embed-Dependency>
+                        <Export-Package>com.acme.api</Export-Package>
+                        <Private-Package>com.acme.pub;com.acme.pvt;com.acme.impl;-split-package:=first</Private-Package>
                         <Bundle-Activator>com.acme.impl.Activator</Bundle-Activator>
                         <L10N-Bundle>%bundle</L10N-Bundle>
                         <L10N-Test>%test</L10N-Test>
@@ -67,11 +40,13 @@
         <dependency>
             <groupId>org.papoose.osgi</groupId>
             <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.papoose.test-support</groupId>
             <artifactId>test-support-jar</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
     </dependencies>
