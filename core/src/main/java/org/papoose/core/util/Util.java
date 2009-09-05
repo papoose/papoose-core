@@ -22,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
@@ -33,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import org.osgi.framework.BundleException;
 
@@ -47,74 +50,136 @@ import org.papoose.core.descriptions.Visibility;
  */
 public final class Util
 {
+    private final static String CLASS_NAME = Util.class.getName();
+    private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
+
     public static void copy(InputStream input, OutputStream output) throws IOException
     {
+        LOGGER.entering(CLASS_NAME, "copy", new Object[]{ input, output });
+
         byte[] buffer = new byte[4096];
         int len;
 
         while ((len = input.read(buffer)) != -1) output.write(buffer, 0, len);
+
+        LOGGER.exiting(CLASS_NAME, "copy");
+    }
+
+    public static void close(Closeable closeable)
+    {
+        LOGGER.entering(CLASS_NAME, "close", closeable);
+
+        try
+        {
+            if (closeable != null) closeable.close();
+        }
+        catch (IOException ioe)
+        {
+            LOGGER.log(Level.WARNING, "Problems closing closeable", ioe);
+        }
+
+        LOGGER.exiting(CLASS_NAME, "close");
     }
 
     public static void delete(File file)
     {
+        LOGGER.entering(CLASS_NAME, "delete", file);
+
         if (file.isDirectory())
         {
+            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine(file + " is a directory");
             for (File f : file.listFiles()) delete(f);
         }
+
+        //noinspection ResultOfMethodCallIgnored
         file.delete();
+
+        LOGGER.exiting(CLASS_NAME, "delete");
     }
 
-    @SuppressWarnings({ "EmptyCatchBlock" })
     public static boolean callSetter(Object pojo, String property, Object value)
     {
-        assert pojo != null;
-        assert property != null;
-        assert value != null;
+        LOGGER.entering(CLASS_NAME, "callSetter", new Object[]{ pojo, property, value });
 
         try
         {
-            Method method = getDeclaredMethod(constructMethodName(property), pojo.getClass(), value.getClass());
+            String methodName = constructMethodName(property);
+            Method method = getDeclaredMethod(methodName, pojo.getClass(), value.getClass());
+
+            if (method == null)
+            {
+                LOGGER.warning(methodName + "(" + value.getClass() + ") not found on class " + pojo.getClass());
+                return false;
+            }
+
             method.setAccessible(true);
             method.invoke(pojo, value);
 
             return true;
         }
-        catch (IllegalAccessException fallThrough)
+        catch (IllegalAccessException iae)
         {
+            LOGGER.log(Level.WARNING, "Problems calling setter", iae);
         }
-        catch (InvocationTargetException fallThrough)
+        catch (InvocationTargetException ite)
         {
+            LOGGER.log(Level.WARNING, "Problems calling setter", ite);
         }
-        catch (SecurityException fallThrough)
+        catch (SecurityException se)
         {
+            LOGGER.log(Level.WARNING, "Problems calling setter", se);
         }
+
+        LOGGER.exiting(CLASS_NAME, "callSetter", false);
 
         return false;
     }
 
     private static Method getDeclaredMethod(String name, Class pojoClass, Class propertyClass)
     {
-        if (propertyClass == null) return null;
+        LOGGER.entering(CLASS_NAME, "getDeclaredMethod", new Object[]{ name, pojoClass, propertyClass });
+
+        if (propertyClass == null)
+        {
+            LOGGER.exiting(CLASS_NAME, "getDeclaredMethod", null);
+            return null;
+        }
 
         try
         {
-            return pojoClass.getDeclaredMethod(name, propertyClass);
+            Method method = pojoClass.getDeclaredMethod(name, propertyClass);
+
+            LOGGER.exiting(CLASS_NAME, "getDeclaredMethod", method);
+
+            return method;
         }
         catch (NoSuchMethodException e)
         {
+            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine(pojoClass + " does not have method " + name + "(" + propertyClass + ")");
+
             Method method;
             for (Class iface : propertyClass.getInterfaces())
             {
-                if ((method = getDeclaredMethod(name, pojoClass, iface)) != null) return method;
+                if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine("Searching interface " + iface);
+
+                if ((method = getDeclaredMethod(name, pojoClass, iface)) != null)
+                {
+                    LOGGER.exiting(CLASS_NAME, "getDeclaredMethod", method);
+
+                    return method;
+                }
             }
-            return getDeclaredMethod(name, pojoClass, propertyClass.getSuperclass());
+
+            method = getDeclaredMethod(name, pojoClass, propertyClass.getSuperclass());
+
+            LOGGER.exiting(CLASS_NAME, "getDeclaredMethod", method);
+
+            return method;
         }
     }
 
     private static String constructMethodName(String property)
     {
-        assert property != null;
-
         if (property.contains("-"))
         {
             StringBuilder builder = new StringBuilder("set");
@@ -146,8 +211,6 @@ public final class Util
 
     public static boolean isValidPackageName(String path)
     {
-        assert path != null;
-
         for (String token : path.split("\\."))
         {
             if (!isJavaIdentifier(token)) return false;
@@ -842,7 +905,7 @@ public final class Util
     {
         BigInteger fact = BigInteger.ONE;
 
-        for (int i = n; i > 1; i--) fact = fact.multiply(new BigInteger(Integer.toString(i)));
+        for (int i = n; i > 1; i--) fact = fact.multiply(BigInteger.valueOf(i));
 
         return fact;
     }

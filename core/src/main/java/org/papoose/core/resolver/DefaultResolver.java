@@ -47,6 +47,7 @@ import org.papoose.core.descriptions.RequireDescription;
 import org.papoose.core.descriptions.Resolution;
 import org.papoose.core.spi.Resolver;
 import org.papoose.core.spi.Solution;
+import static org.papoose.core.util.Assert.assertTrue;
 import org.papoose.core.util.ResolverUtils;
 import org.papoose.core.util.Util;
 
@@ -580,7 +581,7 @@ public class DefaultResolver implements Resolver
 
                             if (result != null)
                             {
-                                if (importExportOverlap) assert result.getResolving().removeExport(targetImport.getPackageName());
+                                if (importExportOverlap) result.getResolving().removeExport(targetImport.getPackageName());
                                 return result;
                             }
                         }
@@ -607,7 +608,7 @@ public class DefaultResolver implements Resolver
 
                                 if (result != null)
                                 {
-                                    if (importExportOverlap) assert result.getResolving().removeExport(targetImport.getPackageName());
+                                    if (importExportOverlap) assertTrue(result.getResolving().removeExport(targetImport.getPackageName()));
                                     return result;
                                 }
                             }
@@ -624,7 +625,7 @@ public class DefaultResolver implements Resolver
 
                             if (result != null)
                             {
-                                if (importExportOverlap) assert result.getResolving().removeExport(targetImport.getPackageName());
+                                if (importExportOverlap) assertTrue(result.getResolving().removeExport(targetImport.getPackageName()));
                                 return result;
                             }
                         }
@@ -643,7 +644,6 @@ public class DefaultResolver implements Resolver
                         else
                         {
                             CandidateWiring candidateWiring = new CandidateWiring(targetImport.getPackageName(), candidateExport.getExportDescription(), candidateExport.getCandidate());
-                            UnBound unBound = (UnBound) candidate;
 
                             // add a wire to the bundle being resolved
                             // move the unbound to to be resolved
@@ -652,7 +652,7 @@ public class DefaultResolver implements Resolver
 
                             if (result != null)
                             {
-                                if (importExportOverlap) assert result.getResolving().removeExport(targetImport.getPackageName());
+                                if (importExportOverlap) assertTrue(result.getResolving().removeExport(targetImport.getPackageName()));
                                 return result;
                             }
                         }

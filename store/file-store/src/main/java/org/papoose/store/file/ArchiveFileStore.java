@@ -54,6 +54,7 @@ import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.util.FileUtils;
 import org.papoose.core.util.SecurityUtils;
 import org.papoose.core.util.Util;
+import static org.papoose.core.util.Assert.assertTrue;
 
 
 /**
@@ -521,7 +522,7 @@ class ArchiveFileStore extends AbstractArchiveStore
             outputStream.close();
 
             File archiveDir = new File(bundleRoot, ARCHIVE_NAME);
-            assert archiveDir.mkdirs();
+            assertTrue(archiveDir.mkdirs());
 
             JarInputStream jarInputStream = new JarInputStream(new FileInputStream(archiveFile));
 

@@ -32,6 +32,7 @@ import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.RequireDescription;
 import org.papoose.core.descriptions.Visibility;
+import static org.papoose.core.util.Assert.assertTrue;
 import org.papoose.core.util.ToStringCreator;
 
 
@@ -54,15 +55,15 @@ public class CheckPoint
         assert generation != null;
         assert canonicalSet != null;
 
-        unResolved.add(new UnBound(generation));
-        unused.addAll(canonicalSet);
+        assertTrue(unResolved.add(new UnBound(generation)));
+        assertTrue(unused.addAll(canonicalSet));
 
         for (Candidate candidate : unused)
         {
             Generation g = candidate.getGeneration();
             if (g.getArchiveStore().isSingleton())
             {
-                singletons.put(g.getSymbolicName(), candidate);
+                assertTrue(singletons.put(g.getSymbolicName(), candidate) == null);
             }
         }
     }
@@ -73,14 +74,14 @@ public class CheckPoint
         assert importDescription != null;
         assert canonicalSet != null;
 
-        unused.addAll(canonicalSet);
+        assertTrue(unused.addAll(canonicalSet));
 
         for (Candidate candidate : unused)
         {
             Generation g = candidate.getGeneration();
             if (g.getArchiveStore().isSingleton())
             {
-                singletons.put(g.getSymbolicName(), candidate);
+                assertTrue(singletons.put(g.getSymbolicName(), candidate) == null);
             }
         }
 
@@ -96,7 +97,7 @@ public class CheckPoint
 
                 for (String packageName : exportDescription.getPackageNames())
                 {
-                    resolving.addWiring(new CandidateWiring(packageName, exportDescription, candidateBundle));
+                    assertTrue(resolving.addWiring(new CandidateWiring(packageName, exportDescription, candidateBundle)));
                 }
             }
         }
@@ -105,10 +106,10 @@ public class CheckPoint
             assert false;
         }
 
-        used.add(resolving);
+        assertTrue(used.add(resolving));
 
-        unused.remove(resolving);
-        for (FragmentGeneration fragmentGeneration : resolving.getFragments()) unused.remove(new Candidate(fragmentGeneration));
+        assertTrue(unused.remove(resolving));
+        for (FragmentGeneration fragmentGeneration : resolving.getFragments()) assertTrue(unused.remove(new Candidate(fragmentGeneration)));
 
         checkSingltonViolation(bundleGeneration);
     }
@@ -133,8 +134,9 @@ public class CheckPoint
         if (checkPoint.resolving != null)
         {
             resolving = new BoundHost(checkPoint.resolving);
-            assert used.remove(resolving);
-            assert used.add(resolving);
+            assertTrue(used.remove(resolving));
+            assertTrue(used.add(resolving));
+
             for (CandidateBundle candidateBundle : used)
             {
                 Set<CandidateWiring> replace = new HashSet<CandidateWiring>();
@@ -217,8 +219,8 @@ public class CheckPoint
         CheckPoint checkPoint = new CheckPoint(this);
 
         checkPoint.getResolving().addCandidateRequiredBundle(new RequiredBundleWrapper(resolvedHost, requireDescription.getVisibility() == Visibility.REEXPORT));
-        assert checkPoint.getUsed().add(resolvedHost);
-        assert checkPoint.getUnused().remove(resolvedHost);
+        assertTrue(checkPoint.getUsed().add(resolvedHost));
+        assertTrue(checkPoint.getUnused().remove(resolvedHost));
 
         return checkPoint;
     }
@@ -251,7 +253,7 @@ public class CheckPoint
     {
         CheckPoint checkPoint = new CheckPoint(this);
 
-        assert checkPoint.resolving.addCandidateWiring(candidateWiring);
+        assertTrue(checkPoint.resolving.addCandidateWiring(candidateWiring));
 
         return checkPoint;
     }
@@ -262,9 +264,9 @@ public class CheckPoint
     {
         CheckPoint checkPoint = new CheckPoint(this);
 
-        assert checkPoint.resolving.addCandidateWiring(candidateWiring);
-        assert checkPoint.used.add(resolved);
-        assert checkPoint.unused.remove(resolved);
+        assertTrue(checkPoint.resolving.addCandidateWiring(candidateWiring));
+        assertTrue(checkPoint.used.add(resolved));
+        assertTrue(checkPoint.unused.remove(resolved));
 
         return checkPoint;
     }
@@ -276,9 +278,9 @@ public class CheckPoint
     {
         CheckPoint checkPoint = new CheckPoint(this);
 
-        assert checkPoint.resolving.addCandidateWiring(candidateWiring);
-        assert checkPoint.unResolved.add(unBound);
-        assert checkPoint.unused.remove(unBound);
+        assertTrue(checkPoint.resolving.addCandidateWiring(candidateWiring));
+        assertTrue(checkPoint.unResolved.add(unBound));
+        assertTrue(checkPoint.unused.remove(unBound));
 
         return checkPoint;
     }
@@ -297,10 +299,10 @@ public class CheckPoint
 
         checkPoint.resolving = new BoundHost(host, fragments);
 
-        checkPoint.used.add(checkPoint.resolving);
+        assertTrue(checkPoint.used.add(checkPoint.resolving));
 
-        checkPoint.unused.remove(checkPoint.resolving);
-        for (FragmentGeneration fragmentGeneration : fragments) checkPoint.unused.remove(new Candidate(fragmentGeneration));
+        assertTrue(checkPoint.unused.remove(checkPoint.resolving));
+        for (FragmentGeneration fragmentGeneration : fragments) assertTrue(checkPoint.unused.remove(new Candidate(fragmentGeneration)));
 
         checkSingltonViolation(host);
 
@@ -312,7 +314,7 @@ public class CheckPoint
     {
         CheckPoint checkPoint = new CheckPoint(this);
 
-        assert checkPoint.getResolving().removeImport(targetImport.getPackageName());
+        assertTrue(checkPoint.getResolving().removeImport(targetImport.getPackageName()));
 
         return checkPoint;
     }
