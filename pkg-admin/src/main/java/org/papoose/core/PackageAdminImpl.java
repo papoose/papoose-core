@@ -653,7 +653,7 @@ public class PackageAdminImpl implements PackageAdmin
         if (classLoader instanceof BundleClassLoader)
         {
             BundleClassLoader bundleClassLoader = (BundleClassLoader) classLoader;
-            BundleGeneration generation = bundleClassLoader.getBundle();
+            BundleGeneration generation = bundleClassLoader.getBundleGeneration();
             BundleController controller = generation.getBundleController();
             if (controller.getFramework() == framework)
             {
