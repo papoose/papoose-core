@@ -37,7 +37,9 @@ import java.util.jar.Manifest;
 import org.apache.xbean.classloader.NamedClassLoader;
 import org.apache.xbean.classloader.ResourceHandle;
 import org.apache.xbean.classloader.ResourceLocation;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.BundleReference;
 import org.osgi.framework.FrameworkEvent;
 
 import org.papoose.core.descriptions.DynamicDescription;
@@ -48,11 +50,11 @@ import org.papoose.core.spi.ArchiveStore;
 /**
  * @version $Revision$ $Date$
  */
-public class BundleClassLoader extends NamedClassLoader
+public class BundleClassLoader extends NamedClassLoader implements BundleReference
 {
     private final static URL[] EMPTY_URLS = new URL[0];
     private final Papoose framework;
-    private final BundleGeneration bundle;
+    private final BundleGeneration bundleGeneration;
     private final Set<Wire> wires;
     private final List<Wire> requiredBundles;
     private final String[] exportedPackages;
@@ -63,7 +65,7 @@ public class BundleClassLoader extends NamedClassLoader
 
     BundleClassLoader(String name, ClassLoader parent,
                       Papoose framework,
-                      BundleGeneration bundle,
+                      BundleGeneration bundleGeneration,
                       Set<Wire> wires,
                       List<Wire> requiredBundles,
                       String[] bootDelegates,
@@ -76,13 +78,13 @@ public class BundleClassLoader extends NamedClassLoader
 
         assert name != null;
         assert framework != null;
-        assert bundle != null;
+        assert bundleGeneration != null;
         assert wires != null;
         assert requiredBundles != null;
         assert boundClassPath != null;
 
         this.framework = framework;
-        this.bundle = bundle;
+        this.bundleGeneration = bundleGeneration;
         this.wires = new HashSet<Wire>(wires);
         this.requiredBundles = requiredBundles;
         this.exportedPackages = exportedPackages;
@@ -91,10 +93,17 @@ public class BundleClassLoader extends NamedClassLoader
         this.archiveStores = archiveStores;
     }
 
-
-    BundleGeneration getBundle()
+    /**
+     * {@inheritDoc}
+     */
+    public Bundle getBundle()
     {
-        return bundle;
+        return bundleGeneration.getBundleController();
+    }
+
+    BundleGeneration getBundleGeneration()
+    {
+        return bundleGeneration;
     }
 
     public Set<Wire> getWires()
@@ -234,7 +243,7 @@ public class BundleClassLoader extends NamedClassLoader
                         || (packagePattern.endsWith("/") && packageName.startsWith(packagePattern))
                         || packageName.equals(packagePattern))
                     {
-                        BundleController bundleController = bundle.getBundleController();
+                        BundleController bundleController = bundleGeneration.getBundleController();
                         ImportDescription importDescription = new ImportDescription(Collections.singleton(packageName), dynamicDescription.getParameters());
 
                         Wire wire = bundleController.getFramework().getBundleManager().resolve(bundleController, importDescription);
@@ -316,7 +325,7 @@ public class BundleClassLoader extends NamedClassLoader
                     || (packagePattern.endsWith(".") && packageName.startsWith(packagePattern))
                     || packageName.equals(packagePattern))
                 {
-                    BundleController bundleController = bundle.getBundleController();
+                    BundleController bundleController = bundleGeneration.getBundleController();
                     ImportDescription importDescription = new ImportDescription(Collections.singleton(packageName), dynamicDescription.getParameters());
 
                     Wire wire = bundleController.getFramework().getBundleManager().resolve(bundleController, importDescription);
@@ -391,7 +400,7 @@ public class BundleClassLoader extends NamedClassLoader
                     // this is the security context of the class
                     CodeSource codeSource = new CodeSource(codeSourceUrl, certificates);
 
-                    ProtectionDomain protectionDomain = manager.getProtectionDomainFactory().assignProtectionDomain(bundle, codeSource, getPermissions(codeSource));
+                    ProtectionDomain protectionDomain = manager.getProtectionDomainFactory().assignProtectionDomain(bundleGeneration, codeSource, getPermissions(codeSource));
 
                     // load the class into the vm
                     Class result = defineClass(className, bytes, 0, bytes.length, protectionDomain);
@@ -400,17 +409,17 @@ public class BundleClassLoader extends NamedClassLoader
                     {
                         try
                         {
-                            manager.performActivation(BundleClassLoader.this.getBundle());
+                            manager.performActivation(BundleClassLoader.this.getBundleGeneration());
                         }
                         catch (BundleException be)
                         {
-                            manager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle.getBundleController(), be));
+                            manager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundleGeneration.getBundleController(), be));
                         }
                     }
 
                     return result;
                 }
-            }, bundle.getBundleController().getFramework().getAcc());
+            }, bundleGeneration.getBundleController().getFramework().getAcc());
         }
         catch (PrivilegedActionException e)
         {
