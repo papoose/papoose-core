@@ -17,6 +17,7 @@
 package org.papoose.core.util;
 
 import java.io.File;
+import java.io.IOException;
 
 
 /**
@@ -41,6 +42,33 @@ public class FileUtils
     {
         for (Object element : elements) root = new File(root, element.toString());
         return root;
+    }
+
+    /**
+     * Determines whether the specified file is a link rather than an actual file.
+     * Will not return true if there is a symlink anywhere in the path, only if the specific
+     * file is.
+     *
+     * @param file the file to check
+     * @return true iff the file is a symlink
+     * @throws IOException if an IO error occurs while checking the file
+     */
+    public static boolean isSymlink(File file) throws IOException
+    {
+        if (file == null) throw new IllegalArgumentException("File must not be null");
+
+        File fileInCanonicalDir;
+        if (file.getParent() == null)
+        {
+            fileInCanonicalDir = file;
+        }
+        else
+        {
+            File canonicalDir = file.getParentFile().getCanonicalFile();
+            fileInCanonicalDir = new File(canonicalDir, file.getName());
+        }
+
+        return !fileInCanonicalDir.getCanonicalFile().equals(fileInCanonicalDir.getAbsoluteFile());
     }
 
     private FileUtils() {}
