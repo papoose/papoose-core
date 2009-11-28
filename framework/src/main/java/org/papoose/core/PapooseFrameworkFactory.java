@@ -14,22 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.framework.launch;
+package org.papoose.core;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
 
-import org.papoose.core.Papoose;
 import org.papoose.core.spi.Store;
 import org.papoose.store.file.FileStore;
 import org.papoose.store.memory.MemoryStore;
@@ -51,35 +52,38 @@ public class PapooseFrameworkFactory implements FrameworkFactory
 
         Properties properties = new Properties();
 
-        for (Object key : configuration.keySet())
+        //noinspection unchecked
+        for (Map.Entry entry : (Set<Map.Entry>) configuration.entrySet())
         {
-            Object value = configuration.get(key);
+            Object key = entry.getKey();
+            Object value = entry.getValue();
             if (key instanceof String && value instanceof String)
             {
                 properties.setProperty((String) key, (String) value);
             }
         }
 
-        String storeTypeString = properties.getProperty(PapooseFrameworkConstants.PAPOOSE_FRAMEWORK_STORE_TYPE, "FILE");
+        String storeTypeString = properties.getProperty(PapooseConstants.PAPOOSE_FRAMEWORK_STORE_TYPE, "FILE");
 
         Store store;
-        if ("MEMORY".equals(storeTypeString))
+        if ("MEMORY".equalsIgnoreCase(storeTypeString))
         {
             store = new MemoryStore();
         }
         else
         {
-            String storageString = properties.getProperty(PapooseFrameworkConstants.PAPOOSE_FRAMEWORK_STORAGE, ".");
-            File file = new File(storageString);
+            String storageString = properties.getProperty(Constants.FRAMEWORK_STORAGE, ".");
+
+            File file = new File(storageString).getAbsoluteFile();
             store = new FileStore(file);
 
             if (!"FILE".equals(storeTypeString))
             {
-                LOGGER.warning("Unable to parse " + PapooseFrameworkConstants.PAPOOSE_FRAMEWORK_STORE_TYPE + ", using file store");
+                LOGGER.warning("Unable to parse " + PapooseConstants.PAPOOSE_FRAMEWORK_STORE_TYPE + ", using file store");
             }
         }
 
-        String threadPoolSizeString = properties.getProperty(PapooseFrameworkConstants.PAPOOSE_FRAMEWORK_THREADPOOL_SIZE, "5");
+        String threadPoolSizeString = properties.getProperty(PapooseConstants.PAPOOSE_FRAMEWORK_THREADPOOL_SIZE, "5");
         int threadPoolSize;
 
         try
@@ -88,13 +92,13 @@ public class PapooseFrameworkFactory implements FrameworkFactory
         }
         catch (NumberFormatException e)
         {
-            LOGGER.warning("Unable to parse " + PapooseFrameworkConstants.PAPOOSE_FRAMEWORK_THREADPOOL_SIZE + ", using default of 5");
+            LOGGER.warning("Unable to parse " + PapooseConstants.PAPOOSE_FRAMEWORK_THREADPOOL_SIZE + ", using default of 5");
             threadPoolSize = 5;
         }
 
         ExecutorService executorService = new ThreadPoolExecutor(1, threadPoolSize, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 
-        String frameworkName = properties.getProperty(PapooseFrameworkConstants.PAPOOSE_FRAMEWORK_NAME);
+        String frameworkName = properties.getProperty(PapooseConstants.PAPOOSE_FRAMEWORK_NAME);
 
         Papoose papose;
         if (frameworkName != null)

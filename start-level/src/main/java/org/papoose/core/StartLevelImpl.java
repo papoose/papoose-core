@@ -49,6 +49,7 @@ public class StartLevelImpl implements StartManager, StartLevel, SynchronousBund
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final Set<StartedState> started = new HashSet<StartedState>();
     private volatile Papoose framework;
+    private volatile StartManager savedStartManager;
     private volatile SerialExecutor serialExecutor;
     private volatile StartLevelStore store;
     private volatile ServiceRegistration serviceRegistration;
@@ -61,16 +62,17 @@ public class StartLevelImpl implements StartManager, StartLevel, SynchronousBund
 
         this.framework = framework;
 
-        framework.getBundleManager().setStartManager(this);
+        savedStartManager = framework.getStartManager();
+        framework.setStartManager(this);
 
         this.serialExecutor = new SerialExecutor(framework.getExecutorService());
 
-        BundleContext context = framework.getSystemBundleContext();
+        BundleContext systemBundleContext = framework.getSystemBundleContext();
 
-        ServiceReference reference = context.getServiceReference(StartLevelStore.class.getName());
+        ServiceReference reference = systemBundleContext.getServiceReference(StartLevelStore.class.getName());
         if (reference != null)
         {
-            this.store = (StartLevelStore) context.getService(reference);
+            this.store = (StartLevelStore) systemBundleContext.getService(reference);
         }
         else
         {
@@ -79,9 +81,9 @@ public class StartLevelImpl implements StartManager, StartLevel, SynchronousBund
 
         store.start(framework);
 
-        context.addBundleListener(this);
+        systemBundleContext.addBundleListener(this);
 
-        this.serviceRegistration = context.registerService(StartLevelImpl.class.getName(), this, null);
+        this.serviceRegistration = systemBundleContext.registerService(StartLevelImpl.class.getName(), this, null);
 
         LOGGER.exiting(CLASS_NAME, "start");
     }
@@ -92,12 +94,15 @@ public class StartLevelImpl implements StartManager, StartLevel, SynchronousBund
 
         serviceRegistration.unregister();
 
-        BundleContext context = framework.getSystemBundleContext();
+        BundleContext systemBundleContext = framework.getSystemBundleContext();
 
-        context.removeBundleListener(this);
+        systemBundleContext.removeBundleListener(this);
 
         store.stop();
 
+        framework.setStartManager(savedStartManager);
+
+        savedStartManager = null;
         serviceRegistration = null;
         store = null;
         framework = null;

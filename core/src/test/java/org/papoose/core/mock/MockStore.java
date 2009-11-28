@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 
 import org.papoose.core.Papoose;
 import org.papoose.core.PapooseException;
@@ -34,9 +35,31 @@ import org.papoose.core.spi.Store;
  */
 public class MockStore implements Store
 {
+    public boolean isPreviouslyUsed() throws PapooseException
+    {
+        return false;
+    }
+
+    public void clear() throws PapooseException
+    {
+    }
+
+    public void start() throws PapooseException
+    {
+    }
+
+    public void stop() throws PapooseException
+    {
+    }
+
     public List<BundleStore> loadBundleStores() throws PapooseException
     {
         return Collections.EMPTY_LIST;
+    }
+
+    public BundleStore obtainSystemBundleStore() throws BundleException
+    {
+        return new MockBundleStore(0, Constants.SYSTEM_BUNDLE_LOCATION);
     }
 
     public BundleStore allocateBundleStore(long bundleId, String location) throws BundleException

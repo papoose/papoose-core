@@ -30,7 +30,51 @@ import org.papoose.core.PapooseException;
  */
 public interface Store
 {
+    /**
+     * Discover if this store pointed to a space that was previously used.
+     * <p/>
+     * The store can and usually will be pointing to a space that was
+     * previously used.  This information can be useful when deciding whether
+     * or not to clear the space.
+     *
+     * @return <code>true</code> if this store pointed to a space that was
+     *         previously used; <code>false</code> otherwise.
+     * @throws PapooseException if an error occurs obtaining this information
+     */
+    boolean isPreviouslyUsed() throws PapooseException;
+
+    /**
+     * Clear the space for use by the store.  When pointing a store at a new
+     * space it is usually a good practice to clear the space before using it.
+     * <p/>
+     * This method will perform what ever steps that are needed to ensure the safe
+     * use of the space by this store.
+     *
+     * @throws PapooseException if an error occurs while clearing this space
+     */
+    void clear() throws PapooseException;
+
+    /**
+     * Notifies the store to start.  This method should only be called once
+     * before {@link #stop} is called but should do no harm if it gets called
+     * more than that.
+     *
+     * @throws PapooseException if an error occurs starting
+     */
+    void start() throws PapooseException;
+
+    /**
+     * Notifies the store to stop.  This method should only be called once
+     * after {@link #start} is called but should do no harm if it gets called
+     * more than that.
+     *
+     * @throws PapooseException if an error occurs stopping
+     */
+    void stop() throws PapooseException;
+
     List<BundleStore> loadBundleStores() throws PapooseException;
+
+    BundleStore obtainSystemBundleStore() throws BundleException;
 
     BundleStore allocateBundleStore(long bundleId, String location) throws BundleException;
 

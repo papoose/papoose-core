@@ -21,11 +21,13 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.Map;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.Version;
 
 /**
  * @version $Revision$ $Date$
@@ -141,6 +143,16 @@ public class MockEmptyBundle implements Bundle
     }
 
     public BundleContext getBundleContext()
+    {
+        return null;
+    }
+
+    public Map getSignerCertificates(int signersType)
+    {
+        return null;
+    }
+
+    public Version getVersion()
     {
         return null;
     }

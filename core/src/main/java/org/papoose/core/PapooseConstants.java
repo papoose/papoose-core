@@ -37,5 +37,9 @@ public final class PapooseConstants
 
     public final static String PAPOOSE_FRAMEWORK_START_LEVEL = "org.osgi.framework.startlevel.beginning";
 
+    public final static String PAPOOSE_FRAMEWORK_NAME = "org.papoose.framework.name";
+    public final static String PAPOOSE_FRAMEWORK_STORE_TYPE = "org.papoose.framework.store.type";
+    public final static String PAPOOSE_FRAMEWORK_THREADPOOL_SIZE = "org.papoose.framework.threadpool.size";
+
     private PapooseConstants() {}
 }

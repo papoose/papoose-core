@@ -71,6 +71,8 @@ public class DefaultFilter implements Filter
 
     public DefaultFilter(Expr expr)
     {
+        assert expr != null;
+
         this.expr = expr;
     }
 

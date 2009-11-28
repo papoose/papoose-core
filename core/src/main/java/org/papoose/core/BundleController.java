@@ -50,6 +50,7 @@ import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
+import org.osgi.framework.Version;
 
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.spi.BundleStore;
@@ -77,7 +78,7 @@ public class BundleController implements Bundle
     @GuardedBy("lock") private Set<FrameworkListener> frameworkListeners;
     @GuardedBy("lock") private Set<ServiceListener> serviceListeners;
     @GuardedBy("lock") private Set<ServiceListener> allServiceListeners;
-    private volatile BundleContextImpl bundleContext;
+    private volatile BundleContextProxy bundleContext;
     private volatile Generation currentGeneration;
     private volatile BundleActivator bundleActivator;
 
@@ -204,10 +205,9 @@ public class BundleController implements Bundle
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
         Papoose framework = getFramework();
-        BundleManager bundleManager = framework.getBundleManager();
         BundleGeneration bundleGeneration = (BundleGeneration) getCurrentGeneration();
 
-        bundleManager.requestStart(bundleGeneration, options);
+        framework.requestStart(bundleGeneration, options);
     }
 
     /**
@@ -220,10 +220,9 @@ public class BundleController implements Bundle
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
         Papoose framework = getFramework();
-        BundleManager bundleManager = framework.getBundleManager();
         BundleGeneration bundleGeneration = (BundleGeneration) getCurrentGeneration();
 
-        bundleManager.requestStop(bundleGeneration, options);
+        framework.requestStop(bundleGeneration, options);
     }
 
     /**
@@ -706,9 +705,25 @@ public class BundleController implements Bundle
     {
         SecurityUtils.checkAdminPermission(this, AdminPermission.CONTEXT);
 
-        if (bundleContext == null) bundleContext = new BundleContextImpl(this);
+        if (bundleContext == null) bundleContext = new BundleContextProxy(this);
 
         return bundleContext;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Map getSignerCertificates(int signersType)
+    {
+        return null;  //Todo change body of implemented methods use File | Settings | File Templates.
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Version getVersion()
+    {
+        return getCurrentGeneration().getVersion();
     }
 
     void setAutostart(AutostartSetting setting)

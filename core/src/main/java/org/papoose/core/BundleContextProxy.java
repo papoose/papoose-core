@@ -18,6 +18,7 @@ package org.papoose.core;
 
 import java.io.File;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.Dictionary;
 
 import org.osgi.framework.Bundle;
@@ -38,20 +39,15 @@ import org.papoose.core.util.ToStringCreator;
 /**
  * @version $Revision$ $Date$
  */
-class BundleContextImpl implements BundleContext
+class BundleContextProxy implements BundleContext
 {
-    private volatile BundleController bundle;
+    private final WeakReference<BundleController> reference;
 
-    public BundleContextImpl(BundleController bundle)
+    public BundleContextProxy(BundleController bundle)
     {
         assert bundle != null;
 
-        this.bundle = bundle;
-    }
-
-    void invalidateContext()
-    {
-        bundle = null;
+        this.reference = new WeakReference<BundleController>(bundle);
     }
 
     public String getProperty(String key)
@@ -63,8 +59,9 @@ class BundleContextImpl implements BundleContext
 
     public BundleController getBundle()
     {
-        if (bundle == null) throw new IllegalStateException("This bundle is no longer valid");
-        return bundle;
+        BundleController pinned = reference.get();
+        if (pinned == null) throw new IllegalStateException("This bundle is no longer valid");
+        return pinned;
     }
 
     public Bundle installBundle(String location) throws BundleException
@@ -181,7 +178,7 @@ class BundleContextImpl implements BundleContext
     {
         ToStringCreator creator = new ToStringCreator(this);
 
-        creator.append("bundle", bundle);
+        creator.append("bundle", reference);
 
         return creator.toString();
     }

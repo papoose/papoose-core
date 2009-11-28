@@ -30,6 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 
 import org.papoose.core.FatalError;
 import org.papoose.core.Papoose;
@@ -39,7 +40,6 @@ import org.papoose.core.spi.BundleStore;
 import org.papoose.core.spi.Store;
 import org.papoose.core.util.FileUtils;
 import org.papoose.core.util.ToStringCreator;
-import org.papoose.core.util.Util;
 
 
 /**
@@ -96,6 +96,52 @@ public class FileStore implements Store
         return root;
     }
 
+    public boolean isPreviouslyUsed() throws PapooseException
+    {
+        return new File(this.root, PROPERTIES_FILE).exists();
+    }
+
+    public void clear() throws PapooseException
+    {
+        LOGGER.entering(CLASS_NAME, "clear");
+
+        File properties = new File(this.root, PROPERTIES_FILE);
+        if (properties.exists())
+        {
+            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine(properties.toString() + " exists, will delete");
+
+            if (!properties.delete())
+            {
+                PapooseException pe = new PapooseException("Unable to delete properties file");
+                LOGGER.throwing(CLASS_NAME, "clear", pe);
+                throw pe;
+            }
+        }
+
+        File bundleRoot = FileUtils.buildPath(root, BUNDLES_DIR);
+        if (bundleRoot.exists())
+        {
+            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine(bundleRoot.toString() + " exists, will delete");
+
+            if (!FileUtils.delete(bundleRoot))
+            {
+                PapooseException pe = new PapooseException("Unable to delete properties file");
+                LOGGER.throwing(CLASS_NAME, "clear", pe);
+                throw pe;
+            }
+        }
+
+        LOGGER.exiting(CLASS_NAME, "clear");
+    }
+
+    public void start() throws PapooseException
+    {
+    }
+
+    public void stop() throws PapooseException
+    {
+    }
+
     public synchronized List<BundleStore> loadBundleStores() throws PapooseException
     {
         LOGGER.entering(CLASS_NAME, "loadBundleStores");
@@ -127,25 +173,32 @@ public class FileStore implements Store
         return result;
     }
 
+    public synchronized BundleStore obtainSystemBundleStore() throws BundleException
+    {
+        LOGGER.entering(CLASS_NAME, "obtainSystemBundleStore");
+
+        File bundleRoot = new File(root, SYSTEM_DIR);
+
+        if (!bundleRoot.exists() && !bundleRoot.mkdirs()) throw new FatalError("Unable to create bundle store location: " + bundleRoot);
+
+        BundleFileStore result = new BundleFileStore(bundleRoot, 0, Constants.SYSTEM_BUNDLE_LOCATION);
+
+        LOGGER.exiting(CLASS_NAME, "obtainSystemBundleStore", result);
+
+        return result;
+    }
+
     public synchronized BundleStore allocateBundleStore(long bundleId, String location) throws BundleException
     {
         LOGGER.entering(CLASS_NAME, "allocateBundleStore", new Object[]{ bundleId, location });
 
         assert location != null;
 
-        File bundleRoot;
-        if (bundleId == 0)
-        {
-            bundleRoot = new File(root, SYSTEM_DIR);
-        }
-        else
-        {
-            bundleRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId);
+        File bundleRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId);
 
-            properties.setProperty(GENERATION_KEY + bundleId, "-1");
+        properties.setProperty(GENERATION_KEY + bundleId, "-1");
 
-            save();
-        }
+        save();
 
         if (bundleRoot.exists()) throw new BundleException("Bundle store location " + bundleRoot + " already exists");
         if (!bundleRoot.mkdirs()) throw new FatalError("Unable to create bundle store location: " + bundleRoot);
@@ -165,7 +218,7 @@ public class FileStore implements Store
 
         if (bundleRoot.exists())
         {
-            Util.delete(bundleRoot);
+            FileUtils.delete(bundleRoot);
 
             properties.remove(GENERATION_KEY + bundleId);
 
@@ -242,7 +295,7 @@ public class FileStore implements Store
 
             for (Integer generation : generations)
             {
-                Util.delete(new File(archivesRoot, Integer.toString(generation)));
+                FileUtils.delete(new File(archivesRoot, Integer.toString(generation)));
             }
 
             result = new ArchiveFileStore(framework, bundleId, current, new File(archivesRoot, Integer.toString(current)));

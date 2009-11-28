@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -51,7 +52,6 @@ import org.osgi.framework.ServicePermission;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
-
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.Extension;
 import org.papoose.core.descriptions.FragmentDescription;
@@ -63,7 +63,6 @@ import org.papoose.core.spi.BootClasspathManager;
 import org.papoose.core.spi.BundleStore;
 import org.papoose.core.spi.ProtectionDomainFactory;
 import org.papoose.core.spi.Solution;
-import org.papoose.core.spi.StartManager;
 import org.papoose.core.spi.Store;
 import org.papoose.core.util.SecurityUtils;
 import org.papoose.core.util.ToStringCreator;
@@ -83,32 +82,20 @@ public class BundleManager
     private final Map<Long, BundleController> bundles = new HashMap<Long, BundleController>();
     private final Papoose framework;
     private final Store store;
-    private volatile StartManager startManager;
     private volatile ProtectionDomainFactory protectionDomainFactory;
-    private long bundleCounter = 0;
+    private final AtomicLong bundleCounter = new AtomicLong(0);
 
 
     public BundleManager(Papoose framework, Store store)
     {
         this.framework = framework;
         this.store = store;
-        this.startManager = new DefaultStartManager(this);
         this.protectionDomainFactory = new DefaultProtectionDomainFactory();
     }
 
     public Store getStore()
     {
         return store;
-    }
-
-    StartManager getStartManager()
-    {
-        return startManager;
-    }
-
-    void setStartManager(StartManager startManager)
-    {
-        this.startManager = startManager;
     }
 
     void setProtectionDomainFactory(ProtectionDomainFactory protectionDomainFactory)
@@ -174,7 +161,7 @@ public class BundleManager
         final long systemBundleId = 0;
         try
         {
-            BundleStore bundleStore = store.allocateBundleStore(systemBundleId, Constants.SYSTEM_BUNDLE_LOCATION);
+            BundleStore bundleStore = store.obtainSystemBundleStore();
 
             BundleController systemBundle = new SystemBundleController(framework, bundleStore, version);
 
@@ -189,7 +176,7 @@ public class BundleManager
 
             framework.getResolver().added(systemBundle.getCurrentGeneration());
 
-            insertSystemClassLoader((BundleGeneration) systemBundle.getCurrentGeneration());
+            insertSystemClassLoader((BundleGeneration)systemBundle.getCurrentGeneration());
 
             bundleStore.markModified();
 
@@ -290,18 +277,13 @@ public class BundleManager
         bundle.setState(Bundle.RESOLVED);
     }
 
-    public void uninstallSystemBundle()
-    {
-
-    }
-
     public Bundle installBundle(String location, InputStream inputStream) throws BundleException
     {
-        LOGGER.entering(CLASS_NAME, "installBundle", new Object[]{ location, inputStream });
+        LOGGER.entering(CLASS_NAME, "installBundle", new Object[]{location, inputStream});
 
         if (locations.containsKey(location)) return locations.get(location);
 
-        long bundleId = ++bundleCounter;
+        long bundleId = bundleCounter.incrementAndGet();
 
         try
         {
@@ -395,7 +377,7 @@ public class BundleManager
 
         if (!bundleNativeCodeList.isEmpty())
         {
-            VersionRange osVersionRange = VersionRange.parseVersionRange((String) framework.getProperty(Constants.FRAMEWORK_OS_VERSION));
+            VersionRange osVersionRange = VersionRange.parseVersionRange((String)framework.getProperty(Constants.FRAMEWORK_OS_VERSION));
 
             nextDescription:
             for (NativeCodeDescription description : bundleNativeCodeList)
@@ -423,7 +405,7 @@ public class BundleManager
                     {
                         try
                         {
-                            Filter selectionFilter = new DefaultFilter(framework.getParser().parse((String) parameters.get(key)));
+                            Filter selectionFilter = new DefaultFilter(framework.getParser().parse((String)parameters.get(key)));
                             if (!selectionFilter.match(framework.getProperties())) continue nextDescription;
                         }
                         catch (InvalidSyntaxException ise)
@@ -444,7 +426,7 @@ public class BundleManager
     {
         if (!bundleExecutionEnvironment.isEmpty())
         {
-            String string = (String) framework.getProperty(Constants.FRAMEWORK_EXECUTIONENVIRONMENT);
+            String string = (String)framework.getProperty(Constants.FRAMEWORK_EXECUTIONENVIRONMENT);
             if (string == null) throw new BundleException(Constants.FRAMEWORK_EXECUTIONENVIRONMENT + " not set");
             String[] environments = string.split(",");
 
@@ -466,7 +448,7 @@ public class BundleManager
 
         try
         {
-            BundleController bundleController = (BundleController) target;
+            BundleController bundleController = (BundleController)target;
             Set<Solution> solutions = framework.getResolver().resolve(bundleController.getCurrentGeneration());
 
             if (solutions.isEmpty()) return false;
@@ -493,8 +475,8 @@ public class BundleManager
 
         try
         {
-            BundleController targetController = (BundleController) target;
-            BundleGeneration targetGeneration = (BundleGeneration) targetController.getCurrentGeneration();
+            BundleController targetController = (BundleController)target;
+            BundleGeneration targetGeneration = (BundleGeneration)targetController.getCurrentGeneration();
             Set<Solution> solutions = framework.getResolver().resolve(targetGeneration, importDescription);
 
             if (solutions.isEmpty()) return null;
@@ -609,7 +591,7 @@ public class BundleManager
         fireBundleEvent(new BundleEvent(BundleEvent.RESOLVED, bundleGeneration.getBundleController()));
     }
 
-    public void loadAndStartBundles()
+    public void loadBundles()
     {
         List<BundleStore> bundleStores;
         try
@@ -625,9 +607,7 @@ public class BundleManager
         {
             try
             {
-                long bundleId = bundleStore.getBundleId();
-
-                if (bundleId == 0) continue;
+                long bundleId = bundleCounter.incrementAndGet();
 
                 String location = bundleStore.getLocation();
                 ArchiveStore archiveStore = store.loadArchiveStore(framework, bundleId);
@@ -651,14 +631,6 @@ public class BundleManager
                 locations.put(location, bundle);
                 installedbundles.put(bundleId, bundle);
                 bundles.put(bundleId, bundle);
-
-                bundleCounter = Math.max(bundleCounter, bundleId);
-
-                if (bundle.getCurrentGeneration() instanceof BundleGeneration)
-                {
-                    framework.getResolver().added(bundle.getCurrentGeneration());
-                    if (archiveStore.getBundleActivatorClass() != null) startManager.start((BundleGeneration) generation, 0); // todo: this is probably wrong
-                }
             }
             catch (BundleException e)
             {
@@ -667,14 +639,52 @@ public class BundleManager
         }
     }
 
-    public void requestStart(BundleGeneration bundle, int options) throws BundleException
+    public void unloadBundles()
     {
-        startManager.start(bundle, options);
+        nameVersions.clear();
+        locations.clear();
+        installedbundles.clear();
+        bundles.clear();
+
+        bundleCounter.set(0);
     }
 
-    public void requestStop(BundleGeneration bundle, int options) throws BundleException
+    public void startBundles()
     {
-        startManager.stop(bundle, options);
+        List<BundleStore> bundleStores;
+        try
+        {
+            bundleStores = store.loadBundleStores();
+        }
+        catch (PapooseException e)
+        {
+            throw new FatalError("Unable to load bundle stores", e);
+        }
+
+        for (BundleStore bundleStore : bundleStores)
+        {
+            try
+            {
+                long bundleId = bundleStore.getBundleId();
+
+                if (bundleId == 0) continue;
+
+                BundleController bundle = bundles.get(bundleId);
+                Generation generation = bundle.getCurrentGeneration();
+
+                if (generation instanceof BundleGeneration)
+                {
+                    if (generation.getArchiveStore().getBundleActivatorClass() != null)
+                    {
+                        framework.getStartManager().start((BundleGeneration)generation, 0); // todo: this is probably wrong
+                    }
+                }
+            }
+            catch (BundleException e)
+            {
+                e.printStackTrace();  //todo: consider this autogenerated code
+            }
+        }
     }
 
     public void beginStart(BundleGeneration bundleGeneration, int options) throws BundleException
@@ -755,7 +765,7 @@ public class BundleManager
 
                     if (bundleActivatorClass == null) throw new BundleException("Bundle activator class " + bundleActivatorClassName + " not found");
 
-                    final BundleActivator bundleActivator = (BundleActivator) bundleActivatorClass.newInstance();
+                    final BundleActivator bundleActivator = (BundleActivator)bundleActivatorClass.newInstance();
 
                     bundleController.setBundleActivator(bundleActivator);
 
@@ -887,8 +897,8 @@ public class BundleManager
 
     public void uninstall(Bundle bundle) throws BundleException
     {
-        BundleController bundleController = (BundleController) bundle;
-        BundleGeneration bundleGeneration = (BundleGeneration) bundleController.getCurrentGeneration();
+        BundleController bundleController = (BundleController)bundle;
+        BundleGeneration bundleGeneration = (BundleGeneration)bundleController.getCurrentGeneration();
 
         try
         {
@@ -1093,7 +1103,7 @@ public class BundleManager
     public void fireServiceEvent(ServiceEvent event)
     {
         ServiceReference reference = event.getServiceReference();
-        String[] classes = (String[]) reference.getProperty(Constants.OBJECTCLASS);
+        String[] classes = (String[])reference.getProperty(Constants.OBJECTCLASS);
 
         for (BundleController bundle : installedbundles.values())
         {
@@ -1168,7 +1178,7 @@ public class BundleManager
                 }
                 else
                 {
-                    BootClasspathManager manager = (BootClasspathManager) framework.getProperty(BootClasspathManager.BOOT_CLASSPATH_MANAGER);
+                    BootClasspathManager manager = (BootClasspathManager)framework.getProperty(BootClasspathManager.BOOT_CLASSPATH_MANAGER);
                     if (manager == null || !manager.isSupported()) throw new BundleException("Boot classpath extensions not supported in this framework configuration");
 
                     return new BootClassExtensionGeneration(bundle, archiveStore);
@@ -1215,7 +1225,7 @@ public class BundleManager
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            NameVersionKey that = (NameVersionKey) o;
+            NameVersionKey that = (NameVersionKey)o;
 
             //noinspection SimplifiableIfStatement
             if (!symbolicName.equals(that.symbolicName)) return false;

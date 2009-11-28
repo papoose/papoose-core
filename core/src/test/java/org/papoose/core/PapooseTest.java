@@ -39,8 +39,6 @@ public class PapooseTest
 
         poo.start();
 
-        poo.setWaitPeriod(100);
-
         try
         {
             poo.setParser(new Parser());
@@ -61,9 +59,11 @@ public class PapooseTest
 
         poo.stop();
 
-        poo.setWaitPeriod(100);
-
-        poo.terminate();
+        /**
+         * Stopping the framework occurs in another thread.  Give it some time
+         * to complete.
+         */
+        Thread.sleep(100);
 
         try
         {

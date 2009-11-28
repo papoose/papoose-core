@@ -14,24 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.framework.launch;
+package org.papoose.core;
 
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.util.concurrent.Future;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.FrameworkEvent;
 
 /**
- * A {@link Future} that returns the {@link FrameworkEvent} of a stopped OSGi
+ * A {@link java.util.concurrent.Future} that returns the {@link org.osgi.framework.FrameworkEvent} of a stopped OSGi
  * {@link org.osgi.framework.launch.Framework} instance.  This class is used
  * for {@link org.osgi.framework.launch.Framework#waitForStop(long)} and is
- * "triggered" when {@link #setFrameworkEvent(FrameworkEvent)} is used to set
+ * "triggered" when {@link #setFrameworkEvent(org.osgi.framework.FrameworkEvent)} is used to set
  * the return value.
  *
  * @version $Revision$ $Date$

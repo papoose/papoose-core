@@ -17,7 +17,14 @@
 package org.papoose.core.util;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.osgi.framework.BundleException;
 
 
 /**
@@ -25,6 +32,9 @@ import java.io.IOException;
  */
 public class FileUtils
 {
+    private final static String CLASS_NAME = FileUtils.class.getName();
+    private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
+
     public static boolean buildDirectoriesFromFilePath(File root, String path, char regex)
     {
         int lastIndex = Math.max(0, path.lastIndexOf(regex));
@@ -42,6 +52,45 @@ public class FileUtils
     {
         for (Object element : elements) root = new File(root, element.toString());
         return root;
+    }
+
+    public static boolean delete(File file)
+    {
+        LOGGER.entering(CLASS_NAME, "delete", file);
+
+        boolean result = true;
+
+        try
+        {
+            if (!isSymlink(file) && file.isDirectory())
+            {
+                if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine(file + " is a directory");
+                for (File f : file.listFiles()) result &= delete(f);
+            }
+        }
+        catch (IOException e)
+        {
+            LOGGER.log(Level.WARNING, "Unable to test if file is symlink: " + file, e);
+            result = false;
+        }
+
+        result &= file.delete();
+
+        LOGGER.exiting(CLASS_NAME, "delete", result);
+
+        return result;
+    }
+
+    public static InputStream safeStream(File file) throws BundleException
+    {
+        try
+        {
+            return new FileInputStream(file);
+        }
+        catch (FileNotFoundException ioe)
+        {
+            throw new BundleException("Unable to obtain input stream", ioe);
+        }
     }
 
     /**

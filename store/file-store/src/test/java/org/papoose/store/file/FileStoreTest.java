@@ -31,7 +31,7 @@ import org.osgi.framework.BundleContext;
 
 import org.papoose.core.Papoose;
 import org.papoose.core.spi.Store;
-import org.papoose.core.util.Util;
+import org.papoose.core.util.FileUtils;
 
 /**
  * @version $Revision$ $Date$
@@ -117,6 +117,6 @@ public class FileStoreTest
         Locale.setDefault(savedLocale);
         savedLocale = null;
 
-        Util.delete(testDirectory);
+        FileUtils.delete(testDirectory);
     }
 }

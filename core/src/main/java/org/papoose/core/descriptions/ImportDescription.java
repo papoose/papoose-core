@@ -101,12 +101,12 @@ public class ImportDescription
         builder.append(resolution);
         if (!parameters.isEmpty())
         {
-            for (String key : parameters.keySet())
+            for (Map.Entry<String,Object> entry : parameters.entrySet())
             {
                 builder.append(";");
-                builder.append(key);
+                builder.append(entry.getKey());
                 builder.append("=");
-                builder.append(parameters.get(key));
+                builder.append(entry.getValue());
             }
         }
 

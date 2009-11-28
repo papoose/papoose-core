@@ -85,8 +85,8 @@
 
             <dependency>
                 <groupId>org.papoose.osgi</groupId>
-                <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
-                <version>4.1.0.build-200702212030</version>
+                <artifactId>OSGi_R4_v4.2_core_spec</artifactId>
+                <version>4.2.0.200908310645</version>
                 <scope>provided</scope>
             </dependency>
 

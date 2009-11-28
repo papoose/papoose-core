@@ -195,6 +195,8 @@ public class ServiceRegistry
     @SuppressWarnings({ "unchecked" })
     public ServiceRegistration registerService(BundleController bundleController, String[] clazzes, Object service, Dictionary properties)
     {
+        LOGGER.entering(CLASS_NAME, "registerService", new Object[]{ bundleController, clazzes, service, properties });
+
         ServiceRegistrationImpl serviceRegistration;
 
         synchronized (lock)
@@ -224,6 +226,8 @@ public class ServiceRegistry
         }
 
         framework.getBundleManager().fireServiceEvent(new ServiceEvent(ServiceEvent.REGISTERED, serviceRegistration.getReference()));
+
+        LOGGER.exiting(CLASS_NAME, "registerService", serviceRegistration);
 
         return serviceRegistration;
     }

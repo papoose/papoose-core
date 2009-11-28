@@ -76,7 +76,7 @@ class ArchiveFileStore extends AbstractArchiveStore
 
     ArchiveFileStore(Papoose framework, long bundleId, int generaton, File archiveRoot) throws BundleException
     {
-        this(framework, bundleId, generaton, archiveRoot, Util.safeStream(new File(archiveRoot, ARCHIVE_JAR_NAME)));
+        this(framework, bundleId, generaton, archiveRoot, FileUtils.safeStream(new File(archiveRoot, ARCHIVE_JAR_NAME)));
     }
 
     ArchiveFileStore(Papoose framework, long bundleId, int generaton, File archiveRoot, InputStream inputStream) throws BundleException
@@ -96,7 +96,7 @@ class ArchiveFileStore extends AbstractArchiveStore
 
             if (!tmp.exists() && !tmp.mkdirs()) throw new BundleException("Unable to create temp directory: " + tmp);
 
-            Util.delete(tmp);
+            FileUtils.delete(tmp);
 
             for (String element : getBundleClassPath()) registerClassPathElement(element);
         }

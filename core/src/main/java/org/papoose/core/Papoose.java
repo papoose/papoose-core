@@ -31,14 +31,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.Version;
 
 import org.papoose.core.filter.Parser;
@@ -58,7 +65,7 @@ import org.papoose.core.util.Util;
 @ThreadSafe
 public final class Papoose
 {
-    public final static String FRAMEWORK_VERSION = "1.4";
+    public final static String FRAMEWORK_VERSION = "1.5";
     public final static String PAPOOSE_VERSION = "org.papoose.framework.version";
 
     private final static String CLASS_NAME = Papoose.class.getName();
@@ -71,7 +78,8 @@ public final class Papoose
     private final static Map<String, Reference<Papoose>> FRAMEWORKS_BY_NAME = new HashMap<String, Reference<Papoose>>();
 
     private final Object lock = new Object();
-    private volatile State state = State.TERMINATED;
+    private volatile State state = new Installed();
+    private volatile FutureFrameworkEvent futureStop = new FutureFrameworkEvent();
     private final AccessControlContext acc = AccessController.getContext();
     private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     private final BundleManager bundleManager;
@@ -80,14 +88,16 @@ public final class Papoose
     private final Properties clientProperties;
     private final String frameworkName;
     private final int frameworkId;
-    private final long timestamp;
     private volatile Properties properties;
-    private volatile long waitPeriod;
+    private volatile StartManager startManager;
     private volatile int startLevel;
     private volatile String[] bootDelegates;
-    @GuardedBy("lock") private volatile Parser parser = new Parser();
-    @GuardedBy("lock") private volatile TrustManager trustManager = new DefaultTrustManager();
-    @GuardedBy("lock") private volatile Resolver resolver = new DefaultResolver();
+    @GuardedBy("lock")
+    private volatile Parser parser = new Parser();
+    @GuardedBy("lock")
+    private volatile TrustManager trustManager = new DefaultTrustManager();
+    @GuardedBy("lock")
+    private volatile Resolver resolver = new DefaultResolver();
     private final List<Object> bootServices = new ArrayList<Object>();
 
     static
@@ -177,8 +187,6 @@ public final class Papoose
         if (store == null) throw new IllegalArgumentException("store is null");
         if (executorService == null) throw new IllegalArgumentException("threadPool is null");
 
-        this.timestamp = System.currentTimeMillis();
-
         synchronized (FRAMEWORKS_BY_NAME)
         {
             ensureUrlHandling();
@@ -201,6 +209,7 @@ public final class Papoose
         }
 
         this.bundleManager = new BundleManager(this, store);
+        this.startManager = new DefaultStartManager(bundleManager);
         this.serviceRegistry = new ServiceRegistry(this);
         this.executorService = executorService;
         this.clientProperties = properties;
@@ -251,33 +260,47 @@ public final class Papoose
         return frameworkId;
     }
 
-    long getTimestamp()
-    {
-        return timestamp;
-    }
-
     public int getStartLevel()
     {
         return startLevel;
+    }
+
+    public StartManager getStartManager()
+    {
+        return startManager;
+    }
+
+    public void setStartManager(StartManager startManager)
+    {
+        synchronized (lock)
+        {
+            if (state.getState() >= Bundle.STARTING) throw new IllegalStateException("Cannot change start manager after framework has initialzied");
+
+            if (startManager == null)
+            {
+                this.startManager = new DefaultStartManager(bundleManager);
+            }
+            else
+            {
+                this.startManager = startManager;
+            }
+
+            if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("Framework start manager: " + startManager);
+        }
     }
 
     public void setStartLevel(int startLevel)
     {
         if (startLevel < 1) throw new IllegalArgumentException("Invalid start level");
 
-        if (state == State.STARTED) LOGGER.warning("Framework already started, new start level will be ignored");
+        synchronized (lock)
+        {
+            if (state.getState() >= Bundle.STARTING) LOGGER.warning("Framework already started, new start level will be ignored");
 
-        this.startLevel = startLevel;
-    }
+            this.startLevel = startLevel;
 
-    public long getWaitPeriod()
-    {
-        return waitPeriod;
-    }
-
-    public void setWaitPeriod(long waitPeriod)
-    {
-        this.waitPeriod = waitPeriod;
+            if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("Framework start level: " + startLevel);
+        }
     }
 
     public String[] getBootDelegates()
@@ -313,7 +336,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (state != State.TERMINATED) throw new IllegalStateException("Cannot change parser after framework has initialzied");
+            if (state.getState() >= Bundle.STARTING) throw new IllegalStateException("Cannot change parser after framework has initialzied");
 
             this.parser = parser;
 
@@ -332,7 +355,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (state != State.TERMINATED) throw new IllegalStateException("Cannot change trust manager after framework has initialzied");
+            if (state.getState() >= Bundle.STARTING) throw new IllegalStateException("Cannot change trust manager after framework has initialzied");
 
             this.trustManager = trustManager;
 
@@ -366,7 +389,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (state != State.TERMINATED) throw new IllegalStateException("Cannot change trust manager after framework has initialzied");
+            if (state.getState() >= Bundle.STARTING) throw new IllegalStateException("Cannot change resolver after framework has initialzied");
 
             this.resolver = resolver;
 
@@ -382,7 +405,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (state == State.TERMINATED) throw new IllegalStateException("Framework has not been initialzied");
+            if (state.getState() < Bundle.STARTING) throw new IllegalStateException("Framework has not been initialzied");
 
             BundleManager manager = getBundleManager();
 
@@ -401,164 +424,162 @@ public final class Papoose
         return systemBundleContext;
     }
 
-    @GuardedBy("lock")
-    public void initialize() throws PapooseException
+    public void init() throws PapooseException
     {
         LOGGER.entering(CLASS_NAME, "initialize");
 
         synchronized (lock)
         {
-            if (state != State.TERMINATED)
-            {
-                LOGGER.warning("Framework already initialized");
-                return;
-            }
-
-            BundleManager manager = getBundleManager();
-
-            try
-            {
-                properties = assembleProperties(clientProperties);
-
-                String bootDelegateString = properties.getProperty(Constants.FRAMEWORK_BOOTDELEGATION);
-                if (bootDelegateString == null)
-                {
-                    bootDelegateString = "org.papoose.*";
-                }
-                else
-                {
-                    bootDelegateString += ",org.papoose.*";
-                }
-
-                bootDelegates = bootDelegateString.split(",");
-
-                for (int i = 0; i < bootDelegates.length; i++)
-                {
-                    bootDelegates[i] = bootDelegates[i].trim();
-                    if (bootDelegates[i].endsWith(".*")) bootDelegates[i] = bootDelegates[i].substring(0, bootDelegates[i].length() - 1);
-                }
-
-                resolver.start(this);
-
-                SystemBundleController systemBundleController = (SystemBundleController) manager.installSystemBundle(new Version(properties.getProperty(PAPOOSE_VERSION)));
-
-                systemBundleController.performStart(0);
-
-                serviceRegistry.start();
-
-                startBootLevelServices();
-
-                state = State.INITIALIZED;
-            }
-            catch (PapooseException pe)
-            {
-                LOGGER.log(Level.SEVERE, "Framework startup exception", pe);
-                manager.uninstallSystemBundle();
-                throw pe;
-            }
-            catch (Exception e)
-            {
-                LOGGER.log(Level.SEVERE, "Framework startup exception", e);
-                manager.uninstallSystemBundle();
-                throw new PapooseException(e);
-            }
+            state.init();
         }
 
         LOGGER.exiting(CLASS_NAME, "initialize");
     }
 
-    @GuardedBy("lock")
     public void start() throws PapooseException
     {
         LOGGER.entering(CLASS_NAME, "start");
 
         synchronized (lock)
         {
-            if (state == State.STARTED)
-            {
-                LOGGER.warning("Framework already started");
-                return;
-            }
-
-            if (state == State.TERMINATED)
-            {
-                initialize();
-            }
-
-            BundleManager manager = getBundleManager();
-            StartManager startManager = manager.getStartManager();
-
-            startManager.setStartLevel(startLevel);
-
-            state = State.STARTED;
+            state.start();
         }
 
         LOGGER.exiting(CLASS_NAME, "start");
     }
 
-    @GuardedBy("lock")
     public void stop() throws PapooseException
     {
         LOGGER.entering(CLASS_NAME, "stop");
 
         synchronized (lock)
         {
-            if (state != State.STARTED)
-            {
-                LOGGER.warning("Framework was not started");
-                return;
-            }
-
-            BundleManager manager = getBundleManager();
-            StartManager startManager = manager.getStartManager();
-
-            startManager.setStartLevel(0);
-
-            state = State.INITIALIZED;
+            state.stop();
         }
 
         LOGGER.exiting(CLASS_NAME, "stop");
     }
 
-    @GuardedBy("lock")
-    public void terminate() throws PapooseException
+    public void update() throws PapooseException
     {
-        LOGGER.entering(CLASS_NAME, "terminate");
+        LOGGER.entering(CLASS_NAME, "update");
 
         synchronized (lock)
         {
-            if (state == State.TERMINATED)
-            {
-                LOGGER.warning("Framework was not started");
-                return;
-            }
-
-            if (state == State.STARTED)
-            {
-                stop();
-            }
-
-            BundleManager manager = getBundleManager();
-
-            try
-            {
-                stopBootLevelServices();
-
-                SystemBundleController system = (SystemBundleController) manager.getBundle(0);
-
-                system.performStop(0);
-            }
-            finally
-            {
-                manager.uninstallSystemBundle();
-                serviceRegistry.stop();
-                resolver.stop();
-
-                state = State.TERMINATED;
-            }
+            state.update();
         }
 
-        LOGGER.exiting(CLASS_NAME, "terminate");
+        LOGGER.exiting(CLASS_NAME, "update");
+    }
+
+    FrameworkEvent waitForStop(long timeout) throws InterruptedException
+    {
+        LOGGER.entering(CLASS_NAME, "waitForStop", timeout);
+
+        if (timeout < 0) throw new IllegalArgumentException("Timeout cannot be negative");
+
+        BundleController systemBundleController = getBundleManager().getBundle(0);
+        FrameworkEvent frameworkEvent;
+        try
+        {
+            if (timeout == 0)
+            {
+                frameworkEvent = futureStop.get();
+            }
+            else
+            {
+                frameworkEvent = futureStop.get(timeout, TimeUnit.MILLISECONDS);
+            }
+        }
+        catch (ExecutionException e)
+        {
+            frameworkEvent = new FrameworkEvent(FrameworkEvent.ERROR, systemBundleController, e.getCause());
+        }
+        catch (TimeoutException e)
+        {
+            frameworkEvent = new FrameworkEvent(FrameworkEvent.WAIT_TIMEDOUT, systemBundleController, null);
+        }
+
+        LOGGER.exiting(CLASS_NAME, "waitForStop", frameworkEvent);
+
+        return frameworkEvent;
+    }
+
+    public void requestStart(BundleGeneration bundle, int options) throws BundleException
+    {
+        startManager.start(bundle, options);
+    }
+
+    public void requestStop(BundleGeneration bundle, int options) throws BundleException
+    {
+        startManager.stop(bundle, options);
+    }
+
+    private void doInitialze() throws PapooseException
+    {
+        BundleManager manager = getBundleManager();
+
+        try
+        {
+            properties = assembleProperties(clientProperties);
+
+            String bootDelegateString = properties.getProperty(Constants.FRAMEWORK_BOOTDELEGATION);
+            if (bootDelegateString == null)
+            {
+                bootDelegateString = "org.papoose.*";
+            }
+            else
+            {
+                bootDelegateString += ",org.papoose.*";
+            }
+
+            bootDelegates = bootDelegateString.split(",");
+
+            for (int i = 0; i < bootDelegates.length; i++)
+            {
+                bootDelegates[i] = bootDelegates[i].trim();
+                if (bootDelegates[i].endsWith(".*")) bootDelegates[i] = bootDelegates[i].substring(0, bootDelegates[i].length() - 1);
+            }
+
+            manager.getStore().start();
+
+            resolver.start(Papoose.this);
+
+            serviceRegistry.start();
+
+            startBootLevelServices();
+
+            SystemBundleController systemBundleController = (SystemBundleController) manager.installSystemBundle(new Version(properties.getProperty(PAPOOSE_VERSION)));
+
+            manager.loadBundles();
+
+            manager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.STARTED, systemBundleController, null));
+        }
+        catch (Exception e)
+        {
+            LOGGER.log(Level.SEVERE, "Framework startup exception", e);
+            throw new PapooseException(e);
+        }
+    }
+
+    private void doStart() throws PapooseException
+    {
+
+    }
+
+    private void doStop() throws PapooseException
+    {
+        BundleManager manager = getBundleManager();
+
+        manager.unloadBundles();
+
+        stopBootLevelServices();
+
+        serviceRegistry.stop();
+
+        resolver.stop();
+
+        manager.getStore().stop();
     }
 
     @Override
@@ -669,8 +690,6 @@ public final class Papoose
                 LOGGER.log(Level.WARNING, "Error closing papoose.properties", ioe);
             }
         }
-
-        result.putAll(System.getProperties());
 
         if (properties != null)
         {
@@ -849,13 +868,357 @@ public final class Papoose
         LOGGER.exiting(CLASS_NAME, "stopBootLevelServices");
     }
 
-    /**
-     *
-     */
-    private static enum State
+    public int getState()
     {
-        TERMINATED,
-        INITIALIZED,
-        STARTED
+        return state.getState();
+    }
+
+    private interface State
+    {
+        int getState();
+
+        void init() throws PapooseException;
+
+        void start() throws PapooseException;
+
+        void stop() throws PapooseException;
+
+        void update() throws PapooseException;
+    }
+
+    private class Installed implements State
+    {
+        public int getState()
+        {
+            return Bundle.INSTALLED;
+        }
+
+        public void init() throws PapooseException
+        {
+            doInitialze();
+
+            state = new Starting();
+        }
+
+        public void start() throws PapooseException
+        {
+            futureStop = new FutureFrameworkEvent();
+
+            doInitialze();
+            doStart();
+
+            state = new Active();
+        }
+
+        public void stop() throws PapooseException
+        {
+        }
+
+        public void update() throws PapooseException
+        {
+        }
+
+        @Override
+        public String toString()
+        {
+            return "INSTALLED";
+        }
+    }
+
+    private class Resolved implements State
+    {
+        public int getState()
+        {
+            return Bundle.RESOLVED;
+        }
+
+        public void init() throws PapooseException
+        {
+            doInitialze();
+
+            state = new Starting();
+        }
+
+        public void start() throws PapooseException
+        {
+            futureStop = new FutureFrameworkEvent();
+
+            doStart();
+
+            state = new Active();
+        }
+
+        public void stop() throws PapooseException
+        {
+        }
+
+        public void update() throws PapooseException
+        {
+        }
+
+        @Override
+        public String toString()
+        {
+            return "RESOLVED";
+        }
+    }
+
+    private final class Starting implements State
+    {
+        public int getState()
+        {
+            return Bundle.STARTING;
+        }
+
+        public void init() throws PapooseException
+        {
+        }
+
+        public void start() throws PapooseException
+        {
+            futureStop = new FutureFrameworkEvent();
+
+            doStart();
+
+            state = new Active();
+        }
+
+        public void stop() throws PapooseException
+        {
+            BundleController systemBundleController = getBundleManager().getBundle(0);
+
+            doStop();
+
+            state = new Resolved();
+
+            futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED, systemBundleController, null));
+        }
+
+        public void update() throws PapooseException
+        {
+            futureStop = new FutureFrameworkEvent();
+
+            doStart();
+
+            state = new Active();
+        }
+
+        @Override
+        public String toString()
+        {
+            return "STARTING";
+        }
+    }
+
+    private final class Active implements State
+    {
+        private volatile CountDownLatch latch = new CountDownLatch(0);
+
+        public int getState()
+        {
+            return Bundle.ACTIVE;
+        }
+
+        public void init() throws PapooseException
+        {
+        }
+
+        public void start() throws PapooseException
+        {
+        }
+
+        public void stop() throws PapooseException
+        {
+            LOGGER.entering(CLASS_NAME, "stop");
+
+
+            final Object lock = new Object();
+
+            synchronized (lock)
+            {
+                try
+                {
+                    latch.await();
+
+                    /**
+                     * By the time we are let through, the running thread could have left the framework in an invalid state.
+                     */
+                    if (state instanceof Invalid) throw new PapooseException("Framework is in an invalid state");
+
+                    final BundleController systemBundleController = getBundleManager().getBundle(0);
+                    latch = new CountDownLatch(1);
+                    executorService.submit(new Runnable()
+                    {
+                        public void run()
+                        {
+                            synchronized (lock)
+                            {
+                                try
+                                {
+                                    doStop();
+
+                                    futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED, systemBundleController, null));
+
+                                    state = new Resolved();
+                                }
+                                catch (PapooseException pe)
+                                {
+                                    LOGGER.log(Level.WARNING, "Problem stopping the framework", pe);
+
+                                    futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, systemBundleController, pe));
+
+                                    state = new Invalid();
+                                }
+                                finally
+                                {
+                                    latch.countDown();
+                                }
+                            }
+                        }
+                    });
+                }
+                catch (InterruptedException ie)
+                {
+                    LOGGER.log(Level.WARNING, "Waiting for inflight update interrupted", ie);
+                    Thread.currentThread().interrupt();
+                }
+
+                state = new Stopping();
+            }
+
+            LOGGER.exiting(CLASS_NAME, "stop");
+        }
+
+        public void update() throws PapooseException
+        {
+            LOGGER.entering(CLASS_NAME, "update");
+
+            try
+            {
+                latch.await();
+
+                /**
+                 * By the time we are let through, the running thread could have left the framework in an invalid state.
+                 */
+                if (state instanceof Invalid) throw new PapooseException("Framework is in an invalid state");
+
+                final BundleController systemBundleController = getBundleManager().getBundle(0);
+                latch = new CountDownLatch(1);
+                executorService.submit(new Runnable()
+                {
+                    public void run()
+                    {
+                        try
+                        {
+                            doStop();
+
+                            futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED_UPDATE, systemBundleController, null));
+
+                            futureStop = new FutureFrameworkEvent();
+
+                            doStart();
+                        }
+                        catch (PapooseException pe)
+                        {
+                            LOGGER.log(Level.WARNING, "Problem stopping and starting (updating) the framework", pe);
+
+                            futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, systemBundleController, pe));
+
+                            state = new Invalid();
+
+                            try
+                            {
+                                doStop();
+                            }
+                            catch (PapooseException e)
+                            {
+                                LOGGER.log(Level.WARNING, "Problem destroying the framework", e);
+                            }
+                        }
+                        finally
+                        {
+                            latch.countDown();
+                        }
+                    }
+                });
+            }
+            catch (InterruptedException ie)
+            {
+                LOGGER.log(Level.WARNING, "Waiting for inflight update interrupted", ie);
+                Thread.currentThread().interrupt();
+            }
+
+            LOGGER.exiting(CLASS_NAME, "update");
+        }
+
+        @Override
+        public String toString()
+        {
+            return "ACTIVE";
+        }
+    }
+
+    private final class Stopping implements State
+    {
+        public void init() throws PapooseException
+        {
+        }
+
+        public void start() throws PapooseException
+        {
+        }
+
+        public int getState()
+        {
+            return Bundle.STOPPING;
+        }
+
+        public void stop() throws PapooseException
+        {
+        }
+
+        public void update() throws PapooseException
+        {
+        }
+
+        @Override
+        public String toString()
+        {
+            return "STOPPING";
+        }
+    }
+
+    private final class Invalid implements State
+    {
+        public void init() throws PapooseException
+        {
+            throw new PapooseException("Framework is in an invalid state");
+        }
+
+        public void start() throws PapooseException
+        {
+            throw new PapooseException("Framework is in an invalid state");
+        }
+
+        public int getState()
+        {
+            return Bundle.UNINSTALLED;
+        }
+
+        public void stop() throws PapooseException
+        {
+            throw new PapooseException("Framework is in an invalid state");
+        }
+
+        public void update() throws PapooseException
+        {
+            throw new PapooseException("Framework is in an invalid state");
+        }
+
+        @Override
+        public String toString()
+        {
+            return "INVALID";
+        }
     }
 }

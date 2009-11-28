@@ -70,7 +70,7 @@
 
         <dependency>
             <groupId>org.papoose.osgi</groupId>
-            <artifactId>OSGi_R4_v4.1_core_spec</artifactId>
+            <artifactId>OSGi_R4_v4.2_core_spec</artifactId>
         </dependency>
 
     </dependencies>

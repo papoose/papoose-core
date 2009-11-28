@@ -16,13 +16,11 @@
  */
 package org.papoose.core.util;
 
+import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
@@ -34,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
 
@@ -79,22 +77,6 @@ public final class Util
         }
 
         LOGGER.exiting(CLASS_NAME, "close");
-    }
-
-    public static void delete(File file)
-    {
-        LOGGER.entering(CLASS_NAME, "delete", file);
-
-        if (file.isDirectory())
-        {
-            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine(file + " is a directory");
-            for (File f : file.listFiles()) delete(f);
-        }
-
-        //noinspection ResultOfMethodCallIgnored
-        file.delete();
-
-        LOGGER.exiting(CLASS_NAME, "delete");
     }
 
     public static boolean callSetter(Object pojo, String property, Object value)
@@ -793,18 +775,6 @@ public final class Util
         }
 
         return builder.toString();
-    }
-
-    public static InputStream safeStream(File file) throws BundleException
-    {
-        try
-        {
-            return new FileInputStream(file);
-        }
-        catch (FileNotFoundException ioe)
-        {
-            throw new BundleException("Unable to obtain input stream", ioe);
-        }
     }
 
     public static <T> Iterable<List<T>> combinations(final List<T> set)

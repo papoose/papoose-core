@@ -23,6 +23,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 
 import org.papoose.core.Papoose;
 import org.papoose.core.PapooseException;
@@ -48,6 +49,24 @@ public class MemoryStore implements Store
         LOGGER.exiting(CLASS_NAME, "FileStore");
     }
 
+    public boolean isPreviouslyUsed() throws PapooseException
+    {
+        return false;
+    }
+
+    public void clear() throws PapooseException
+    {
+        properties.clear();
+    }
+
+    public void start() throws PapooseException
+    {
+    }
+
+    public void stop() throws PapooseException
+    {
+    }
+
     public synchronized List<BundleStore> loadBundleStores() throws PapooseException
     {
         LOGGER.entering(CLASS_NAME, "loadBundleStores");
@@ -55,6 +74,17 @@ public class MemoryStore implements Store
         List<BundleStore> result = Collections.emptyList();
 
         LOGGER.exiting(CLASS_NAME, "loadBundleStores", result);
+
+        return result;
+    }
+
+    public synchronized BundleStore obtainSystemBundleStore() throws BundleException
+    {
+        LOGGER.entering(CLASS_NAME, "obtainSystemBundleStore");
+
+        BundleMemoryStore result = new BundleMemoryStore(0, Constants.SYSTEM_BUNDLE_LOCATION);
+
+        LOGGER.exiting(CLASS_NAME, "obtainSystemBundleStore", result);
 
         return result;
     }

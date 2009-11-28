@@ -14,28 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.papoose.core.mock;
+package org.papoose.core;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.Permission;
 import java.security.cert.Certificate;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.SortedSet;
 import java.util.jar.Attributes;
+import java.util.logging.Logger;
 
 import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 
-import org.papoose.core.FragmentAttachment;
-import org.papoose.core.L18nResourceBundle;
 import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.FragmentDescription;
@@ -44,61 +43,100 @@ import org.papoose.core.descriptions.LazyActivationDescription;
 import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.descriptions.RequireDescription;
 import org.papoose.core.spi.ArchiveStore;
+import org.papoose.core.util.AttributeUtils;
+import org.papoose.core.util.AttributesWrapper;
 
 /**
  * @version $Revision$ $Date$
  */
-public class MockArchiveStore implements ArchiveStore
+class SystemArchiveStore implements ArchiveStore
 {
+    private final Logger LOGGER = Logger.getLogger(SystemArchiveStore.class.getName());
+    private final List<ExportDescription> exportDescriptions = new ArrayList<ExportDescription>();
+    private final Papoose framework;
+    private final Version version;
+    private final Attributes attributes;
+
+    public SystemArchiveStore(Papoose framework, Version version) throws BundleException
+    {
+        assert framework != null;
+        assert version != null;
+
+        this.framework = framework;
+        this.version = version;
+
+        String packages = (String) framework.getProperty(Constants.FRAMEWORK_SYSTEMPACKAGES);
+        if (packages != null)
+        {
+            exportDescriptions.addAll(AttributeUtils.parseBundleExportList(packages, getBundleSymbolicName(), getBundleVersion()));
+        }
+        exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.framework;version=1.4,org.osgi.service.url;version=1.4,org.osgi.util.tracker;version=1.4", getBundleSymbolicName(), getBundleVersion()));
+
+        if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_PACKAGE_ADMIN) != null)
+        {
+            exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.packageadmin;version=1.2", getBundleSymbolicName(), getBundleVersion()));
+        }
+        if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_START_LEVEL) != null)
+        {
+            exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.startlevel;version=1.1", getBundleSymbolicName(), getBundleVersion()));
+        }
+        if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_URL_HANDLERS) != null)
+        {
+            exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.url;version=1.0", getBundleSymbolicName(), getBundleVersion()));
+        }
+        if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_PACKAGE_ADMIN) != null)
+        {
+            exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.permissionadmin;version=1.2", getBundleSymbolicName(), getBundleVersion()));
+        }
+        if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_CND_PERM_ADMIN) != null)
+        {
+            exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.service.condpermadmin;version=1.0", getBundleSymbolicName(), getBundleVersion()));
+        }
+
+        Properties p = framework.getProperties();
+        Attributes a = new Attributes();
+        a.putValue(Constants.BUNDLE_CLASSPATH, ".");
+        a.putValue(Constants.BUNDLE_CONTACTADDRESS, p.getProperty(PapooseConstants.PAPOOSE_CONTACT_ADDRESS));
+        a.putValue(Constants.BUNDLE_COPYRIGHT, p.getProperty(PapooseConstants.PAPOOSE_COPYRIGHT));
+        a.putValue(Constants.BUNDLE_DESCRIPTION, p.getProperty(PapooseConstants.PAPOOSE_DESCRIPTION));
+        a.putValue(Constants.BUNDLE_DOCURL, p.getProperty(PapooseConstants.PAPOOSE_DOC_URL));
+        a.putValue(Constants.BUNDLE_MANIFESTVERSION, Integer.toString(2));
+        a.putValue(Constants.BUNDLE_NAME, "Papoose OSGi R4 System Bundle");
+        a.putValue(Constants.BUNDLE_SYMBOLICNAME, getBundleSymbolicName());
+        a.putValue(Constants.BUNDLE_VENDOR, p.getProperty(PapooseConstants.PAPOOSE_VENDOR));
+        a.putValue(Constants.BUNDLE_VERSION, version.toString());
+
+        attributes = new AttributesWrapper(a);
+    }
+
     public String getFrameworkName()
     {
-        return null;  //todo: consider this autogenerated code
+        return framework.getFrameworkName();
     }
 
     public long getBundleId()
     {
-        return 0;  //todo: consider this autogenerated code
+        return 0;
     }
 
     public int getGeneration()
     {
-        return 0;  //todo: consider this autogenerated code
+        return 0;
     }
 
     public Attributes getAttributes()
     {
-        Attributes result = new Attributes();
-
-        result.put(new Attributes.Name("Manifest-Version"), "1.0");
-        result.put(new Attributes.Name("Bundle-Activator"), "com.acme.impl.Activator");
-        result.put(new Attributes.Name("Created-By"), "1.5.0_13 (Apple Inc.)");
-        result.put(new Attributes.Name("Import-Package"), "com.acme.api,org.osgi.framework");
-        result.put(new Attributes.Name("L10N-Bundle"), "%bundle");
-        result.put(new Attributes.Name("Include-Resource"), "src/main/resources");
-        result.put(new Attributes.Name("Bnd-LastModified"), "1208018376942");
-        result.put(new Attributes.Name("Export-Package"), "com.acme.api");
-        result.put(new Attributes.Name("Bundle-Version"), "1.0.0.SNAPSHOT");
-        result.put(new Attributes.Name("Bundle-Name"), "Papoose :: OSGi R4 test bundle");
-        result.put(new Attributes.Name("Bundle-Description"), "OSGi R4 Test Bundle");
-        result.put(new Attributes.Name("Bundle-Classpath"), ".,lib/test.jar");
-        result.put(new Attributes.Name("Private-Package"), "OSGI-INF.l10n,com.acme,com.acme.impl,com.acme.pvt,com.acme.resource,com.acme.safe,lib");
-        result.put(new Attributes.Name("L10N-Test"), "%test");
-        result.put(new Attributes.Name("Bundle-ManifestVersion"), "2");
-        result.put(new Attributes.Name("L10N-NoTranslation"), "%no translation for this entry");
-        result.put(new Attributes.Name("Bundle-SymbolicName"), "org.papoose.test.papoose-test-bundle");
-        result.put(new Attributes.Name("Tool"), "Bnd-0.0.160");
-
-        return result;
+        return attributes;
     }
 
     public String getBundleActivatorClass()
     {
-        return "com.acme.impl.Activator";
+        return null;
     }
 
     public String getBundleSymbolicName()
     {
-        return "org.papoose.test.papoose-test-bundle";
+        return "org.papoose.system-bundle." + Papoose.FRAMEWORK_VERSION;
     }
 
     public URL getBundleUpdateLocation()
@@ -108,27 +146,27 @@ public class MockArchiveStore implements ArchiveStore
 
     public Version getBundleVersion()
     {
-        return new Version(1, 0, 0, "SNAPSHOT");
+        return version;
     }
 
     public List<String> getBundleClassPath()
     {
-        return Collections.emptyList();
+        return Collections.singletonList(".");
     }
 
     public List<NativeCodeDescription> getBundleNativeCodeList()
     {
-        return Collections.emptyList();
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public List<String> getBundleRequiredExecutionEnvironment()
     {
-        return Collections.emptyList();
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public List<ExportDescription> getExportDescriptions()
     {
-        return Collections.emptyList();
+        return exportDescriptions;
     }
 
     public List<ImportDescription> getImportDescriptions()
@@ -153,7 +191,7 @@ public class MockArchiveStore implements ArchiveStore
 
     public ResourceLocation registerClassPathElement(String classPathElement) throws BundleException
     {
-        return null;
+        return null; // todo:
     }
 
     public LazyActivationDescription getLazyActivationDescription()
@@ -163,56 +201,22 @@ public class MockArchiveStore implements ArchiveStore
 
     public boolean isLazyActivationPolicy()
     {
-        return false;
+        return false;  //Todo: change body of implemented methods use File | Settings | File Templates.
     }
 
     public String loadLibrary(String libname)
     {
-        return null;  //todo: consider this autogenerated code
-    }
-
-    public Permission[] getPermissionCollection()
-    {
-        return new Permission[0];  //todo: consider this autogenerated code
+        return null;
     }
 
     public Enumeration findEntries(String path, String filePattern, boolean includeDirectory, boolean recurse)
     {
-        try
-        {
-            if ("*.xml".equals(filePattern)) return Collections.enumeration(Arrays.asList(new URL("papoose://org.acme.osgi.0:1/com/acme/anvil.xml")));
-            if ("*.class".equals(filePattern))
-            {
-                return Collections.enumeration(Arrays.asList(
-                        new URL("papoose://org.acme.osgi.0:1/com/acme/impl/Activator.class"),
-                        new URL("papoose://org.acme.osgi.0:1/com/acme/impl/AnvilImpl.class"),
-                        new URL("papoose://org.acme.osgi.0:1/com/acme/pvt/Hidden.class"),
-                        new URL("papoose://org.acme.osgi.0:1/com/acme/api/AnvilApi.class"),
-                        new URL("papoose://org.acme.osgi.0:1/com/acme/safe/Primary.class")
-                ));
-            }
-        }
-        catch (MalformedURLException e)
-        {
-            e.printStackTrace();  //todo: consider this autogenerated code
-        }
         return null;  //todo: consider this autogenerated code
     }
 
-    @SuppressWarnings({ "EmptyCatchBlock" })
-    public L18nResourceBundle getResourceBundle(Locale locale)
+    public L18nResourceBundle getResourceBundle(Locale local)
     {
-        try
-        {
-            String path = "org/papoose/core/mock/bundle";
-            path += (locale != null ? "_" + locale : "") + ".properties";
-            InputStream in = MockArchiveStore.class.getClassLoader().getResourceAsStream(path);
-            if (in != null) return new L18nResourceBundle(in);
-        }
-        catch (IOException ioe)
-        {
-        }
-        return null;
+        return null;  //todo: consider this autogenerated code
     }
 
     public InputStream getInputStreamForCodeSource() throws IOException
@@ -252,12 +256,12 @@ public class MockArchiveStore implements ArchiveStore
 
     public void close()
     {
-        int i = 0;
         //todo: consider this autogenerated code
     }
 
     public int compareTo(Object o)
     {
-        return 0;  //todo: consider this autogenerated code
+        if (!(o instanceof SystemArchiveStore)) return 1;
+        return 0;
     }
 }
