@@ -60,12 +60,6 @@ public class PapooseTest
         poo.stop();
         poo.waitForStop(0);
 
-        /**
-         * Stopping the framework occurs in another thread.  Give it some time
-         * to complete.
-         */
-        Thread.sleep(100);
-
         try
         {
             poo.setParser(new Parser());
