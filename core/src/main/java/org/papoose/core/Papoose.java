@@ -39,15 +39,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Constants;
-import org.osgi.framework.FrameworkEvent;
-import org.osgi.framework.Version;
-
 import org.papoose.core.filter.Parser;
 import org.papoose.core.resolver.DefaultResolver;
 import org.papoose.core.spi.LocationMapper;
@@ -57,6 +48,15 @@ import org.papoose.core.spi.Store;
 import org.papoose.core.spi.TrustManager;
 import org.papoose.core.util.ToStringCreator;
 import org.papoose.core.util.Util;
+
+import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.ThreadSafe;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkEvent;
+import org.osgi.framework.Version;
 
 
 /**
@@ -1031,60 +1031,55 @@ public final class Papoose
         {
             LOGGER.entering(CLASS_NAME, "stop");
 
-
-            final Object lock = new Object();
-
-            synchronized (lock)
+            try
             {
-                try
+                latch.await();
+
+                /**
+                 * By the time we are let through, the running thread could have left the framework in an invalid state.
+                 */
+                if (state instanceof Invalid) throw new PapooseException("Framework is in an invalid state");
+
+                final BundleController systemBundleController = getBundleManager().getBundle(0);
+                latch = new CountDownLatch(1);
+                executorService.submit(new Runnable()
                 {
-                    latch.await();
-
-                    /**
-                     * By the time we are let through, the running thread could have left the framework in an invalid state.
-                     */
-                    if (state instanceof Invalid) throw new PapooseException("Framework is in an invalid state");
-
-                    final BundleController systemBundleController = getBundleManager().getBundle(0);
-                    latch = new CountDownLatch(1);
-                    executorService.submit(new Runnable()
+                    public void run()
                     {
-                        public void run()
+                        synchronized (lock)
                         {
-                            synchronized (lock)
+                            try
                             {
-                                try
-                                {
-                                    doStop();
+                                doStop();
 
-                                    futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED, systemBundleController, null));
+                                state = new Resolved();
 
-                                    state = new Resolved();
-                                }
-                                catch (PapooseException pe)
-                                {
-                                    LOGGER.log(Level.WARNING, "Problem stopping the framework", pe);
+                                futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED, systemBundleController, null));
+                            }
+                            catch (Throwable throwable)
+                            {
+                                LOGGER.log(Level.SEVERE, "Problem stopping the framework", throwable);
 
-                                    futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, systemBundleController, pe));
+                                state = new Invalid();
 
-                                    state = new Invalid();
-                                }
-                                finally
-                                {
-                                    latch.countDown();
-                                }
+                                futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, systemBundleController, throwable));
+                            }
+                            finally
+                            {
+                                latch.countDown();
                             }
                         }
-                    });
-                }
-                catch (InterruptedException ie)
-                {
-                    LOGGER.log(Level.WARNING, "Waiting for inflight update interrupted", ie);
-                    Thread.currentThread().interrupt();
-                }
-
-                state = new Stopping();
+                    }
+                });
             }
+            catch (InterruptedException ie)
+            {
+                LOGGER.log(Level.WARNING, "Waiting for inflight update interrupted", ie);
+                Thread.currentThread().interrupt();
+            }
+
+            state = new Stopping();
+
 
             LOGGER.exiting(CLASS_NAME, "stop");
         }
@@ -1108,36 +1103,39 @@ public final class Papoose
                 {
                     public void run()
                     {
-                        try
+                        synchronized (lock)
                         {
-                            doStop();
-
-                            futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED_UPDATE, systemBundleController, null));
-
-                            futureStop = new FutureFrameworkEvent();
-
-                            doStart();
-                        }
-                        catch (PapooseException pe)
-                        {
-                            LOGGER.log(Level.WARNING, "Problem stopping and starting (updating) the framework", pe);
-
-                            futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, systemBundleController, pe));
-
-                            state = new Invalid();
-
                             try
                             {
                                 doStop();
+
+                                futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED_UPDATE, systemBundleController, null));
+
+                                futureStop = new FutureFrameworkEvent();
+
+                                doStart();
                             }
-                            catch (PapooseException e)
+                            catch (Throwable throwable)
                             {
-                                LOGGER.log(Level.WARNING, "Problem destroying the framework", e);
+                                LOGGER.log(Level.SEVERE, "Problem stopping and starting (updating) the framework", throwable);
+
+                                state = new Invalid();
+
+                                futureStop.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, systemBundleController, throwable));
+
+                                try
+                                {
+                                    doStop();
+                                }
+                                catch (Throwable t)
+                                {
+                                    LOGGER.log(Level.SEVERE, "Problem destroying the framework", t);
+                                }
                             }
-                        }
-                        finally
-                        {
-                            latch.countDown();
+                            finally
+                            {
+                                latch.countDown();
+                            }
                         }
                     }
                 });

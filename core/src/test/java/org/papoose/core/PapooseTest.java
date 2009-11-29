@@ -58,6 +58,7 @@ public class PapooseTest
         }
 
         poo.stop();
+        poo.waitForStop(0);
 
         /**
          * Stopping the framework occurs in another thread.  Give it some time
@@ -71,7 +72,7 @@ public class PapooseTest
         }
         catch (Exception e)
         {
-            Assert.fail("Should allow parser to be set before framework starts");
+            Assert.fail("Should allow parser to be set before framework starts: " + poo.getState());
         }
 
         try
