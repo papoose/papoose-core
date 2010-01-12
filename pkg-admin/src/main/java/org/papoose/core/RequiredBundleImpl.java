@@ -16,8 +16,6 @@
  */
 package org.papoose.core;
 
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 import org.osgi.service.packageadmin.RequiredBundle;
@@ -32,14 +30,13 @@ import org.osgi.service.packageadmin.RequiredBundle;
  *
  * @version $Revision$ $Date$
  */
-@ThreadSafe
 public class RequiredBundleImpl implements RequiredBundle
 {
     private final Object monitor = new Object();
     private final String symbolicName;
     private final Version version;
-    @GuardedBy("monitor") private Bundle bundle;
-    @GuardedBy("monitor") private Bundle[] requiringBundles;
+    private Bundle bundle;
+    private Bundle[] requiringBundles;
 
     public RequiredBundleImpl(String symbolicName, Version version, Bundle bundle, Bundle[] requiringBundles)
     {

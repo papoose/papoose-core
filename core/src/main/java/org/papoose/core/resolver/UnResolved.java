@@ -16,14 +16,11 @@
  */
 package org.papoose.core.resolver;
 
-import net.jcip.annotations.Immutable;
-
 import org.papoose.core.Generation;
 
 /**
  * @version $Revision$ $Date$
  */
-@Immutable
 public abstract class UnResolved extends Candidate implements Cloneable
 {
     protected UnResolved(Generation toBeResolved)

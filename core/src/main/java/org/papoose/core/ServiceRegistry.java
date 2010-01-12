@@ -30,7 +30,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
-import net.jcip.annotations.NotThreadSafe;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
@@ -565,7 +564,6 @@ public class ServiceRegistry
         }
     }
 
-    @NotThreadSafe
     private static class ServiceEntry
     {
         private final ServiceRegistrationImpl registration;

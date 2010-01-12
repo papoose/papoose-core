@@ -20,15 +20,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import net.jcip.annotations.Immutable;
-
 import org.papoose.core.BundleGeneration;
 import org.papoose.core.FragmentGeneration;
 
 /**
  * @version $Revision$ $Date$
  */
-@Immutable
 class RequiredBundleWrapper implements CandidateBundle
 {
     private final CandidateBundle delegate;

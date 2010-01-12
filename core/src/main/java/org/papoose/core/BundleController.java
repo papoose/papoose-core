@@ -33,7 +33,13 @@ import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.jcip.annotations.GuardedBy;
+import org.papoose.core.spi.ArchiveStore;
+import org.papoose.core.spi.BundleStore;
+import org.papoose.core.util.AttributeUtils;
+import org.papoose.core.util.I18nUtils;
+import org.papoose.core.util.SecurityUtils;
+import org.papoose.core.util.SerialExecutor;
+
 import org.osgi.framework.AdminPermission;
 import org.osgi.framework.AllServiceListener;
 import org.osgi.framework.Bundle;
@@ -52,14 +58,6 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
 
-import org.papoose.core.spi.ArchiveStore;
-import org.papoose.core.spi.BundleStore;
-import org.papoose.core.util.AttributeUtils;
-import org.papoose.core.util.I18nUtils;
-import org.papoose.core.util.SecurityUtils;
-import org.papoose.core.util.SerialExecutor;
-import org.papoose.core.util.ToStringCreator;
-
 
 /**
  * @version $Revision$ $Date$
@@ -72,12 +70,12 @@ public class BundleController implements Bundle
     private final Papoose framework;
     private final BundleStore bundleStore;
     private final Map<Integer, Generation> generations = new HashMap<Integer, Generation>();
-    @GuardedBy("lock") private Executor serialExecutor;
-    @GuardedBy("lock") private Set<BundleListener> bundleListeners;
-    @GuardedBy("lock") private Set<SynchronousBundleListener> syncBundleListeners;
-    @GuardedBy("lock") private Set<FrameworkListener> frameworkListeners;
-    @GuardedBy("lock") private Set<ServiceListener> serviceListeners;
-    @GuardedBy("lock") private Set<ServiceListener> allServiceListeners;
+    private Executor serialExecutor;
+    private Set<BundleListener> bundleListeners;
+    private Set<SynchronousBundleListener> syncBundleListeners;
+    private Set<FrameworkListener> frameworkListeners;
+    private Set<ServiceListener> serviceListeners;
+    private Set<ServiceListener> allServiceListeners;
     private volatile BundleContextProxy bundleContext;
     private volatile Generation currentGeneration;
     private volatile BundleActivator bundleActivator;
@@ -775,15 +773,7 @@ public class BundleController implements Bundle
     @Override
     public String toString()
     {
-        ToStringCreator creator = new ToStringCreator(this);
-
-        Generation generation = getCurrentGeneration();
-        creator.append("symbolicName", generation.getSymbolicName());
-        creator.append("version", generation.getVersion());
-        creator.append("bundleId", getBundleId());
-        creator.append("generations", getGenerations().size());
-
-        return creator.toString();
+        return "[" + getBundleId() + "] " + getSymbolicName() + " - " + getCurrentGeneration().getVersion() + "/" + getGenerations().size();
     }
 
     void addBundleListener(BundleListener bundleListener)

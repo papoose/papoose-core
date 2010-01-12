@@ -16,12 +16,10 @@
  */
 package org.papoose.core.filter;
 
-import net.jcip.annotations.Immutable;
 
 /**
  * @version $Revision$ $Date$
  */
-@Immutable
 class Greater extends CompareExpr
 {
     private transient volatile String string;

@@ -16,14 +16,12 @@
  */
 package org.papoose.core.filter;
 
-import net.jcip.annotations.Immutable;
 
 /**
  * The Apache Felix project seemed to have a nice default implementation.
  *
  * @version $Revision$ $Date$
  */
-@Immutable
 public class DefaultApproxAlgorithm implements ApproxAlgorithm
 {
     // Criteria in % to accept something as approximate.

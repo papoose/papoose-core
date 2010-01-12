@@ -16,7 +16,6 @@
  */
 package org.papoose.core.resolver;
 
-import net.jcip.annotations.Immutable;
 import org.osgi.framework.Version;
 
 import org.papoose.core.descriptions.ExportDescription;
@@ -31,7 +30,6 @@ import org.papoose.core.descriptions.ExportDescription;
  *
  * @version $Revision$ $Date$
  */
-@Immutable
 public class ExportDescriptionWrapper implements Comparable<ExportDescriptionWrapper>
 {
     private final ExportDescription exportDescription;

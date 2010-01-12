@@ -49,8 +49,6 @@ import org.papoose.core.spi.TrustManager;
 import org.papoose.core.util.ToStringCreator;
 import org.papoose.core.util.Util;
 
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -62,11 +60,9 @@ import org.osgi.framework.Version;
 /**
  * @version $Revision$ $Date: $
  */
-@ThreadSafe
 public final class Papoose
 {
     public final static String FRAMEWORK_VERSION = "1.5";
-    public final static String PAPOOSE_VERSION = "org.papoose.framework.version";
 
     private final static String CLASS_NAME = Papoose.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
@@ -92,11 +88,8 @@ public final class Papoose
     private volatile StartManager startManager;
     private volatile int startLevel;
     private volatile String[] bootDelegates;
-    @GuardedBy("lock")
     private volatile Parser parser = new Parser();
-    @GuardedBy("lock")
     private volatile TrustManager trustManager = new DefaultTrustManager();
-    @GuardedBy("lock")
     private volatile Resolver resolver = new DefaultResolver();
     private final List<Object> bootServices = new ArrayList<Object>();
 
@@ -549,7 +542,7 @@ public final class Papoose
 
             startBootLevelServices();
 
-            SystemBundleController systemBundleController = (SystemBundleController) manager.installSystemBundle(new Version(properties.getProperty(PAPOOSE_VERSION)));
+            SystemBundleController systemBundleController = (SystemBundleController) manager.installSystemBundle(new Version(properties.getProperty(PapooseConstants.PAPOOSE_VERSION)));
 
             manager.loadBundles();
 

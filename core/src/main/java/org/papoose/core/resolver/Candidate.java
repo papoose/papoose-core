@@ -16,10 +16,9 @@
  */
 package org.papoose.core.resolver;
 
-import net.jcip.annotations.ThreadSafe;
-
 import org.papoose.core.Generation;
 import org.papoose.core.util.ToStringCreator;
+
 
 /**
  * Base wrapper for bundle generations as the resolver searches for a
@@ -30,7 +29,6 @@ import org.papoose.core.util.ToStringCreator;
  *
  * @version $Revision$ $Date$
  */
-@ThreadSafe
 public class Candidate
 {
     /**
@@ -72,7 +70,7 @@ public class Candidate
         if (this == obj) return true;
         if (!(obj instanceof Candidate)) return false;
 
-        Candidate candidate = (Candidate) obj;
+        Candidate candidate = (Candidate)obj;
 
         return generation.equals(candidate.generation);
     }

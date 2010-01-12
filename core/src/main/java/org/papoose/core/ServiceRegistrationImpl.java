@@ -22,7 +22,6 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.List;
 
-import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
@@ -31,7 +30,6 @@ import org.osgi.framework.ServiceRegistration;
 /**
  * @version $Revision$ $Date$
  */
-@ThreadSafe
 public final class ServiceRegistrationImpl implements ServiceRegistration
 {
     private final Dictionary<String, Object> properties;

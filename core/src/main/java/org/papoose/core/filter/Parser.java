@@ -20,14 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import net.jcip.annotations.Immutable;
 import org.osgi.framework.InvalidSyntaxException;
 
 
 /**
  * @version $Revision$ $Date$
  */
-@Immutable
 public final class Parser
 {
     private final ApproxAlgorithm approxAlgorithm;

@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Version;
 
 import org.papoose.core.util.ToStringCreator;
@@ -29,7 +28,6 @@ import org.papoose.core.util.ToStringCreator;
 /**
  * @version $Revision$ $Date$
  */
-@ThreadSafe
 public class NativeCodeDescription implements Comparable
 {
     public final static NativeCodeDescription WILDCARD = new NativeCodeDescription(Collections.<String>emptySet(), Collections.<String, Object>emptyMap(), 0);

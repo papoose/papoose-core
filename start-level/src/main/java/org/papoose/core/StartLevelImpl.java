@@ -23,7 +23,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
 
-import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
@@ -42,7 +41,6 @@ import org.papoose.core.util.SerialExecutor;
 /**
  * @version $Revision$ $Date$
  */
-@ThreadSafe
 public class StartLevelImpl implements StartManager, StartLevel, SynchronousBundleListener
 {
     private final static String CLASS_NAME = StartLevelImpl.class.getName();

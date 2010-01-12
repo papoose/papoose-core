@@ -18,13 +18,11 @@ package org.papoose.core.filter;
 
 import java.util.Dictionary;
 
-import net.jcip.annotations.Immutable;
 
 
 /**
  * @version $Revision$ $Date$
  */
-@Immutable
 class Not implements Expr
 {
     private final Expr expression;

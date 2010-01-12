@@ -22,9 +22,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
-
 /**
  * A handy wrapper class that conveniently queues runnables for execution.
  * <p/>
@@ -33,14 +30,13 @@ import net.jcip.annotations.ThreadSafe;
  *
  * @version $Revision$ $Date$
  */
-@ThreadSafe
 public class SerialExecutor implements Executor
 {
     private final static String CLASS_NAME = SerialExecutor.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final Queue<Runnable> tasks = new LinkedBlockingQueue<Runnable>();
     private final Executor executor;
-    @GuardedBy("this") private Runnable active;
+    private Runnable active;
 
     /**
      * Initialzed the serial executor with a shared executor delegate.

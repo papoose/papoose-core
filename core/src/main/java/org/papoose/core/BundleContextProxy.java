@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.Dictionary;
 
+import org.papoose.core.spi.LocationMapper;
+
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -31,9 +33,6 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
-
-import org.papoose.core.spi.LocationMapper;
-import org.papoose.core.util.ToStringCreator;
 
 
 /**
@@ -176,11 +175,16 @@ class BundleContextProxy implements BundleContext
     @Override
     public String toString()
     {
-        ToStringCreator creator = new ToStringCreator(this);
+        BundleController pinned = reference.get();
 
-        creator.append("bundle", reference);
-
-        return creator.toString();
+        if (pinned == null)
+        {
+            return "";
+        }
+        else
+        {
+            return "[" + pinned.getBundleId() + "] " + pinned.getSymbolicName() + " - " + pinned.getVersion();
+        }
     }
 
     private Papoose getFramework()

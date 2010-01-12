@@ -19,7 +19,6 @@ package org.papoose.core.descriptions;
 import java.util.Collections;
 import java.util.Map;
 
-import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Version;
 
 import org.papoose.core.VersionRange;
@@ -29,7 +28,6 @@ import org.papoose.core.util.ToStringCreator;
 /**
  * @version $Revision$ $Date$
  */
-@ThreadSafe
 public class RequireDescription
 {
     public final static VersionRange DEFAULT_VERSION_RANGE = new VersionRange(new Version(0, 0, 0), null, true, false);

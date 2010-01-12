@@ -24,7 +24,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.FrameworkEvent;
 
 /**
@@ -36,7 +35,6 @@ import org.osgi.framework.FrameworkEvent;
  *
  * @version $Revision$ $Date$
  */
-@ThreadSafe
 class FutureFrameworkEvent implements Future<FrameworkEvent>
 {
     private final static String CLASS_NAME = FutureFrameworkEvent.class.getName();

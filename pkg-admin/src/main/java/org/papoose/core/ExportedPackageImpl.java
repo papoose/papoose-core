@@ -16,8 +16,6 @@
  */
 package org.papoose.core;
 
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 import org.osgi.service.packageadmin.ExportedPackage;
@@ -33,14 +31,13 @@ import org.osgi.service.packageadmin.ExportedPackage;
  *
  * @version $Revision$ $Date$
  */
-@ThreadSafe
 public class ExportedPackageImpl implements ExportedPackage, Comparable
 {
     private final Object monitor = new Object();
     private final String name;
     private final Version version;
-    @GuardedBy("monitor") private Bundle exportingBundle;
-    @GuardedBy("monitor") private Bundle[] importingBundles;
+    private Bundle exportingBundle;
+    private Bundle[] importingBundles;
 
     /**
      * {@inheritDoc}

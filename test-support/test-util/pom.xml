@@ -24,8 +24,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.papoose.osgi</groupId>
-            <artifactId>OSGi_R4_v4.2_core_spec</artifactId>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
         </dependency>
 
     </dependencies>

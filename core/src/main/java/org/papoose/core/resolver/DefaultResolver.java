@@ -26,8 +26,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
@@ -55,16 +53,15 @@ import org.papoose.core.util.Util;
 /**
  * @version $Revision$ $Date$
  */
-@ThreadSafe
 public class DefaultResolver implements Resolver
 {
     private final static String CLASS_NAME = DefaultResolver.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final Object lock = new Object();
-    @GuardedBy("lock") private final Set<Generation> bundles = new HashSet<Generation>();
-    @GuardedBy("lock") private final Map<String, List<BundleGeneration>> indexByPackage = new HashMap<String, List<BundleGeneration>>();
-    @GuardedBy("lock") private Papoose framework;
-    @GuardedBy("lock") private String[] bootDelegates;
+    private final Set<Generation> bundles = new HashSet<Generation>();
+    private final Map<String, List<BundleGeneration>> indexByPackage = new HashMap<String, List<BundleGeneration>>();
+    private Papoose framework;
+    private String[] bootDelegates;
 
 
     /**

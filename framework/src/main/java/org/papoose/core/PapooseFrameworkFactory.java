@@ -100,17 +100,17 @@ public class PapooseFrameworkFactory implements FrameworkFactory
 
         String frameworkName = properties.getProperty(PapooseConstants.PAPOOSE_FRAMEWORK_NAME);
 
-        Papoose papose;
+        Papoose papoose;
         if (frameworkName != null)
         {
-            papose = new Papoose(frameworkName, store, executorService, properties);
+            papoose = new Papoose(frameworkName, store, executorService, properties);
         }
         else
         {
-            papose = new Papoose(store, executorService, properties);
+            papoose = new Papoose(store, executorService, properties);
         }
 
-        Framework framework = new PapooseFramework(papose);
+        Framework framework = new PapooseFramework(papoose);
 
         LOGGER.exiting(CLASS_NAME, "newFramework", framework);
 

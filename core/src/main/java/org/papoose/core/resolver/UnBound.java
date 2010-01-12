@@ -16,14 +16,11 @@
  */
 package org.papoose.core.resolver;
 
-import net.jcip.annotations.Immutable;
-
 import org.papoose.core.Generation;
 
 /**
  * @version $Revision$ $Date$
  */
-@Immutable
 public class UnBound extends UnResolved
 {
     public UnBound(Generation toBeResolved)

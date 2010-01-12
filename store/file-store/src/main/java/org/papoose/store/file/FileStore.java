@@ -47,6 +47,8 @@ import org.papoose.core.util.ToStringCreator;
  */
 public class FileStore implements Store
 {
+    public final static String FILESTORE_VERSION_KEY = "org.papoose.store.file.version";
+    public final static String FILESTORE_VERSION = "1.0";
     private final static String CLASS_NAME = FileStore.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final static String PROPERTIES_FILE = "store.properties";
@@ -63,12 +65,11 @@ public class FileStore implements Store
 
         if (root == null) throw new IllegalArgumentException("Root file for file store cannot be null");
 
-        this.root = root;
+        this.root = new File(root, "papoose");
 
-        if (!root.exists())
+        if (!this.root.exists())
         {
-            if (!root.mkdirs()) throw new FatalError("Unable to create non-existant root: " + root);
-            save();
+            if (!this.root.mkdirs()) throw new FatalError("Unable to create non-existant root: " + this.root);
         }
         else
         {
@@ -79,14 +80,15 @@ public class FileStore implements Store
             }
             else
             {
+                properties.put(FILESTORE_VERSION_KEY, FILESTORE_VERSION);
                 save();
             }
         }
 
-        File bundlesRoot = new File(root, BUNDLES_DIR);
+        File bundlesRoot = new File(this.root, BUNDLES_DIR);
         if (!bundlesRoot.exists() && !bundlesRoot.mkdirs()) throw new FatalError("Unable to create bundles root: " + bundlesRoot);
 
-        if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("root: " + root);
+        if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("root: " + this.root);
 
         LOGGER.exiting(CLASS_NAME, "FileStore");
     }

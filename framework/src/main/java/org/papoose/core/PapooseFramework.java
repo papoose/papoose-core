@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.jcip.annotations.ThreadSafe;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
@@ -40,7 +39,6 @@ import org.papoose.core.util.Util;
 /**
  * @version $Revision$ $Date$
  */
-@ThreadSafe
 class PapooseFramework implements Framework
 {
     private final static String CLASS_NAME = PapooseFramework.class.getName();

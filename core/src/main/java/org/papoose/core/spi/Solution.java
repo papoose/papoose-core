@@ -22,8 +22,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import net.jcip.annotations.Immutable;
-
 import org.papoose.core.BundleGeneration;
 import org.papoose.core.FragmentGeneration;
 import org.papoose.core.Wire;
@@ -35,7 +33,6 @@ import org.papoose.core.util.ToStringCreator;
  *
  * @version $Revision$ $Date$
  */
-@Immutable
 public class Solution
 {
     private final BundleGeneration bundle;

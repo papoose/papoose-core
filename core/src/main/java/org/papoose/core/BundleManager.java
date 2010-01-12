@@ -280,7 +280,7 @@ public class BundleManager
     public Bundle installBundle(String location, InputStream inputStream) throws BundleException
     {
         LOGGER.entering(CLASS_NAME, "installBundle", new Object[]{location, inputStream});
-
+        
         if (locations.containsKey(location)) return locations.get(location);
 
         long bundleId = bundleCounter.incrementAndGet();

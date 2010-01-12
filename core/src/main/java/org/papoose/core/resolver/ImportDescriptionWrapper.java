@@ -18,15 +18,12 @@ package org.papoose.core.resolver;
 
 import java.util.Map;
 
-import net.jcip.annotations.Immutable;
-
 import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.Resolution;
 
 /**
  * @version $Revision$ $Date$
  */
-@Immutable
 public class ImportDescriptionWrapper
 {
     private final String packageName;
