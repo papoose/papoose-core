@@ -16,23 +16,27 @@
  */
 package org.papoose.framework.launch;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.Future;
-import java.util.concurrent.Callable;
 
 import org.junit.Assert;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 import org.papoose.core.PapooseFrameworkFactory;
+
 
 /**
  * @version $Revision$ $Date$
@@ -42,8 +46,11 @@ public class PapooseFrameworkFactoryTest
     @Test
     public void test() throws Exception
     {
+        Map<String, String> configuration = new HashMap<String, String>();
+        configuration.put(Constants.FRAMEWORK_STORAGE, "targets/papoose");
+
         FrameworkFactory factory = new PapooseFrameworkFactory();
-        final Framework framework = factory.newFramework(null);
+        final Framework framework = factory.newFramework(configuration);
 
         FrameworkEvent frameworkEvent = framework.waitForStop(0);
 

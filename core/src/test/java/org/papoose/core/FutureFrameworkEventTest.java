@@ -27,13 +27,19 @@ import java.util.concurrent.TimeoutException;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkEvent;
+
+import org.papoose.core.mock.MockBundle;
+
 
 /**
  * @version $Revision$ $Date$
  */
 public class FutureFrameworkEventTest
 {
+    private final static Bundle MOCK_SYSTEM_BUNDLE = new MockBundle();
+
     @Test
     public void testIsDone()
     {
@@ -41,8 +47,7 @@ public class FutureFrameworkEventTest
 
         Assert.assertFalse(futureFrameworkEvent.isDone());
 
-        //noinspection deprecation
-        futureFrameworkEvent.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED, this));
+        futureFrameworkEvent.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED, MOCK_SYSTEM_BUNDLE, null));
 
         Assert.assertTrue(futureFrameworkEvent.isDone());
     }
@@ -73,8 +78,7 @@ public class FutureFrameworkEventTest
 
             Assert.assertEquals(1, countDownLatch.getCount());
 
-            //noinspection deprecation
-            futureFrameworkEvent.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED, this));
+            futureFrameworkEvent.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED, MOCK_SYSTEM_BUNDLE, null));
 
             Assert.assertTrue(result.get());
             Assert.assertEquals(0, countDownLatch.getCount());
@@ -112,8 +116,7 @@ public class FutureFrameworkEventTest
 
             Assert.assertEquals(1, countDownLatch.getCount());
 
-            //noinspection deprecation
-            futureFrameworkEvent.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED, this));
+            futureFrameworkEvent.setFrameworkEvent(new FrameworkEvent(FrameworkEvent.STOPPED, MOCK_SYSTEM_BUNDLE, null));
 
             Assert.assertTrue(result.get());
             Assert.assertEquals(0, countDownLatch.getCount());

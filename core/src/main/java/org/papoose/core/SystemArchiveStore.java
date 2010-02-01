@@ -70,7 +70,7 @@ class SystemArchiveStore implements ArchiveStore
         {
             exportDescriptions.addAll(AttributeUtils.parseBundleExportList(packages, getBundleSymbolicName(), getBundleVersion()));
         }
-        exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.framework;version=1.4,org.osgi.service.url;version=1.4,org.osgi.util.tracker;version=1.4", getBundleSymbolicName(), getBundleVersion()));
+        exportDescriptions.addAll(AttributeUtils.parseBundleExportList("org.osgi.framework;version=1.5,org.osgi.service.url;version=1.5,org.osgi.util.tracker;version=1.5", getBundleSymbolicName(), getBundleVersion()));
 
         if (framework.getProperty(PapooseConstants.PAPOOSE_SERVICE_PACKAGE_ADMIN) != null)
         {

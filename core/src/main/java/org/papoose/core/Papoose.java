@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007-2009 (C) The original author or authors
+ * Copyright 2007-2010 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,13 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkEvent;
+import org.osgi.framework.Version;
+
 import org.papoose.core.filter.Parser;
 import org.papoose.core.resolver.DefaultResolver;
 import org.papoose.core.spi.LocationMapper;
@@ -46,15 +53,7 @@ import org.papoose.core.spi.Resolver;
 import org.papoose.core.spi.StartManager;
 import org.papoose.core.spi.Store;
 import org.papoose.core.spi.TrustManager;
-import org.papoose.core.util.ToStringCreator;
 import org.papoose.core.util.Util;
-
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Constants;
-import org.osgi.framework.FrameworkEvent;
-import org.osgi.framework.Version;
 
 
 /**
@@ -429,6 +428,19 @@ public final class Papoose
         LOGGER.exiting(CLASS_NAME, "initialize");
     }
 
+    public void destroy() throws PapooseException
+    {
+        BundleManager manager = getBundleManager();
+
+        resolver.stop();
+
+        manager.unloadBundles();
+
+        stopBootLevelServices();
+
+        manager.getStore().stop();
+    }
+
     public void start() throws PapooseException
     {
         LOGGER.entering(CLASS_NAME, "start");
@@ -564,29 +576,13 @@ public final class Papoose
     {
         BundleManager manager = getBundleManager();
 
-        manager.unloadBundles();
-
-        stopBootLevelServices();
-
         serviceRegistry.stop();
-
-        resolver.stop();
-
-        manager.getStore().stop();
     }
 
     @Override
     public String toString()
     {
-        ToStringCreator creator = new ToStringCreator(this);
-
-        creator.append("frameworkName", frameworkName);
-        creator.append("frameworkId", frameworkId);
-        creator.append("executorService", executorService);
-        creator.append("resolver", resolver);
-        creator.append("state", state);
-
-        return creator.toString();
+        return "[" + frameworkId + "] " + frameworkName + " - " + state;
     }
 
     static Papoose getFramework(Integer frameworkId)

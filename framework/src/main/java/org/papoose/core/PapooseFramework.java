@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,7 +46,7 @@ class PapooseFramework implements Framework
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final Object lock = new Object();
     private final Papoose framework;
-    private volatile SystemBundleController systemBundle;
+    private final AtomicReference<SystemBundleController> systemBundle = new AtomicReference<SystemBundleController>();
 
     PapooseFramework(Papoose framework)
     {
@@ -72,7 +73,7 @@ class PapooseFramework implements Framework
             {
                 framework.init();
 
-                systemBundle = (SystemBundleController) framework.getSystemBundleContext().getBundle();
+                systemBundle.set((SystemBundleController) framework.getSystemBundleContext().getBundle());
             }
             catch (PapooseException pe)
             {
@@ -92,7 +93,7 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "waitForStop", timeout);
 
-        if (systemBundle == null) return new FrameworkEvent(FrameworkEvent.STOPPED, this, null);
+        if (systemBundle.get() == null) return new FrameworkEvent(FrameworkEvent.STOPPED, this, null); // todo: ???
 
         FrameworkEvent frameworkEvent = framework.waitForStop(timeout);
 
@@ -111,9 +112,9 @@ class PapooseFramework implements Framework
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(new AdminPermission(this, AdminPermission.EXECUTE));
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        systemBundle.start();
+        systemBundle.get().start();
 
         LOGGER.exiting(CLASS_NAME, "start");
     }
@@ -125,7 +126,7 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getState");
 
-        int result = systemBundle == null ? INSTALLED : systemBundle.getState();
+        int result = systemBundle.get() == null ? INSTALLED : systemBundle.get().getState();
 
         LOGGER.exiting(CLASS_NAME, "getState", result);
 
@@ -154,9 +155,9 @@ class PapooseFramework implements Framework
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(new AdminPermission(this, AdminPermission.EXECUTE));
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        systemBundle.stop();
+        systemBundle.get().stop();
 
         LOGGER.exiting(CLASS_NAME, "stop");
     }
@@ -194,9 +195,9 @@ class PapooseFramework implements Framework
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(new AdminPermission(this, AdminPermission.METADATA));
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        Dictionary result = systemBundle.getHeaders();
+        Dictionary result = systemBundle.get().getHeaders();
 
         LOGGER.exiting(CLASS_NAME, "getHeaders", result);
 
@@ -213,9 +214,9 @@ class PapooseFramework implements Framework
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(new AdminPermission(this, AdminPermission.LIFECYCLE));
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        systemBundle.update();
+        systemBundle.get().update();
 
         LOGGER.exiting(CLASS_NAME, "update");
     }
@@ -260,9 +261,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getRegisteredServices");
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        ServiceReference[] result = systemBundle.getRegisteredServices();
+        ServiceReference[] result = systemBundle.get().getRegisteredServices();
 
         LOGGER.exiting(CLASS_NAME, "getRegisteredServices", result);
 
@@ -276,9 +277,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getServicesInUse");
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        ServiceReference[] result = systemBundle.getServicesInUse();
+        ServiceReference[] result = systemBundle.get().getServicesInUse();
 
         LOGGER.exiting(CLASS_NAME, "getServicesInUse", result);
 
@@ -292,9 +293,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "hasPermission", permission);
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        boolean result = systemBundle.hasPermission(permission);
+        boolean result = systemBundle.get().hasPermission(permission);
 
         LOGGER.exiting(CLASS_NAME, "hasPermission", result);
 
@@ -308,9 +309,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getResource", name);
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        URL result = systemBundle.getResource(name);
+        URL result = systemBundle.get().getResource(name);
 
         LOGGER.exiting(CLASS_NAME, "getResource", result);
 
@@ -324,9 +325,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getHeaders", locale);
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        Dictionary result = systemBundle.getHeaders(locale);
+        Dictionary result = systemBundle.get().getHeaders(locale);
 
         LOGGER.exiting(CLASS_NAME, "getHeaders", result);
 
@@ -340,9 +341,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getSymbolicName");
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        String result = systemBundle.getSymbolicName();
+        String result = systemBundle.get().getSymbolicName();
 
         LOGGER.exiting(CLASS_NAME, "getSymbolicName", result);
 
@@ -356,9 +357,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "loadClass", name);
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        Class result = systemBundle.loadClass(name);
+        Class result = systemBundle.get().loadClass(name);
 
         LOGGER.exiting(CLASS_NAME, "loadClass", result);
 
@@ -372,9 +373,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getResources", name);
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        Enumeration result = systemBundle.getResources(name);
+        Enumeration result = systemBundle.get().getResources(name);
 
         LOGGER.exiting(CLASS_NAME, "getResources", result);
 
@@ -388,9 +389,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getEntryPaths", path);
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        Enumeration result = systemBundle.getEntryPaths(path);
+        Enumeration result = systemBundle.get().getEntryPaths(path);
 
         LOGGER.exiting(CLASS_NAME, "getEntryPaths", result);
 
@@ -404,9 +405,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getEntry", path);
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        URL result = systemBundle.getEntry(path);
+        URL result = systemBundle.get().getEntry(path);
 
         LOGGER.exiting(CLASS_NAME, "getEntry", result);
 
@@ -420,9 +421,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getLastModified");
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        long result = systemBundle.getLastModified();
+        long result = systemBundle.get().getLastModified();
 
         LOGGER.exiting(CLASS_NAME, "getLastModified", result);
 
@@ -436,9 +437,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "findEntries", new Object[]{ path, filePattern, recurse });
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        Enumeration result = systemBundle.findEntries(path, filePattern, recurse);
+        Enumeration result = systemBundle.get().findEntries(path, filePattern, recurse);
 
         LOGGER.exiting(CLASS_NAME, "findEntries", result);
 
@@ -452,9 +453,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getBundleContext");
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        BundleContext result = systemBundle.getBundleContext();
+        BundleContext result = systemBundle.get().getBundleContext();
 
         LOGGER.exiting(CLASS_NAME, "getBundleContext", result);
 
@@ -468,9 +469,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getSignerCertificates");
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        Map result = systemBundle.getSignerCertificates(signersType);
+        Map result = systemBundle.get().getSignerCertificates(signersType);
 
         LOGGER.exiting(CLASS_NAME, "getSignerCertificates", result);
 
@@ -484,9 +485,9 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "getVersion");
 
-        if (systemBundle == null) throw new IllegalStateException("Framework has not been initialized");
+        if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        Version result = systemBundle.getVersion();
+        Version result = systemBundle.get().getVersion();
 
         LOGGER.exiting(CLASS_NAME, "getVersion", result);
 
@@ -496,6 +497,6 @@ class PapooseFramework implements Framework
     @Override
     public String toString()
     {
-        return framework.getFrameworkName();
+        return framework.toString();
     }
 }

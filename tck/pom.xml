@@ -2,7 +2,7 @@
 <project>
     <parent>
         <groupId>org.papoose.core</groupId>
-        <artifactId>papoose-core</artifactId>
+        <artifactId>papoose-project</artifactId>
         <version>1.0.0.SNAPSHOT</version>
     </parent>
 

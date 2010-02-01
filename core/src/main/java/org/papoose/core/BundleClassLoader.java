@@ -332,6 +332,7 @@ public class BundleClassLoader extends NamedClassLoader implements BundleReferen
 
                     if (wire != null)
                     {
+                        // todo: should we remove this description if a wire is created?
                         wires.add(wire);
 
                         return wire.getBundleClassLoader().delegateLoadClass(className);
