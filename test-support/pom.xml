@@ -25,7 +25,7 @@
             <dependency>
                 <groupId>org.papoose.test-support</groupId>
                 <artifactId>test-support-jar</artifactId>
-                <version>${papooseVersion}</version>
+                <version>${pom.version}</version>
             </dependency>
 
         </dependencies>

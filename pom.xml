@@ -33,7 +33,6 @@
     </modules>
 
     <properties>
-        <papooseVersion>1.0.0.SNAPSHOT</papooseVersion>
     </properties>
 
     <build>
@@ -81,55 +80,55 @@
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>core</artifactId>
-                <version>${papooseVersion}</version>
+                <version>${pom.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>cnd-perm-admin</artifactId>
-                <version>${papooseVersion}</version>
+                <version>${pom.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>perm-admin</artifactId>
-                <version>${papooseVersion}</version>
+                <version>${pom.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>pkg-admin</artifactId>
-                <version>${papooseVersion}</version>
+                <version>${pom.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>start-level</artifactId>
-                <version>${papooseVersion}</version>
+                <version>${pom.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>store-file</artifactId>
-                <version>${papooseVersion}</version>
+                <version>${pom.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>store-memory</artifactId>
-                <version>${papooseVersion}</version>
+                <version>${pom.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>url-handlers</artifactId>
-                <version>${papooseVersion}</version>
+                <version>${pom.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.test-support</groupId>
                 <artifactId>test-support-bundle</artifactId>
-                <version>${papooseVersion}</version>
+                <version>${pom.version}</version>
                 <scope>test</scope>
             </dependency>
 
