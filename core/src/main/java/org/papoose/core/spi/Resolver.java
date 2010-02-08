@@ -39,7 +39,7 @@ public interface Resolver
 {
     /**
      * Called by the owning framework to notify the resolver that the framework
-     * is starting.  The owning framework passes a referene to itself.
+     * is starting.  The owning framework passes a reference to itself.
      * <p/>
      * If an error occurs that prevents the resolver from functioning properly
      * an exception will be thrown.  When this happens, the owning framework
