@@ -47,7 +47,7 @@ public class PapooseFrameworkFactoryTest
     public void test() throws Exception
     {
         Map<String, String> configuration = new HashMap<String, String>();
-        configuration.put(Constants.FRAMEWORK_STORAGE, "targets/papoose");
+        configuration.put(Constants.FRAMEWORK_STORAGE, "target/papoose");
 
         FrameworkFactory factory = new PapooseFrameworkFactory();
         final Framework framework = factory.newFramework(configuration);
