@@ -328,7 +328,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (state.getState() >= Bundle.STARTING) throw new IllegalStateException("Cannot change parser after framework has initialzied");
+            if (state.getState() >= Bundle.STARTING) throw new IllegalStateException("Cannot change parser after framework has initialized");
 
             this.parser = parser;
 
@@ -347,7 +347,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (state.getState() >= Bundle.STARTING) throw new IllegalStateException("Cannot change trust manager after framework has initialzied");
+            if (state.getState() >= Bundle.STARTING) throw new IllegalStateException("Cannot change trust manager after framework has initialized");
 
             this.trustManager = trustManager;
 
@@ -381,7 +381,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (state.getState() >= Bundle.STARTING) throw new IllegalStateException("Cannot change resolver after framework has initialzied");
+            if (state.getState() >= Bundle.STARTING) throw new IllegalStateException("Cannot change resolver after framework has initialized");
 
             this.resolver = resolver;
 
@@ -397,7 +397,7 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (state.getState() < Bundle.STARTING) throw new IllegalStateException("Framework has not been initialzied");
+            if (state.getState() < Bundle.STARTING) throw new IllegalStateException("Framework has not been initialized");
 
             BundleManager manager = getBundleManager();
 
