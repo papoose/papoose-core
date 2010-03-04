@@ -21,12 +21,10 @@ import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -69,8 +67,8 @@ public final class Papoose
     private final static Properties DEFAULTS = new Properties();
 
     private static int FRAMEWORK_COUNTER = 0;
-    private final static Map<Integer, Reference<Papoose>> FRAMEWORKS_BY_ID = new HashMap<Integer, Reference<Papoose>>();
-    private final static Map<String, Reference<Papoose>> FRAMEWORKS_BY_NAME = new HashMap<String, Reference<Papoose>>();
+    private final static Map<Integer, Reference<Papoose>> FRAMEWORKS_BY_ID = new Hashtable<Integer, Reference<Papoose>>();
+    private final static Map<String, Reference<Papoose>> FRAMEWORKS_BY_NAME = new Hashtable<String, Reference<Papoose>>();
 
     private final Object lock = new Object();
     private volatile State state = new Installed();
@@ -181,7 +179,7 @@ public final class Papoose
 
         synchronized (FRAMEWORKS_BY_NAME)
         {
-            ensureUrlHandling();
+            Util.ensureUrlHandling();
 
             this.frameworkId = FRAMEWORK_COUNTER++;
 
@@ -355,11 +353,6 @@ public final class Papoose
         }
     }
 
-    public Properties getClientProperties()
-    {
-        return clientProperties;
-    }
-
     public Object getProperty(String key)
     {
         return properties.get(key);
@@ -520,7 +513,7 @@ public final class Papoose
         startManager.stop(bundle, options);
     }
 
-    private void doInitialze() throws PapooseException
+    private void doInitialize() throws PapooseException
     {
         BundleManager manager = getBundleManager();
 
@@ -552,9 +545,9 @@ public final class Papoose
 
             serviceRegistry.start();
 
-            startBootLevelServices();
-
             SystemBundleController systemBundleController = (SystemBundleController) manager.installSystemBundle(new Version(properties.getProperty(PapooseConstants.PAPOOSE_VERSION)));
+
+            startBootLevelServices();
 
             manager.loadBundles();
 
@@ -601,52 +594,6 @@ public final class Papoose
         if (result == null) FRAMEWORKS_BY_NAME.remove(name);
 
         return result;
-    }
-
-    private static void ensureUrlHandling()
-    {
-        LOGGER.entering(CLASS_NAME, "ensureUrlHandling");
-
-        try
-        {
-            new URL("codesource://1:0@org.papoose.framework.0");
-
-            LOGGER.finest("Handler for codesource protocol found");
-        }
-        catch (MalformedURLException e)
-        {
-            LOGGER.finest("Handler for codesource protocol not found");
-
-            String prefixes = System.getProperty("java.protocol.handler.pkgs");
-
-            if (prefixes == null)
-            {
-                prefixes = "org.papoose.core.protocols";
-            }
-            else
-            {
-                prefixes = prefixes + "|org.papoose.core.protocols";
-            }
-
-            if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("java.protocol.handler.pkgs: " + prefixes);
-
-            System.setProperty("java.protocol.handler.pkgs", prefixes);
-
-            try
-            {
-                new URL("codesource://1:0@org.papoose.framework-0");
-
-                LOGGER.finest("Handler for codesource protocol found");
-            }
-            catch (MalformedURLException mue)
-            {
-                LOGGER.severe("Unable to pick up Papoose protocol handlers");
-
-                throw new FatalError("Unable to pick up Papoose protocol handlers", mue);
-            }
-        }
-
-        LOGGER.exiting(CLASS_NAME, "ensureUrlHandling");
     }
 
     private Properties assembleProperties(Properties properties)
@@ -884,7 +831,7 @@ public final class Papoose
 
         public void init() throws PapooseException
         {
-            doInitialze();
+            doInitialize();
 
             state = new Starting();
         }
@@ -893,7 +840,7 @@ public final class Papoose
         {
             futureStop = new FutureFrameworkEvent();
 
-            doInitialze();
+            doInitialize();
             doStart();
 
             state = new Active();
@@ -923,7 +870,7 @@ public final class Papoose
 
         public void init() throws PapooseException
         {
-            doInitialze();
+            doInitialize();
 
             state = new Starting();
         }

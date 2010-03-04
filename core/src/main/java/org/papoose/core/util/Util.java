@@ -24,6 +24,8 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -37,6 +39,7 @@ import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
 
+import org.papoose.core.FatalError;
 import org.papoose.core.Papoose;
 import org.papoose.core.descriptions.Extension;
 import org.papoose.core.descriptions.Resolution;
@@ -777,6 +780,52 @@ public final class Util
         return builder.toString();
     }
 
+    public static void ensureUrlHandling()
+    {
+        LOGGER.entering(CLASS_NAME, "ensureUrlHandling");
+
+        try
+        {
+            new URL("codesource://1:0@org.papoose.framework.0");
+
+            LOGGER.finest("Handler for codesource protocol found");
+        }
+        catch (MalformedURLException e)
+        {
+            LOGGER.finest("Handler for codesource protocol not found");
+
+            String prefixes = System.getProperty("java.protocol.handler.pkgs");
+
+            if (prefixes == null)
+            {
+                prefixes = "org.papoose.core.protocols";
+            }
+            else
+            {
+                prefixes = prefixes + "|org.papoose.core.protocols";
+            }
+
+            if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("java.protocol.handler.pkgs: " + prefixes);
+
+            System.setProperty("java.protocol.handler.pkgs", prefixes);
+
+            try
+            {
+                new URL("codesource://1:0@org.papoose.framework-0");
+
+                LOGGER.finest("Handler for codesource protocol found");
+            }
+            catch (MalformedURLException mue)
+            {
+                LOGGER.severe("Unable to pick up Papoose protocol handlers");
+
+                throw new FatalError("Unable to pick up Papoose protocol handlers", mue);
+            }
+        }
+
+        LOGGER.exiting(CLASS_NAME, "ensureUrlHandling");
+    }
+
     public static <T> Iterable<List<T>> combinations(final List<T> set)
     {
         final List<T> list = new ArrayList<T>(set);
@@ -869,7 +918,6 @@ public final class Util
             public void remove() { throw new UnsupportedOperationException(); }
         };
     }
-
 
     private static BigInteger getFactorial(int n)
     {
