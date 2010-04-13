@@ -12,6 +12,7 @@
     <name>Papoose :: OSGi Compatibility Tests :: Bundles</name>
 
     <modules>
+        <module>simple</module>
     </modules>
 
 </project>

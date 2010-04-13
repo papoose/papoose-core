@@ -19,6 +19,7 @@ package org.papoose.core.descriptions;
 import java.util.Collections;
 import java.util.Set;
 
+
 /**
  * @version $Revision$ $Date$
  */
@@ -56,5 +57,11 @@ public class LazyActivationDescription
     public void setExclude(Set<String> exclude)
     {
         this.exclude = exclude;
+    }
+
+    @Override
+    public String toString()
+    {
+        return (lazyActivation ? "LAZY" : "EAGER");
     }
 }

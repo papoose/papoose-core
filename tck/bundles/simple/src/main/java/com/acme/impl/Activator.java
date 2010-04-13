@@ -26,11 +26,9 @@ public class Activator implements BundleActivator
 {
     public void start(BundleContext bundleContext) throws Exception
     {
-        int i = 0;
     }
 
     public void stop(BundleContext bundleContext) throws Exception
     {
-        int i = 0;
     }
 }

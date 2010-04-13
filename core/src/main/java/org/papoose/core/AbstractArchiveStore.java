@@ -87,7 +87,7 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 
         this.bundleSymbolicName = tokens[0];
 
-        String singletonString = Boolean.FALSE.toString();
+        String singletonString = "false";
         String fragmentAttachmentString = Constants.FRAGMENT_ATTACHMENT_ALWAYS;
         for (int i = 1; i < tokens.length; i++)
         {

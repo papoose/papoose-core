@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cnd-perm-admin</artifactId>
     <packaging>jar</packaging>
-    <name>Papoose :: OSGi R4 Conditional Permission Admin Service</name>
+    <name>Papoose :: OSGi R4 Conditional Perm Admin Service</name>
     <description>OSGi R4 Conditional Permission Admin Service</description>
 
     <build/>

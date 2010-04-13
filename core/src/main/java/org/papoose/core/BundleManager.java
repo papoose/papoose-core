@@ -52,6 +52,7 @@ import org.osgi.framework.ServicePermission;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
+
 import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.descriptions.Extension;
 import org.papoose.core.descriptions.FragmentDescription;
@@ -65,7 +66,6 @@ import org.papoose.core.spi.ProtectionDomainFactory;
 import org.papoose.core.spi.Solution;
 import org.papoose.core.spi.Store;
 import org.papoose.core.util.SecurityUtils;
-import org.papoose.core.util.ToStringCreator;
 
 
 /**
@@ -176,7 +176,7 @@ public class BundleManager
 
             framework.getResolver().added(systemBundle.getCurrentGeneration());
 
-            insertSystemClassLoader((BundleGeneration)systemBundle.getCurrentGeneration());
+            insertSystemClassLoader((BundleGeneration) systemBundle.getCurrentGeneration());
 
             bundleStore.markModified();
 
@@ -279,8 +279,8 @@ public class BundleManager
 
     public Bundle installBundle(String location, InputStream inputStream) throws BundleException
     {
-        LOGGER.entering(CLASS_NAME, "installBundle", new Object[]{location, inputStream});
-        
+        LOGGER.entering(CLASS_NAME, "installBundle", new Object[]{ location, inputStream });
+
         if (locations.containsKey(location)) return locations.get(location);
 
         long bundleId = bundleCounter.incrementAndGet();
@@ -377,7 +377,7 @@ public class BundleManager
 
         if (!bundleNativeCodeList.isEmpty())
         {
-            VersionRange osVersionRange = VersionRange.parseVersionRange((String)framework.getProperty(Constants.FRAMEWORK_OS_VERSION));
+            VersionRange osVersionRange = VersionRange.parseVersionRange((String) framework.getProperty(Constants.FRAMEWORK_OS_VERSION));
 
             nextDescription:
             for (NativeCodeDescription description : bundleNativeCodeList)
@@ -405,7 +405,7 @@ public class BundleManager
                     {
                         try
                         {
-                            Filter selectionFilter = new DefaultFilter(framework.getParser().parse((String)parameters.get(key)));
+                            Filter selectionFilter = new DefaultFilter(framework.getParser().parse((String) parameters.get(key)));
                             if (!selectionFilter.match(framework.getProperties())) continue nextDescription;
                         }
                         catch (InvalidSyntaxException ise)
@@ -426,7 +426,7 @@ public class BundleManager
     {
         if (!bundleExecutionEnvironment.isEmpty())
         {
-            String string = (String)framework.getProperty(Constants.FRAMEWORK_EXECUTIONENVIRONMENT);
+            String string = (String) framework.getProperty(Constants.FRAMEWORK_EXECUTIONENVIRONMENT);
             if (string == null) throw new BundleException(Constants.FRAMEWORK_EXECUTIONENVIRONMENT + " not set");
             String[] environments = string.split(",");
 
@@ -448,7 +448,7 @@ public class BundleManager
 
         try
         {
-            BundleController bundleController = (BundleController)target;
+            BundleController bundleController = (BundleController) target;
             Set<Solution> solutions = framework.getResolver().resolve(bundleController.getCurrentGeneration());
 
             if (solutions.isEmpty()) return false;
@@ -475,8 +475,8 @@ public class BundleManager
 
         try
         {
-            BundleController targetController = (BundleController)target;
-            BundleGeneration targetGeneration = (BundleGeneration)targetController.getCurrentGeneration();
+            BundleController targetController = (BundleController) target;
+            BundleGeneration targetGeneration = (BundleGeneration) targetController.getCurrentGeneration();
             Set<Solution> solutions = framework.getResolver().resolve(targetGeneration, importDescription);
 
             if (solutions.isEmpty()) return null;
@@ -676,7 +676,7 @@ public class BundleManager
                 {
                     if (generation.getArchiveStore().getBundleActivatorClass() != null)
                     {
-                        framework.getStartManager().start((BundleGeneration)generation, 0); // todo: this is probably wrong
+                        framework.getStartManager().start((BundleGeneration) generation, 0); // todo: this is probably wrong
                     }
                 }
             }
@@ -765,7 +765,7 @@ public class BundleManager
 
                     if (bundleActivatorClass == null) throw new BundleException("Bundle activator class " + bundleActivatorClassName + " not found");
 
-                    final BundleActivator bundleActivator = (BundleActivator)bundleActivatorClass.newInstance();
+                    final BundleActivator bundleActivator = (BundleActivator) bundleActivatorClass.newInstance();
 
                     bundleController.setBundleActivator(bundleActivator);
 
@@ -897,8 +897,8 @@ public class BundleManager
 
     public void uninstall(Bundle bundle) throws BundleException
     {
-        BundleController bundleController = (BundleController)bundle;
-        BundleGeneration bundleGeneration = (BundleGeneration)bundleController.getCurrentGeneration();
+        BundleController bundleController = (BundleController) bundle;
+        BundleGeneration bundleGeneration = (BundleGeneration) bundleController.getCurrentGeneration();
 
         try
         {
@@ -916,21 +916,21 @@ public class BundleManager
                 }
             }
 
-            Set<Generation> unused = new HashSet<Generation>();
+            Set<Generation> unused = new HashSet<Generation>(bundleController.getGenerations().values());
             boolean remove = true;
             for (Generation generation : bundleController.getGenerations().values())
             {
-                boolean removed = false;
+                boolean inUse = false;
                 for (ExportDescription description : generation.getArchiveStore().getExportDescriptions())
                 {
                     if (description.getReferenceCount() > 0)
                     {
-                        removed = true;
-                        unused.add(generation);
+                        inUse = true;
+                        unused.remove(generation);
                         break;
                     }
                 }
-                if (removed) remove = false;
+                if (inUse) remove = false;
             }
 
             for (Generation generation : unused)
@@ -1000,6 +1000,8 @@ public class BundleManager
                 {
                     assert false;
                 }
+
+                store.removeBundleStore(bundleId);
             }
 
             bundleGeneration.setState(Bundle.UNINSTALLED);
@@ -1103,7 +1105,7 @@ public class BundleManager
     public void fireServiceEvent(ServiceEvent event)
     {
         ServiceReference reference = event.getServiceReference();
-        String[] classes = (String[])reference.getProperty(Constants.OBJECTCLASS);
+        String[] classes = (String[]) reference.getProperty(Constants.OBJECTCLASS);
 
         for (BundleController bundle : installedbundles.values())
         {
@@ -1178,7 +1180,7 @@ public class BundleManager
                 }
                 else
                 {
-                    BootClasspathManager manager = (BootClasspathManager)framework.getProperty(BootClasspathManager.BOOT_CLASSPATH_MANAGER);
+                    BootClasspathManager manager = (BootClasspathManager) framework.getProperty(BootClasspathManager.BOOT_CLASSPATH_MANAGER);
                     if (manager == null || !manager.isSupported()) throw new BundleException("Boot classpath extensions not supported in this framework configuration");
 
                     return new BootClassExtensionGeneration(bundle, archiveStore);
@@ -1225,7 +1227,7 @@ public class BundleManager
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            NameVersionKey that = (NameVersionKey)o;
+            NameVersionKey that = (NameVersionKey) o;
 
             //noinspection SimplifiableIfStatement
             if (!symbolicName.equals(that.symbolicName)) return false;
@@ -1244,12 +1246,7 @@ public class BundleManager
         @Override
         public String toString()
         {
-            ToStringCreator creator = new ToStringCreator(this);
-
-            creator.append("symbolicName", symbolicName);
-            creator.append("version", version);
-
-            return creator.toString();
+            return "[" + symbolicName + ", " + version + "]";
         }
     }
 }

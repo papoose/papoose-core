@@ -11,8 +11,89 @@
     <packaging>pom</packaging>
     <name>Papoose :: OSGi Compatibility Tests :: Tests</name>
 
-    <modules>
-    </modules>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.papoose.test-support</groupId>
+                                    <artifactId>test-support-bundle</artifactId>
+                                    <version>${papooseVersion}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>target</outputDirectory>
+                                    <destFileName>bundle.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>        
+    </build>
 
+    <dependencies>
+
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core</groupId>
+            <artifactId>core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core</groupId>
+            <artifactId>cnd-perm-admin</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core</groupId>
+            <artifactId>framework</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core</groupId>
+            <artifactId>perm-admin</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core</groupId>
+            <artifactId>pkg-admin</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core</groupId>
+            <artifactId>start-level</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core</groupId>
+            <artifactId>store-file</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core</groupId>
+            <artifactId>store-memory</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core</groupId>
+            <artifactId>url-handlers</artifactId>
+        </dependency>
+
+    </dependencies>
 </project>
 

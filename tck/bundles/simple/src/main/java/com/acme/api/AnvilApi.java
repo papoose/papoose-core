@@ -14,23 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.acme.impl;
-
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
+package com.acme.api;
 
 /**
  * @version $Revision$ $Date$
  */
-public class Activator implements BundleActivator
+public interface AnvilApi
 {
-    public void start(BundleContext bundleContext) throws Exception
-    {
-        int i = 0;
-    }
-
-    public void stop(BundleContext bundleContext) throws Exception
-    {
-        int i = 0;
-    }
 }

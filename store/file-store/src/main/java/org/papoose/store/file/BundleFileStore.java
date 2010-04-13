@@ -97,8 +97,7 @@ class BundleFileStore implements BundleStore
 
         try
         {
-            Properties properties = new Properties();
-            properties.load(new FileInputStream(bundleRoot));
+            Properties properties = load();
             this.location = properties.getProperty(LOCATION_KEY);
             this.lastModified = System.currentTimeMillis();
             this.setting = AutostartSetting.valueOf(properties.getProperty(AUTOSTART_KEY));
@@ -171,5 +170,12 @@ class BundleFileStore implements BundleStore
         properties.setProperty(LOCATION_KEY, location);
         properties.setProperty(AUTOSTART_KEY, setting.toString());
         properties.store(new FileOutputStream(new File(bundleRoot, "bundle.properties")), " bundle id: " + bundleId + " location: " + location);
+    }
+
+    private Properties load() throws IOException
+    {
+        Properties properties = new Properties();
+        properties.load(new FileInputStream(new File(bundleRoot, "bundle.properties")));
+        return properties;
     }
 }

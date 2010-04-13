@@ -16,21 +16,11 @@
  */
 package com.acme.impl;
 
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
+import com.acme.api.AnvilApi;
 
 /**
  * @version $Revision$ $Date$
  */
-public class Activator implements BundleActivator
+public class AnvilImpl implements AnvilApi
 {
-    public void start(BundleContext bundleContext) throws Exception
-    {
-        int i = 0;
-    }
-
-    public void stop(BundleContext bundleContext) throws Exception
-    {
-        int i = 0;
-    }
 }

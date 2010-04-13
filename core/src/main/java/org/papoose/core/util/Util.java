@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 import org.papoose.core.FatalError;
@@ -53,6 +54,26 @@ public final class Util
 {
     private final static String CLASS_NAME = Util.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
+
+    public static String bundleStateToString(int state)
+    {
+        switch (state)
+        {
+            case Bundle.INSTALLED:
+                return "INSTALLED";
+            case Bundle.STARTING:
+                return "STARTING";
+            case Bundle.ACTIVE:
+                return "ACTIVE";
+            case Bundle.STOPPING:
+                return "STOPPING";
+            case Bundle.RESOLVED:
+                return "RESOLVED";
+            case Bundle.UNINSTALLED:
+                return "UNINSTALLED";
+        }
+        return "UNKNOWN";
+    }
 
     public static void copy(InputStream input, OutputStream output) throws IOException
     {

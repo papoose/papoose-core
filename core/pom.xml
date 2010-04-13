@@ -58,14 +58,14 @@
         </dependency>
 
         <dependency>
-            <groupId>org.papoose.test-support</groupId>
-            <artifactId>test-support-bundle</artifactId>
-            <scope>test</scope>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.core</artifactId>
+            <groupId>org.papoose.test-support</groupId>
+            <artifactId>test-support-bundle</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

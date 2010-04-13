@@ -33,13 +33,6 @@ import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.papoose.core.spi.ArchiveStore;
-import org.papoose.core.spi.BundleStore;
-import org.papoose.core.util.AttributeUtils;
-import org.papoose.core.util.I18nUtils;
-import org.papoose.core.util.SecurityUtils;
-import org.papoose.core.util.SerialExecutor;
-
 import org.osgi.framework.AdminPermission;
 import org.osgi.framework.AllServiceListener;
 import org.osgi.framework.Bundle;
@@ -57,6 +50,13 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
+import org.papoose.core.spi.ArchiveStore;
+import org.papoose.core.spi.BundleStore;
+import org.papoose.core.util.AttributeUtils;
+import org.papoose.core.util.I18nUtils;
+import org.papoose.core.util.SecurityUtils;
+import org.papoose.core.util.SerialExecutor;
+import org.papoose.core.util.Util;
 
 
 /**
@@ -203,7 +203,7 @@ public class BundleController implements Bundle
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
         Papoose framework = getFramework();
-        BundleGeneration bundleGeneration = (BundleGeneration) getCurrentGeneration();
+        BundleGeneration bundleGeneration = (BundleGeneration)getCurrentGeneration();
 
         framework.requestStart(bundleGeneration, options);
     }
@@ -218,7 +218,7 @@ public class BundleController implements Bundle
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
         Papoose framework = getFramework();
-        BundleGeneration bundleGeneration = (BundleGeneration) getCurrentGeneration();
+        BundleGeneration bundleGeneration = (BundleGeneration)getCurrentGeneration();
 
         framework.requestStop(bundleGeneration, options);
     }
@@ -309,7 +309,7 @@ public class BundleController implements Bundle
     {
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
-        return new ServiceReference[0];  //To change body of implemented methods use File | Settings | File Templates.
+        return new ServiceReference[0];  //Todo change body of implemented methods use File | Settings | File Templates.
     }
 
     /**
@@ -327,7 +327,6 @@ public class BundleController implements Bundle
      */
     public URL getResource(String name)
     {
-        SecurityManager sm = System.getSecurityManager();
         try
         {
             SecurityUtils.checkAdminPermission(this, AdminPermission.RESOURCE);
@@ -357,11 +356,11 @@ public class BundleController implements Bundle
 
                     if (currentGeneration instanceof BundleGeneration)
                     {
-                        bundleGeneration = (BundleGeneration) currentGeneration;
+                        bundleGeneration = (BundleGeneration)currentGeneration;
                     }
                     else
                     {
-                        bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
+                        bundleGeneration = (BundleGeneration)getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
                     }
 
                     return bundleGeneration.getClassLoader().getResource(name);
@@ -461,16 +460,16 @@ public class BundleController implements Bundle
 
                     if (currentGeneration instanceof BundleGeneration)
                     {
-                        bundleGeneration = (BundleGeneration) currentGeneration;
+                        bundleGeneration = (BundleGeneration)currentGeneration;
                     }
                     else if (currentGeneration instanceof FragmentGeneration)
                     {
-                        FragmentGeneration fragmentGeneration = (FragmentGeneration) currentGeneration;
+                        FragmentGeneration fragmentGeneration = (FragmentGeneration)currentGeneration;
                         bundleGeneration = fragmentGeneration.getHost();
                     }
                     else
                     {
-                        bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
+                        bundleGeneration = (BundleGeneration)getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
                     }
 
                     return bundleGeneration.getClassLoader().loadClass(name);
@@ -528,11 +527,11 @@ public class BundleController implements Bundle
 
                     if (currentGeneration instanceof BundleGeneration)
                     {
-                        bundleGeneration = (BundleGeneration) currentGeneration;
+                        bundleGeneration = (BundleGeneration)currentGeneration;
                     }
                     else
                     {
-                        bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
+                        bundleGeneration = (BundleGeneration)getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
                     }
 
                     return bundleGeneration.getClassLoader().findResources(name);
@@ -666,7 +665,7 @@ public class BundleController implements Bundle
 
                 if (currentGeneration instanceof BundleGeneration)
                 {
-                    BundleGeneration bundleGeneration = (BundleGeneration) currentGeneration;
+                    BundleGeneration bundleGeneration = (BundleGeneration)currentGeneration;
 
                     for (FragmentGeneration fragment : bundleGeneration.getFragments())
                     {
@@ -773,7 +772,7 @@ public class BundleController implements Bundle
     @Override
     public String toString()
     {
-        return "[" + getBundleId() + "] " + getSymbolicName() + " - " + getCurrentGeneration().getVersion() + "/" + getGenerations().size();
+        return "[" + getBundleId() + "]:" + Util.bundleStateToString(getState()) + " " + getSymbolicName() + " - " + getCurrentGeneration().getVersion() + "/" + getGenerations().size();
     }
 
     void addBundleListener(BundleListener bundleListener)
@@ -784,7 +783,7 @@ public class BundleController implements Bundle
             {
                 if (syncBundleListeners == null) syncBundleListeners = new CopyOnWriteArraySet<SynchronousBundleListener>();
 
-                syncBundleListeners.add((SynchronousBundleListener) bundleListener);
+                syncBundleListeners.add((SynchronousBundleListener)bundleListener);
             }
             else
             {
@@ -908,11 +907,6 @@ public class BundleController implements Bundle
             this.filter = filter;
         }
 
-        public Filter getFilter()
-        {
-            return filter;
-        }
-
         public void serviceChanged(ServiceEvent event)
         {
             if (filter.match(event.getServiceReference())) delegate.serviceChanged(event);
@@ -924,7 +918,7 @@ public class BundleController implements Bundle
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            ServiceListenerWithFilter that = (ServiceListenerWithFilter) o;
+            ServiceListenerWithFilter that = (ServiceListenerWithFilter)o;
 
             return delegate == that.delegate;
         }

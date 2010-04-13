@@ -45,6 +45,7 @@ import org.apache.xbean.classloader.ResourceHandle;
 import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.InvalidSyntaxException;
+import static org.papoose.core.util.Assert.assertTrue;
 
 import org.papoose.core.AbstractArchiveStore;
 import org.papoose.core.L18nResourceBundle;
@@ -54,7 +55,6 @@ import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.util.FileUtils;
 import org.papoose.core.util.SecurityUtils;
 import org.papoose.core.util.Util;
-import static org.papoose.core.util.Assert.assertTrue;
 
 
 /**
@@ -510,18 +510,29 @@ class ArchiveFileStore extends AbstractArchiveStore
         }
     }
 
-    private static Attributes loadAndProvideAttributes(File bundleRoot, InputStream inputStream) throws BundleException
+    // todo: what and why are we copying anything here?
+    private static Attributes loadAndProvideAttributes(File generationRoot, InputStream inputStream) throws BundleException
     {
         try
         {
-            File archiveFile = new File(bundleRoot, ARCHIVE_JAR_NAME);
-            OutputStream outputStream = new FileOutputStream(archiveFile);
+            File archiveFile = new File(generationRoot, ARCHIVE_JAR_NAME);
 
-            Util.copy(inputStream, outputStream);
+            if (!archiveFile.exists())
+            {
+                OutputStream outputStream = null;
+                try
+                {
+                    outputStream = new FileOutputStream(archiveFile);
 
-            outputStream.close();
+                    Util.copy(inputStream, outputStream);
+                }
+                finally
+                {
+                    Util.close(outputStream);
+                }
+            }
 
-            File archiveDir = new File(bundleRoot, ARCHIVE_NAME);
+            File archiveDir = new File(generationRoot, ARCHIVE_NAME);
             assertTrue(archiveDir.mkdirs());
 
             JarInputStream jarInputStream = new JarInputStream(new FileInputStream(archiveFile));

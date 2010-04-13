@@ -29,6 +29,7 @@ import org.osgi.framework.BundleException;
 import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.util.ToStringCreator;
+import org.papoose.core.util.Util;
 
 
 /**
@@ -104,13 +105,6 @@ public class BundleGeneration extends Generation
     @Override
     public String toString()
     {
-        ToStringCreator creator = new ToStringCreator(this);
-
-        creator.append("bundleId", getBundleId());
-        creator.append("generation", getGeneration());
-        creator.append("symbolicName", getSymbolicName());
-        creator.append("version", getVersion());
-
-        return creator.toString();
+        return "[" + getBundleId() + "]:" + Util.bundleStateToString(getState()) + " " + getSymbolicName() + " - " + getVersion();
     }
 }

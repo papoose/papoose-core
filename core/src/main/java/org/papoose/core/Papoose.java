@@ -562,20 +562,19 @@ public final class Papoose
 
     private void doStart() throws PapooseException
     {
-
+        this.startManager.setStartLevel(startLevel);
     }
 
     private void doStop() throws PapooseException
     {
-        BundleManager manager = getBundleManager();
-
+        this.startManager.setStartLevel(0);
         serviceRegistry.stop();
     }
 
     @Override
     public String toString()
     {
-        return "[" + frameworkId + "] " + frameworkName + " - " + state;
+        return "[" + frameworkId + "]:" + state + " " + frameworkName;
     }
 
     static Papoose getFramework(Integer frameworkId)
@@ -718,7 +717,7 @@ public final class Papoose
 
                 Util.callStart(pojo, this);
 
-                if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Starting " + pojo);
+                if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Started " + pojo);
 
                 bootServices.add(pojo);
             }
@@ -870,8 +869,6 @@ public final class Papoose
 
         public void init() throws PapooseException
         {
-            doInitialize();
-
             state = new Starting();
         }
 
