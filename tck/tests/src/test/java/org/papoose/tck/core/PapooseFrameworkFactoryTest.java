@@ -52,8 +52,8 @@ public class PapooseFrameworkFactoryTest
         Map<String, String> configuration = new HashMap<String, String>();
         configuration.put(Constants.FRAMEWORK_STORAGE, "target/papoose");
 
-        FrameworkFactory factory = new PapooseFrameworkFactory();
-        final Framework framework = factory.newFramework(configuration);
+        final FrameworkFactory factory = new PapooseFrameworkFactory();
+        Framework framework = factory.newFramework(configuration);
 
         framework.init();
 
@@ -77,6 +77,7 @@ public class PapooseFrameworkFactoryTest
 
         framework.stop();
 
+        framework = factory.newFramework(configuration);
         framework.init();
 
         systemBundle = framework.getBundleContext().getBundle(0);

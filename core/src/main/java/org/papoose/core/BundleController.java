@@ -50,6 +50,7 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
+
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.spi.BundleStore;
 import org.papoose.core.util.AttributeUtils;
@@ -203,7 +204,7 @@ public class BundleController implements Bundle
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
         Papoose framework = getFramework();
-        BundleGeneration bundleGeneration = (BundleGeneration)getCurrentGeneration();
+        BundleGeneration bundleGeneration = (BundleGeneration) getCurrentGeneration();
 
         framework.requestStart(bundleGeneration, options);
     }
@@ -218,7 +219,7 @@ public class BundleController implements Bundle
         if (getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
         Papoose framework = getFramework();
-        BundleGeneration bundleGeneration = (BundleGeneration)getCurrentGeneration();
+        BundleGeneration bundleGeneration = (BundleGeneration) getCurrentGeneration();
 
         framework.requestStop(bundleGeneration, options);
     }
@@ -356,11 +357,11 @@ public class BundleController implements Bundle
 
                     if (currentGeneration instanceof BundleGeneration)
                     {
-                        bundleGeneration = (BundleGeneration)currentGeneration;
+                        bundleGeneration = (BundleGeneration) currentGeneration;
                     }
                     else
                     {
-                        bundleGeneration = (BundleGeneration)getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
+                        bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
                     }
 
                     return bundleGeneration.getClassLoader().getResource(name);
@@ -460,16 +461,16 @@ public class BundleController implements Bundle
 
                     if (currentGeneration instanceof BundleGeneration)
                     {
-                        bundleGeneration = (BundleGeneration)currentGeneration;
+                        bundleGeneration = (BundleGeneration) currentGeneration;
                     }
                     else if (currentGeneration instanceof FragmentGeneration)
                     {
-                        FragmentGeneration fragmentGeneration = (FragmentGeneration)currentGeneration;
+                        FragmentGeneration fragmentGeneration = (FragmentGeneration) currentGeneration;
                         bundleGeneration = fragmentGeneration.getHost();
                     }
                     else
                     {
-                        bundleGeneration = (BundleGeneration)getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
+                        bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
                     }
 
                     return bundleGeneration.getClassLoader().loadClass(name);
@@ -527,11 +528,11 @@ public class BundleController implements Bundle
 
                     if (currentGeneration instanceof BundleGeneration)
                     {
-                        bundleGeneration = (BundleGeneration)currentGeneration;
+                        bundleGeneration = (BundleGeneration) currentGeneration;
                     }
                     else
                     {
-                        bundleGeneration = (BundleGeneration)getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
+                        bundleGeneration = (BundleGeneration) getFramework().getBundleManager().getBundle(0).getCurrentGeneration();
                     }
 
                     return bundleGeneration.getClassLoader().findResources(name);
@@ -665,7 +666,7 @@ public class BundleController implements Bundle
 
                 if (currentGeneration instanceof BundleGeneration)
                 {
-                    BundleGeneration bundleGeneration = (BundleGeneration)currentGeneration;
+                    BundleGeneration bundleGeneration = (BundleGeneration) currentGeneration;
 
                     for (FragmentGeneration fragment : bundleGeneration.getFragments())
                     {
@@ -783,7 +784,7 @@ public class BundleController implements Bundle
             {
                 if (syncBundleListeners == null) syncBundleListeners = new CopyOnWriteArraySet<SynchronousBundleListener>();
 
-                syncBundleListeners.add((SynchronousBundleListener)bundleListener);
+                syncBundleListeners.add((SynchronousBundleListener) bundleListener);
             }
             else
             {
@@ -918,7 +919,7 @@ public class BundleController implements Bundle
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            ServiceListenerWithFilter that = (ServiceListenerWithFilter)o;
+            ServiceListenerWithFilter that = (ServiceListenerWithFilter) o;
 
             return delegate == that.delegate;
         }

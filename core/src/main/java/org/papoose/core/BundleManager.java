@@ -607,11 +607,14 @@ public class BundleManager
         {
             try
             {
-                long bundleId = bundleCounter.incrementAndGet();
+                while (bundleCounter.get() < bundleStore.getBundleId()) bundleCounter.incrementAndGet();
+
+                long bundleId = bundleStore.getBundleId();
 
                 String location = bundleStore.getLocation();
                 ArchiveStore archiveStore = store.loadArchiveStore(framework, bundleId);
 
+                // todo: this always seemed kinda a wacky way to do this
                 archiveStore.assignNativeCodeDescriptions(resolveNativeCodeDependencies(archiveStore.getBundleNativeCodeList()));
 
                 confirmRequiredExecutionEnvironment(archiveStore.getBundleRequiredExecutionEnvironment());
@@ -631,6 +634,12 @@ public class BundleManager
                 locations.put(location, bundle);
                 installedbundles.put(bundleId, bundle);
                 bundles.put(bundleId, bundle);
+
+                bundleStore.markModified();
+
+                generation.setState(Bundle.INSTALLED);
+
+                fireBundleEvent(new BundleEvent(BundleEvent.INSTALLED, bundle));
             }
             catch (BundleException e)
             {

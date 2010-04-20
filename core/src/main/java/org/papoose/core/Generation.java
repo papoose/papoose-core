@@ -21,6 +21,7 @@ import java.security.ProtectionDomain;
 import java.util.Enumeration;
 import java.util.SortedSet;
 
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 
@@ -35,7 +36,7 @@ public abstract class Generation
 {
     private final BundleController bundleController;
     private final ArchiveStore archiveStore;
-    private volatile int state;
+    private volatile int state = Bundle.INSTALLED;
     private volatile ProtectionDomain protectionDomain;
 
     protected Generation(BundleController bundleController, ArchiveStore archiveStore)

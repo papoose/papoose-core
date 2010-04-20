@@ -164,6 +164,12 @@ class BundleFileStore implements BundleStore
         }
     }
 
+    @Override
+    public String toString()
+    {
+        return "[" + bundleId + ", " + location + ", " + bundleRoot + "]";
+    }
+
     private void save() throws IOException
     {
         Properties properties = new Properties();
