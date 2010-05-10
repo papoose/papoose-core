@@ -79,7 +79,6 @@ public class BundleManager
     private final Map<String, BundleController> locations = new HashMap<String, BundleController>();
     private final Map<NameVersionKey, BundleController> nameVersions = new HashMap<NameVersionKey, BundleController>();
     private final Map<Long, BundleController> installedbundles = new HashMap<Long, BundleController>();  // todo: handy but not sure it's consistently maintained
-    private final Map<Long, BundleController> bundles = new HashMap<Long, BundleController>();
     private final Papoose framework;
     private final Store store;
     private volatile ProtectionDomainFactory protectionDomainFactory;
@@ -110,9 +109,9 @@ public class BundleManager
 
     public InputStream getInputStreamForCodesource(long bundleId, int generationId) throws IOException
     {
-        if (!bundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
+        if (!installedbundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
 
-        BundleController bundle = bundles.get(bundleId);
+        BundleController bundle = installedbundles.get(bundleId);
         Generation generation = (bundle != null ? bundle.getGenerations().get(generationId) : null);
         if (generation != null) return generation.getArchiveStore().getInputStreamForCodeSource();
 
@@ -121,9 +120,9 @@ public class BundleManager
 
     public InputStream getInputStreamForEntry(long bundleId, int generationId, String path) throws IOException
     {
-        if (!bundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
+        if (!installedbundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
 
-        BundleController bundle = bundles.get(bundleId);
+        BundleController bundle = installedbundles.get(bundleId);
         Generation generation = (bundle != null ? bundle.getGenerations().get(generationId) : null);
         if (generation != null) return generation.getArchiveStore().getInputStreamForEntry(path);
 
@@ -132,9 +131,9 @@ public class BundleManager
 
     public InputStream getInputStreamForResource(long bundleId, int generationId, int location, String path) throws IOException
     {
-        if (!bundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
+        if (!installedbundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
 
-        BundleController bundle = bundles.get(bundleId);
+        BundleController bundle = installedbundles.get(bundleId);
         Generation generation = (bundle != null ? bundle.getGenerations().get(generationId) : null);
         if (generation != null) return generation.getArchiveStore().getInputStreamForResource(location, path);
 
@@ -172,7 +171,6 @@ public class BundleManager
             nameVersions.put(key, systemBundle);
             locations.put(Constants.SYSTEM_BUNDLE_LOCATION, systemBundle);
             installedbundles.put(systemBundleId, systemBundle);
-            bundles.put(systemBundleId, systemBundle);
 
             framework.getResolver().added(systemBundle.getCurrentGeneration());
 
@@ -312,7 +310,6 @@ public class BundleManager
             nameVersions.put(key, bundle);
             locations.put(location, bundle);
             installedbundles.put(bundleId, bundle);
-            bundles.put(bundleId, bundle);
 
             framework.getResolver().added(generation);
 
@@ -635,7 +632,6 @@ public class BundleManager
                 nameVersions.put(key, bundle);
                 locations.put(location, bundle);
                 installedbundles.put(bundleId, bundle);
-                bundles.put(bundleId, bundle);
 
                 bundleStore.markModified();
 
@@ -655,7 +651,6 @@ public class BundleManager
         nameVersions.clear();
         locations.clear();
         installedbundles.clear();
-        bundles.clear();
 
         bundleCounter.set(0);
     }
@@ -680,7 +675,7 @@ public class BundleManager
 
                 if (bundleId == 0) continue;
 
-                BundleController bundle = bundles.get(bundleId);
+                BundleController bundle = installedbundles.get(bundleId);
                 Generation generation = bundle.getCurrentGeneration();
 
                 if (generation instanceof BundleGeneration)
@@ -999,7 +994,7 @@ public class BundleManager
                 }
 
                 bundleId = null;
-                for (Map.Entry<Long, BundleController> entry : bundles.entrySet())
+                for (Map.Entry<Long, BundleController> entry : installedbundles.entrySet())
                 {
                     if (entry.getValue() == bundleController)
                     {
@@ -1009,7 +1004,7 @@ public class BundleManager
                 }
                 if (bundleId != null)
                 {
-                    bundles.remove(bundleId);
+                    installedbundles.remove(bundleId);
                 }
                 else
                 {
