@@ -30,7 +30,7 @@
                                 <artifactItem>
                                     <groupId>org.papoose.test-support</groupId>
                                     <artifactId>test-support-bundle</artifactId>
-                                    <version>${papooseVersion}</version>
+                                    <version>${pom.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>target</outputDirectory>
