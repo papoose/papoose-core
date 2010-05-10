@@ -21,17 +21,17 @@ import org.osgi.framework.Constants;
 /**
  * @version $Revision$ $Date$
  */
-public enum FragmentAttachment
+public enum FragmentAttachmentDirective
 {
     ALWAYS,
     NEVER,
     RESOLVE_TIME;
 
-    public static FragmentAttachment parseFragmentDescription(String string)
+    public static FragmentAttachmentDirective parseFragmentDescription(String string)
     {
         if (Constants.FRAGMENT_ATTACHMENT_ALWAYS.equals(string)) return ALWAYS;
         if (Constants.FRAGMENT_ATTACHMENT_NEVER.equals(string)) return NEVER;
         if (Constants.FRAGMENT_ATTACHMENT_RESOLVETIME.equals(string)) return RESOLVE_TIME;
-        throw new IllegalArgumentException("No enum const FragmentAttachment." + string);
+        throw new IllegalArgumentException("No enum const FragmentAttachmentDirective." + string);
     }
 }

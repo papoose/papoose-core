@@ -34,7 +34,7 @@ import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Version;
 
-import org.papoose.core.FragmentAttachment;
+import org.papoose.core.FragmentAttachmentDirective;
 import org.papoose.core.L18nResourceBundle;
 import org.papoose.core.descriptions.DynamicDescription;
 import org.papoose.core.descriptions.ExportDescription;
@@ -238,11 +238,6 @@ public class MockArchiveStore implements ArchiveStore
     public boolean isSingleton()
     {
         return false;  //Todo: change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public FragmentAttachment getFragmentAttachment()
-    {
-        return null;  //Todo: change body of implemented methods use File | Settings | File Templates.
     }
 
     public void assignNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException

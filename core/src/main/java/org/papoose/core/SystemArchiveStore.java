@@ -244,11 +244,6 @@ class SystemArchiveStore implements ArchiveStore
         return false;  //Todo: change body of implemented methods use File | Settings | File Templates.
     }
 
-    public FragmentAttachment getFragmentAttachment()
-    {
-        return null;  //Todo: change body of implemented methods use File | Settings | File Templates.
-    }
-
     public void assignNativeCodeDescriptions(SortedSet<NativeCodeDescription> nativeCodeDescriptions) throws BundleException
     {
         //To change body of implemented methods use File | Settings | File Templates.

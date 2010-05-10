@@ -367,10 +367,11 @@ public class BundleManager
     /**
      * Make sure that at least one native code description is valid.
      *
-     * @param bundleNativeCodeList the raw list of narive code descriptions to be processed
+     * @param bundleNativeCodeList the raw list of native code descriptions to be processed
      * @return a list of resolvable native code descriptions
      * @throws BundleException if the method is unable to find at least one valid native code description
      */
+    // todo: util candidate
     private SortedSet<NativeCodeDescription> resolveNativeCodeDependencies(List<NativeCodeDescription> bundleNativeCodeList) throws BundleException
     {
         SortedSet<NativeCodeDescription> set = new TreeSet<NativeCodeDescription>();
@@ -422,6 +423,7 @@ public class BundleManager
         return set;
     }
 
+    // todo: util candidate
     protected void confirmRequiredExecutionEnvironment(List<String> bundleExecutionEnvironment) throws BundleException
     {
         if (!bundleExecutionEnvironment.isEmpty())
@@ -696,6 +698,7 @@ public class BundleManager
         }
     }
 
+    // todo: util candidate
     public void beginStart(BundleGeneration bundleGeneration, int options) throws BundleException
     {
         try
@@ -750,6 +753,7 @@ public class BundleManager
         }
     }
 
+    // todo: util candidate
     public void performActivation(BundleGeneration bundleGeneration) throws BundleException
     {
         try
@@ -835,6 +839,7 @@ public class BundleManager
         }
     }
 
+    // todo: util candidate
     public void beginStop(BundleGeneration bundleGeneration, int options) throws BundleException
     {
         try
@@ -885,6 +890,7 @@ public class BundleManager
         }
     }
 
+    // todo: util candidate
     public void performDeactivation(final BundleController bundleController) throws Exception
     {
         final BundleActivator bundleActivator = bundleController.getBundleActivator();
@@ -1166,6 +1172,7 @@ public class BundleManager
         readWriteLock.writeLock().unlock();
     }
 
+    // todo: util candidate
     private Generation allocateGeneration(BundleController bundle, ArchiveStore archiveStore) throws BundleException
     {
         if (archiveStore.getFragmentDescription() != null)
@@ -1241,7 +1248,6 @@ public class BundleManager
             //noinspection SimplifiableIfStatement
             if (!symbolicName.equals(that.symbolicName)) return false;
             return version.equals(that.version);
-
         }
 
         @Override

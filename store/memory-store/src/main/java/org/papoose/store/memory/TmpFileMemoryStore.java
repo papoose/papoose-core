@@ -63,7 +63,7 @@ public class TmpFileMemoryStore implements Store
 
         if (!root.exists())
         {
-            if (!root.mkdirs()) throw new FatalError("Unable to create non-existant root: " + root);
+            if (!root.mkdirs()) throw new FatalError("Unable to create non-existent root: " + root);
             save();
         }
         else

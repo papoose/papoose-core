@@ -65,7 +65,7 @@ public abstract class AbstractArchiveStore implements ArchiveStore
     private final List<String> bundleRequiredExecutionEnvironment;
     private final String bundleSymbolicName;
     private final boolean singleton;
-    private final FragmentAttachment fragmentAttachment;
+    private final FragmentAttachmentDirective fragmentAttachmentDirective;
     private final URL bundleUpdateLocation;
     private final Version bundleVersion;
     private final List<DynamicDescription> bundleDynamicImportList;
@@ -99,7 +99,7 @@ public abstract class AbstractArchiveStore implements ArchiveStore
             else if (Constants.FRAGMENT_ATTACHMENT_DIRECTIVE.equals(assignment[0])) fragmentAttachmentString = assignment[1];
         }
         this.singleton = Boolean.parseBoolean(singletonString);
-        this.fragmentAttachment = FragmentAttachment.parseFragmentDescription(fragmentAttachmentString);
+        this.fragmentAttachmentDirective = FragmentAttachmentDirective.parseFragmentDescription(fragmentAttachmentString);
 
         this.bundleActivatorClass = this.attributes.getValue(Constants.BUNDLE_ACTIVATOR);
         this.bundleClassPath = obtainBundleClasspath(this.attributes);
@@ -161,9 +161,9 @@ public abstract class AbstractArchiveStore implements ArchiveStore
         return singleton;
     }
 
-    public FragmentAttachment getFragmentAttachment()
+    public FragmentAttachmentDirective getFragmentAttachmentDirective()
     {
-        return fragmentAttachment;
+        return fragmentAttachmentDirective;
     }
 
     public URL getBundleUpdateLocation()

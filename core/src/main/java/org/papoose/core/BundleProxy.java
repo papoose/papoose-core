@@ -47,7 +47,7 @@ public class BundleProxy implements Bundle
     private Bundle getBundle()
     {
         Bundle pinnedBundle = reference.get();
-        if (pinnedBundle == null) throw new IllegalStateException("");
+        if (pinnedBundle == null) throw new IllegalStateException("Bundle has been removed");
         return pinnedBundle;
     }
 
