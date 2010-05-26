@@ -63,22 +63,17 @@ public class BundleClassLoader extends NamedClassLoader implements BundleReferen
     private final Set<ArchiveStore> archiveStores;
     private volatile boolean lazyActivation;
 
-    BundleClassLoader(String name, ClassLoader parent,
-                      Papoose framework,
-                      BundleGeneration bundleGeneration,
-                      Set<Wire> wires,
-                      List<Wire> requiredBundles,
-                      String[] bootDelegates,
-                      String[] exportedPackages,
-                      List<DynamicDescription> dynamicImports,
-                      List<ResourceLocation> boundClassPath,
-                      Set<ArchiveStore> archiveStores) throws BundleException
+    public BundleClassLoader(Papoose framework,
+                             BundleGeneration bundleGeneration,
+                             Set<Wire> wires,
+                             List<Wire> requiredBundles,
+                             String[] exportedPackages,
+                             List<DynamicDescription> dynamicImports,
+                             List<ResourceLocation> boundClassPath,
+                             Set<ArchiveStore> archiveStores) throws BundleException
     {
-        super(name, EMPTY_URLS, parent);
+        super(bundleGeneration.getBundleController().getLocation(), EMPTY_URLS, framework.getClassLoader());
 
-        assert name != null;
-        assert framework != null;
-        assert bundleGeneration != null;
         assert wires != null;
         assert requiredBundles != null;
         assert boundClassPath != null;

@@ -220,7 +220,7 @@ public final class Papoose
         return acc;
     }
 
-    ClassLoader getClassLoader()
+    public ClassLoader getClassLoader()
     {
         return classLoader;
     }

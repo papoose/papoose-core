@@ -48,8 +48,8 @@ public class DefaultApproxAlgorithm implements ApproxAlgorithm
      * As subclasses of Number must provide methods to convert the represented numeric value
      * to byte, double, float, int, long, and short. (see API)
      *
-     * @param obj1
-     * @param obj2
+     * @param obj1 first object to be tested
+     * @param obj2 second object to be tested
      * @return true if they are approximate
      */
     public boolean test(Object obj1, Object obj2)
@@ -86,8 +86,8 @@ public class DefaultApproxAlgorithm implements ApproxAlgorithm
         {
             int value1 = (Integer) obj1;
             int value2 = (Integer) obj2;
-            return (value2 >= (value1 - ((Math.abs(value1) * (int) APPROX_CRITERIA) / (int) 100))
-                    && value2 <= (value1 + ((Math.abs(value1) * (int) APPROX_CRITERIA) / (int) 100)));
+            return (value2 >= (value1 - ((Math.abs(value1) * APPROX_CRITERIA) / 100))
+                    && value2 <= (value1 + ((Math.abs(value1) * APPROX_CRITERIA) / 100)));
         }
         else if (obj1 instanceof Long)
         {

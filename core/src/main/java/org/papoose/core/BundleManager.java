@@ -21,13 +21,12 @@ import java.io.InputStream;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -42,10 +41,8 @@ import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.BundleListener;
 import org.osgi.framework.Constants;
-import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
-import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServicePermission;
@@ -54,17 +51,14 @@ import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
 
 import org.papoose.core.descriptions.ExportDescription;
-import org.papoose.core.descriptions.Extension;
-import org.papoose.core.descriptions.FragmentDescription;
 import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.LazyActivationDescription;
-import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.spi.ArchiveStore;
-import org.papoose.core.spi.BootClasspathManager;
 import org.papoose.core.spi.BundleStore;
 import org.papoose.core.spi.ProtectionDomainFactory;
 import org.papoose.core.spi.Solution;
 import org.papoose.core.spi.Store;
+import org.papoose.core.util.BundleUtils;
 import org.papoose.core.util.SecurityUtils;
 
 
@@ -77,8 +71,8 @@ public class BundleManager
     private final Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     private final Map<String, BundleController> locations = new HashMap<String, BundleController>();
-    private final Map<NameVersionKey, BundleController> nameVersions = new HashMap<NameVersionKey, BundleController>();
-    private final Map<Long, BundleController> installedbundles = new HashMap<Long, BundleController>();  // todo: handy but not sure it's consistently maintained
+    private final Map<NameVersionKey, Generation> nameVersions = new HashMap<NameVersionKey, Generation>();
+    private final Map<Long, BundleController> installedBundles = Collections.synchronizedMap(new HashMap<Long, BundleController>());  // todo: handy but not sure it's consistently maintained
     private final Papoose framework;
     private final Store store;
     private volatile ProtectionDomainFactory protectionDomainFactory;
@@ -109,9 +103,28 @@ public class BundleManager
 
     public InputStream getInputStreamForCodesource(long bundleId, int generationId) throws IOException
     {
-        if (!installedbundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
+        try
+        {
+            readLock();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            throw new IOException("Request for stream interrupted", ie);
+        }
 
-        BundleController bundle = installedbundles.get(bundleId);
+        BundleController bundle;
+        try
+        {
+            if (!installedBundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
+
+            bundle = installedBundles.get(bundleId);
+        }
+        finally
+        {
+            readUnlock();
+        }
+
         Generation generation = (bundle != null ? bundle.getGenerations().get(generationId) : null);
         if (generation != null) return generation.getArchiveStore().getInputStreamForCodeSource();
 
@@ -120,9 +133,28 @@ public class BundleManager
 
     public InputStream getInputStreamForEntry(long bundleId, int generationId, String path) throws IOException
     {
-        if (!installedbundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
+        try
+        {
+            readLock();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            throw new IOException("Request for stream interrupted", ie);
+        }
 
-        BundleController bundle = installedbundles.get(bundleId);
+        BundleController bundle;
+        try
+        {
+            if (!installedBundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
+
+            bundle = installedBundles.get(bundleId);
+        }
+        finally
+        {
+            readUnlock();
+        }
+
         Generation generation = (bundle != null ? bundle.getGenerations().get(generationId) : null);
         if (generation != null) return generation.getArchiveStore().getInputStreamForEntry(path);
 
@@ -131,9 +163,28 @@ public class BundleManager
 
     public InputStream getInputStreamForResource(long bundleId, int generationId, int location, String path) throws IOException
     {
-        if (!installedbundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
+        try
+        {
+            readLock();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            throw new IOException("Request for stream interrupted", ie);
+        }
 
-        BundleController bundle = installedbundles.get(bundleId);
+        BundleController bundle;
+        try
+        {
+            if (!installedBundles.containsKey(bundleId)) throw new IOException("Unable to find bundle " + bundleId);
+
+            bundle = installedBundles.get(bundleId);
+        }
+        finally
+        {
+            readUnlock();
+        }
+
         Generation generation = (bundle != null ? bundle.getGenerations().get(generationId) : null);
         if (generation != null) return generation.getArchiveStore().getInputStreamForResource(location, path);
 
@@ -142,12 +193,12 @@ public class BundleManager
 
     public BundleController getBundle(long bundleId)
     {
-        return installedbundles.get(bundleId);
+        return installedBundles.get(bundleId);
     }
 
     public BundleController[] getBundles()
     {
-        Collection<BundleController> bundles = installedbundles.values();
+        Collection<BundleController> bundles = installedBundles.values();
         return bundles.toArray(new BundleController[bundles.size()]);
     }
 
@@ -155,289 +206,174 @@ public class BundleManager
     {
         LOGGER.entering(CLASS_NAME, "installSystemBundle");
 
-        if (locations.containsKey(Constants.SYSTEM_BUNDLE_LOCATION)) throw new BundleException("System bundle already installed");
-
-        final long systemBundleId = 0;
         try
         {
-            BundleStore bundleStore = store.obtainSystemBundleStore();
-
-            BundleController systemBundle = new SystemBundleController(framework, bundleStore, version);
-
-            NameVersionKey key = new NameVersionKey(systemBundle.getSymbolicName(), version);
-
-            if (nameVersions.containsKey(key)) throw new BundleException("Bundle already registered with name " + key.getSymbolicName() + " and version " + key.getVersion());
-
-            nameVersions.put(key, systemBundle);
-            locations.put(Constants.SYSTEM_BUNDLE_LOCATION, systemBundle);
-            installedbundles.put(systemBundleId, systemBundle);
-
-            framework.getResolver().added(systemBundle.getCurrentGeneration());
-
-            insertSystemClassLoader((BundleGeneration) systemBundle.getCurrentGeneration());
-
-            bundleStore.markModified();
-
-            LOGGER.exiting(CLASS_NAME, "installSystemBundle", systemBundle);
-
-            return systemBundle;
+            writeLock();
         }
-        catch (BundleException be)
+        catch (InterruptedException ie)
         {
-            store.removeBundleStore(systemBundleId);
-            throw be;
-        }
-        catch (Exception e)
-        {
-            store.removeBundleStore(systemBundleId);
-            throw new BundleException("Error occured while loading location " + Constants.SYSTEM_BUNDLE_LOCATION, e);
-        }
-    }
-
-    private void insertSystemClassLoader(BundleGeneration bundle) throws BundleException
-    {
-        ArchiveStore currentStore = bundle.getArchiveStore();
-
-        Set<String> exportedPackages = new HashSet<String>();
-
-        for (ExportDescription desc : currentStore.getExportDescriptions())
-        {
-            exportedPackages.addAll(desc.getPackageNames());
+            Thread.currentThread().interrupt();
+            throw new BundleException("Request for stream interrupted", ie);
         }
 
-        Set<ArchiveStore> archiveStores = new HashSet<ArchiveStore>();
-
-        archiveStores.add(currentStore);
-        for (FragmentGeneration fragment : bundle.getFragments()) archiveStores.add(fragment.getArchiveStore());
-
-        List<ResourceLocation> resourceLocations = new ArrayList<ResourceLocation>();
-
-        for (String element : currentStore.getBundleClassPath())
+        try
         {
-            ResourceLocation resourceLocation = currentStore.registerClassPathElement(element);
-            if (resourceLocation == null)
+            if (locations.containsKey(Constants.SYSTEM_BUNDLE_LOCATION)) throw new BundleException("System bundle already installed");
+
+            final long systemBundleId = 0;
+            try
             {
-                for (FragmentGeneration fragment : bundle.getFragments())
+                BundleStore bundleStore = store.obtainSystemBundleStore();
+
+                BundleController systemBundle = new SystemBundleController(framework, bundleStore, version);
+
+                NameVersionKey key = new NameVersionKey(systemBundle.getSymbolicName(), version);
+                if (nameVersions.containsKey(key)) throw new BundleException("Bundle already registered with name " + key.getSymbolicName() + " and version " + key.getVersion());
+
+                BundleUtils.insertSystemClassLoader(framework, (BundleGeneration) systemBundle.getCurrentGeneration());
+
+                nameVersions.put(key, systemBundle.getCurrentGeneration());
+                locations.put(Constants.SYSTEM_BUNDLE_LOCATION, systemBundle);
+                installedBundles.put(systemBundleId, systemBundle);
+
+                framework.getResolver().added(systemBundle.getCurrentGeneration());
+
+                bundleStore.markModified();
+
+                LOGGER.exiting(CLASS_NAME, "installSystemBundle", systemBundle);
+
+                return systemBundle;
+            }
+            catch (BundleException be)
+            {
+                try
                 {
-                    resourceLocation = fragment.getArchiveStore().registerClassPathElement(element);
-
-                    if (resourceLocation != null) break;
+                    store.removeBundleStore(systemBundleId);
                 }
-            }
-            if (resourceLocation != null) resourceLocations.add(resourceLocation);
-        }
-
-        for (FragmentGeneration fragment : bundle.getFragments())
-        {
-            ArchiveStore archiveStore = fragment.getArchiveStore();
-
-            for (String element : archiveStore.getBundleClassPath())
-            {
-                ResourceLocation resourceLocation = archiveStore.registerClassPathElement(element);
-                if (resourceLocation != null) resourceLocations.add(resourceLocation);
-            }
-        }
-
-        /**
-         * Empty for system bundle
-         */
-        List<Wire> requiredBundles = new ArrayList<Wire>();
-        Set<Wire> wires = new HashSet<Wire>();
-
-        BundleClassLoader classLoader = new BundleClassLoader(bundle.getBundleController().getLocation(),
-                                                              framework.getClassLoader(),
-                                                              framework,
-                                                              bundle,
-                                                              wires,
-                                                              requiredBundles,
-                                                              framework.getBootDelegates(),
-                                                              exportedPackages.toArray(new String[exportedPackages.size()]),
-                                                              currentStore.getDynamicDescriptions(),
-                                                              resourceLocations,
-                                                              archiveStores)
-        {
-            @Override
-            protected Class<?> delegateLoadClass(String className) throws ClassNotFoundException
-            {
-                String packageName = className.substring(0, Math.max(0, className.lastIndexOf('.')));
-
-                for (String exportedPackage : getExportedPackages())
+                catch (BundleException e)
                 {
-                    if (exportedPackage.equals(packageName)) return getParent().loadClass(className);
+                    throw new FatalError("Unable to remove bundle at location " + Constants.SYSTEM_BUNDLE_LOCATION, e);
                 }
-
-                throw new ClassNotFoundException();
+                throw be;
             }
-        };
-
-        bundle.setClassLoader(classLoader);
-
-        bundle.setState(Bundle.RESOLVED);
+            catch (Exception e)
+            {
+                try
+                {
+                    store.removeBundleStore(systemBundleId);
+                }
+                catch (BundleException be)
+                {
+                    throw new FatalError("Unable to remove bundle at location " + Constants.SYSTEM_BUNDLE_LOCATION, be);
+                }
+                throw new BundleException("Error occurred while loading location " + Constants.SYSTEM_BUNDLE_LOCATION, e);
+            }
+        }
+        finally
+        {
+            writeUnlock();
+        }
     }
 
     public Bundle installBundle(String location, InputStream inputStream) throws BundleException
     {
         LOGGER.entering(CLASS_NAME, "installBundle", new Object[]{ location, inputStream });
 
-        if (locations.containsKey(location)) return locations.get(location);
-
-        long bundleId = bundleCounter.incrementAndGet();
+        try
+        {
+            writeLock();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            throw new BundleException("Request for stream interrupted", ie);
+        }
 
         try
         {
-            BundleStore bundleStore = store.allocateBundleStore(bundleId, location);
+            if (locations.containsKey(location)) return locations.get(location);
 
-            ArchiveStore archiveStore = store.allocateArchiveStore(framework, bundleId, inputStream);
+            long bundleId = bundleCounter.incrementAndGet();
 
-            if (!archiveStore.getBundleNativeCodeList().isEmpty()) archiveStore.assignNativeCodeDescriptions(resolveNativeCodeDependencies(archiveStore.getBundleNativeCodeList()));
-
-            confirmRequiredExecutionEnvironment(archiveStore.getBundleRequiredExecutionEnvironment());
-
-            BundleController bundle = new BundleController(framework, bundleStore);
-
-            Generation generation = allocateGeneration(bundle, archiveStore);
-
-            bundle.getGenerations().put(archiveStore.getGeneration(), generation);
-            bundle.setCurrentGeneration(generation);
-
-            NameVersionKey key = new NameVersionKey(archiveStore.getBundleSymbolicName(), archiveStore.getBundleVersion());
-
-            if (nameVersions.containsKey(key)) throw new BundleException("Bundle already registered with name " + key.getSymbolicName() + " and version " + key.getVersion());
-
-            SecurityUtils.checkAdminPermission(bundle, AdminPermission.LIFECYCLE);
-            if (generation instanceof ExtensionGeneration) SecurityUtils.checkAdminPermission(bundle, AdminPermission.EXTENSIONLIFECYCLE);
-
-            nameVersions.put(key, bundle);
-            locations.put(location, bundle);
-            installedbundles.put(bundleId, bundle);
-
-            framework.getResolver().added(generation);
-
-            bundleStore.markModified();
-
-            generation.setState(Bundle.INSTALLED);
-
-            fireBundleEvent(new BundleEvent(BundleEvent.INSTALLED, bundle));
-
-            LOGGER.exiting(CLASS_NAME, "installBundle", bundle);
-
-            return bundle;
-        }
-        catch (BundleException be)
-        {
             try
             {
-                store.removeBundleStore(bundleId);
-            }
-            catch (BundleException e)
-            {
-                throw new FatalError("Unable to remove bundle at location " + location, e);
-            }
-            throw be;
-        }
-        catch (SecurityException se)
-        {
-            try
-            {
-                store.removeBundleStore(bundleId);
+                BundleStore bundleStore = store.allocateBundleStore(bundleId, location);
+
+                ArchiveStore archiveStore = store.allocateArchiveStore(framework, bundleId, inputStream);
+
+                NameVersionKey key = new NameVersionKey(archiveStore.getBundleSymbolicName(), archiveStore.getBundleVersion());
+                if (nameVersions.containsKey(key)) throw new BundleException("Bundle already registered with name " + key.getSymbolicName() + " and version " + key.getVersion());
+
+                BundleUtils.processNativeCodeDescriptions(framework, archiveStore);
+
+                BundleUtils.confirmRequiredExecutionEnvironment(framework, archiveStore.getBundleRequiredExecutionEnvironment());
+
+                BundleController bundle = new BundleController(framework, bundleStore);
+
+                Generation generation = BundleUtils.allocateGeneration(framework, bundle, archiveStore);
+
+                bundle.getGenerations().put(archiveStore.getGeneration(), generation);
+                bundle.setCurrentGeneration(generation);
+
+                SecurityUtils.checkAdminPermission(bundle, AdminPermission.LIFECYCLE);
+                if (generation instanceof ExtensionGeneration) SecurityUtils.checkAdminPermission(bundle, AdminPermission.EXTENSIONLIFECYCLE);
+
+                nameVersions.put(key, generation);
+                locations.put(location, bundle);
+                installedBundles.put(bundleId, bundle);
+
+                framework.getResolver().added(generation);
+
+                bundleStore.markModified();
+
+                generation.setState(Bundle.INSTALLED);
+
+                fireBundleEvent(new BundleEvent(BundleEvent.INSTALLED, bundle));
+
+                LOGGER.exiting(CLASS_NAME, "installBundle", bundle);
+
+                return bundle;
             }
             catch (BundleException be)
             {
-                throw new FatalError("Unable to remove bundle at location " + location, be);
-            }
-            throw se;
-        }
-        catch (Exception e)
-        {
-            try
-            {
-                store.removeBundleStore(bundleId);
-            }
-            catch (BundleException be)
-            {
-                throw new FatalError("Unable to remove bundle at location " + location, be);
-            }
-            throw new BundleException("Error occured while loading location " + location, e);
-        }
-    }
-
-    /**
-     * Make sure that at least one native code description is valid.
-     *
-     * @param bundleNativeCodeList the raw list of native code descriptions to be processed
-     * @return a list of resolvable native code descriptions
-     * @throws BundleException if the method is unable to find at least one valid native code description
-     */
-    // todo: util candidate
-    private SortedSet<NativeCodeDescription> resolveNativeCodeDependencies(List<NativeCodeDescription> bundleNativeCodeList) throws BundleException
-    {
-        SortedSet<NativeCodeDescription> set = new TreeSet<NativeCodeDescription>();
-
-        if (!bundleNativeCodeList.isEmpty())
-        {
-            VersionRange osVersionRange = VersionRange.parseVersionRange((String) framework.getProperty(Constants.FRAMEWORK_OS_VERSION));
-
-            nextDescription:
-            for (NativeCodeDescription description : bundleNativeCodeList)
-            {
-                Map<String, Object> parameters = description.getParameters();
-                for (String key : parameters.keySet())
+                try
                 {
-                    if ("osname".equals(key) && !framework.getProperty(Constants.FRAMEWORK_OS_NAME).equals(parameters.get(key)))
-                    {
-                        continue nextDescription;
-                    }
-                    else if ("processor".equals(key) && !framework.getProperty(Constants.FRAMEWORK_PROCESSOR).equals(parameters.get(key)))
-                    {
-                        continue nextDescription;
-                    }
-                    else if ("osversion".equals(key))
-                    {
-                        if (!osVersionRange.includes(description.getOsVersion())) continue nextDescription;
-                    }
-                    else if ("language".equals(key) && !framework.getProperty(Constants.FRAMEWORK_LANGUAGE).equals(description.getLanguage()))
-                    {
-                        continue nextDescription;
-                    }
-                    else if ("selection-filter".equals(key))
-                    {
-                        try
-                        {
-                            Filter selectionFilter = new DefaultFilter(framework.getParser().parse((String) parameters.get(key)));
-                            if (!selectionFilter.match(framework.getProperties())) continue nextDescription;
-                        }
-                        catch (InvalidSyntaxException ise)
-                        {
-                            throw new BundleException("Invalid selection filter", ise);
-                        }
-                    }
+                    store.removeBundleStore(bundleId);
                 }
-
-                set.add(description);
+                catch (BundleException e)
+                {
+                    throw new FatalError("Unable to remove bundle at location " + location, e);
+                }
+                throw be;
+            }
+            catch (SecurityException se)
+            {
+                try
+                {
+                    store.removeBundleStore(bundleId);
+                }
+                catch (BundleException be)
+                {
+                    throw new FatalError("Unable to remove bundle at location " + location, be);
+                }
+                throw se;
+            }
+            catch (Exception e)
+            {
+                try
+                {
+                    store.removeBundleStore(bundleId);
+                }
+                catch (BundleException be)
+                {
+                    throw new FatalError("Unable to remove bundle at location " + location, be);
+                }
+                throw new BundleException("Error occurred while loading location " + location, e);
             }
         }
-
-        return set;
-    }
-
-    // todo: util candidate
-    protected void confirmRequiredExecutionEnvironment(List<String> bundleExecutionEnvironment) throws BundleException
-    {
-        if (!bundleExecutionEnvironment.isEmpty())
+        finally
         {
-            String string = (String) framework.getProperty(Constants.FRAMEWORK_EXECUTIONENVIRONMENT);
-            if (string == null) throw new BundleException(Constants.FRAMEWORK_EXECUTIONENVIRONMENT + " not set");
-            String[] environments = string.split(",");
-
-            nextRequirement:
-            for (String requirement : bundleExecutionEnvironment)
-            {
-                for (String environment : environments)
-                {
-                    if (requirement.equals(environment)) continue nextRequirement;
-                }
-                throw new BundleException("Missing required execution environment: " + requirement);
-            }
+            writeUnlock();
         }
     }
 
@@ -571,13 +507,10 @@ public class BundleManager
             bundleGeneration.getFragments().add(fragment);
         }
 
-        BundleClassLoader classLoader = new BundleClassLoader(bundleGeneration.getBundleController().getLocation(),  //todo: remove?
-                                                              framework.getClassLoader(),  //todo: remove?
-                                                              framework,
+        BundleClassLoader classLoader = new BundleClassLoader(framework,
                                                               bundleGeneration,
                                                               wires,
                                                               requiredBundles,
-                                                              framework.getBootDelegates(),  //todo: remove?
                                                               exportedPackages.toArray(new String[exportedPackages.size()]),
                                                               currentStore.getDynamicDescriptions(),
                                                               resourceLocations,
@@ -597,9 +530,9 @@ public class BundleManager
         {
             bundleStores = store.loadBundleStores();
         }
-        catch (PapooseException e)
+        catch (PapooseException pe)
         {
-            throw new FatalError("Unable to load bundle stores", e);
+            throw new FatalError("Unable to load bundle stores", pe);
         }
 
         for (BundleStore bundleStore : bundleStores)
@@ -613,14 +546,13 @@ public class BundleManager
                 String location = bundleStore.getLocation();
                 ArchiveStore archiveStore = store.loadArchiveStore(framework, bundleId);
 
-                // todo: this always seemed kinda a wacky way to do this
-                archiveStore.assignNativeCodeDescriptions(resolveNativeCodeDependencies(archiveStore.getBundleNativeCodeList()));
+                BundleUtils.processNativeCodeDescriptions(framework, archiveStore);
 
-                confirmRequiredExecutionEnvironment(archiveStore.getBundleRequiredExecutionEnvironment());
+                BundleUtils.confirmRequiredExecutionEnvironment(framework, archiveStore.getBundleRequiredExecutionEnvironment());
 
                 BundleController bundle = new BundleController(framework, bundleStore);
 
-                Generation generation = allocateGeneration(bundle, archiveStore);
+                Generation generation = BundleUtils.allocateGeneration(framework, bundle, archiveStore);
 
                 bundle.getGenerations().put(archiveStore.getGeneration(), generation);
                 bundle.setCurrentGeneration(generation);
@@ -629,9 +561,9 @@ public class BundleManager
 
                 if (nameVersions.containsKey(key)) throw new BundleException("Bundle already registered with name " + key.getSymbolicName() + " and version " + key.getVersion());
 
-                nameVersions.put(key, bundle);
+                nameVersions.put(key, generation);
                 locations.put(location, bundle);
-                installedbundles.put(bundleId, bundle);
+                installedBundles.put(bundleId, bundle);
 
                 bundleStore.markModified();
 
@@ -639,67 +571,52 @@ public class BundleManager
 
                 fireBundleEvent(new BundleEvent(BundleEvent.INSTALLED, bundle));
             }
-            catch (BundleException e)
+            catch (BundleException be)
             {
-                e.printStackTrace();  //todo: consider this autogenerated code
+                throw new FatalError("Unable to load bundles", be);
             }
         }
     }
 
     public void unloadBundles()
     {
-        nameVersions.clear();
-        locations.clear();
-        installedbundles.clear();
-
-        bundleCounter.set(0);
-    }
-
-    public void startBundles()
-    {
-        List<BundleStore> bundleStores;
         try
         {
-            bundleStores = store.loadBundleStores();
+            writeLock();
         }
-        catch (PapooseException e)
+        catch (InterruptedException ie)
         {
-            throw new FatalError("Unable to load bundle stores", e);
+            Thread.currentThread().interrupt();
         }
 
-        for (BundleStore bundleStore : bundleStores)
+        try
         {
-            try
-            {
-                long bundleId = bundleStore.getBundleId();
+            nameVersions.clear();
+            locations.clear();
+            installedBundles.clear();
 
-                if (bundleId == 0) continue;
-
-                BundleController bundle = installedbundles.get(bundleId);
-                Generation generation = bundle.getCurrentGeneration();
-
-                if (generation instanceof BundleGeneration)
-                {
-                    if (generation.getArchiveStore().getBundleActivatorClass() != null)
-                    {
-                        framework.getStartManager().start((BundleGeneration) generation, 0); // todo: this is probably wrong
-                    }
-                }
-            }
-            catch (BundleException e)
-            {
-                e.printStackTrace();  //todo: consider this autogenerated code
-            }
+            bundleCounter.set(0);
+        }
+        finally
+        {
+            writeUnlock();
         }
     }
 
-    // todo: util candidate
     public void beginStart(BundleGeneration bundleGeneration, int options) throws BundleException
     {
         try
         {
-            if (!bundleGeneration.getStarting().tryLock(10000, TimeUnit.MILLISECONDS)) throw new BundleException("Timeout waiting for bundle to start");
+            if (!bundleGeneration.getLock().writeLock().tryLock(10000, TimeUnit.MILLISECONDS)) throw new BundleException("Timeout waiting for bundle to start");
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            throw new BundleException("Request to start interrupted", ie);
+        }
 
+        try
+        {
             if (bundleGeneration.getState() == Bundle.ACTIVE) return;
 
             BundleController bundleController = bundleGeneration.getBundleController();
@@ -737,23 +654,17 @@ public class BundleManager
 
             performActivation(bundleGeneration);
         }
-        catch (InterruptedException ie)
-        {
-            Thread.currentThread().interrupt();
-            throw new BundleException("Interrupted while waiting to start bundle", ie);
-        }
         finally
         {
-            bundleGeneration.getStarting().unlock();
+            bundleGeneration.getLock().writeLock().unlock();
         }
     }
 
-    // todo: util candidate
     public void performActivation(BundleGeneration bundleGeneration) throws BundleException
     {
         try
         {
-            if (!bundleGeneration.getStarting().tryLock(10000, TimeUnit.MILLISECONDS)) throw new BundleException("Timeout waiting for bundle to start");
+            if (!bundleGeneration.getLock().writeLock().tryLock(10000, TimeUnit.MILLISECONDS)) throw new BundleException("Timeout waiting for bundle to start");
 
             if (bundleGeneration.getState() != Bundle.STARTING) return;
 
@@ -830,16 +741,15 @@ public class BundleManager
         }
         finally
         {
-            bundleGeneration.getStarting().unlock();
+            bundleGeneration.getLock().writeLock().unlock();
         }
     }
 
-    // todo: util candidate
     public void beginStop(BundleGeneration bundleGeneration, int options) throws BundleException
     {
         try
         {
-            if (!bundleGeneration.getStarting().tryLock(10000, TimeUnit.MILLISECONDS)) throw new BundleException("Timeout waiting for bundle to stop");
+            if (!bundleGeneration.getLock().writeLock().tryLock(10000, TimeUnit.MILLISECONDS)) throw new BundleException("Timeout waiting for bundle to stop");
 
             BundleController bundleController = bundleGeneration.getBundleController();
 
@@ -881,11 +791,10 @@ public class BundleManager
         }
         finally
         {
-            bundleGeneration.getStarting().unlock();
+            bundleGeneration.getLock().writeLock().unlock();
         }
     }
 
-    // todo: util candidate
     public void performDeactivation(final BundleController bundleController) throws Exception
     {
         final BundleActivator bundleActivator = bundleController.getBundleActivator();
@@ -912,7 +821,7 @@ public class BundleManager
 
         try
         {
-            if (!bundleGeneration.getStarting().tryLock(10000, TimeUnit.MILLISECONDS)) throw new BundleException("Timeout waiting for bundle to start");
+            if (!bundleGeneration.getLock().writeLock().tryLock(10000, TimeUnit.MILLISECONDS)) throw new BundleException("Timeout waiting for bundle to start");
 
             if (bundleGeneration.getState() == Bundle.ACTIVE)
             {
@@ -968,15 +877,19 @@ public class BundleManager
                     assert false;
                 }
 
+                // todo: not sure this is correct
                 Set<NameVersionKey> keys = new HashSet<NameVersionKey>();
-                for (Map.Entry<NameVersionKey, BundleController> entry : nameVersions.entrySet())
+                for (Generation generation : bundleController.getGenerations().values())
                 {
-                    if (entry.getValue() == bundleController) keys.add(entry.getKey());
+                    for (Map.Entry<NameVersionKey, Generation> entry : nameVersions.entrySet())
+                    {
+                        if (entry.getValue() == generation) keys.add(entry.getKey());
+                    }
                 }
                 for (NameVersionKey key : keys) nameVersions.remove(key);
 
                 Long bundleId = null;
-                for (Map.Entry<Long, BundleController> entry : installedbundles.entrySet())
+                for (Map.Entry<Long, BundleController> entry : installedBundles.entrySet())
                 {
                     if (entry.getValue() == bundleController)
                     {
@@ -986,7 +899,7 @@ public class BundleManager
                 }
                 if (bundleId != null)
                 {
-                    installedbundles.remove(bundleId);
+                    installedBundles.remove(bundleId);
                 }
                 else
                 {
@@ -994,7 +907,7 @@ public class BundleManager
                 }
 
                 bundleId = null;
-                for (Map.Entry<Long, BundleController> entry : installedbundles.entrySet())
+                for (Map.Entry<Long, BundleController> entry : installedBundles.entrySet())
                 {
                     if (entry.getValue() == bundleController)
                     {
@@ -1004,7 +917,7 @@ public class BundleManager
                 }
                 if (bundleId != null)
                 {
-                    installedbundles.remove(bundleId);
+                    installedBundles.remove(bundleId);
                 }
                 else
                 {
@@ -1025,13 +938,13 @@ public class BundleManager
         }
         finally
         {
-            bundleGeneration.getStarting().unlock();
+            bundleGeneration.getLock().writeLock().unlock();
         }
     }
 
     public void fireBundleEvent(final BundleEvent event)
     {
-        Collection<BundleController> bundles = installedbundles.values();
+        Collection<BundleController> bundles = installedBundles.values();
 
         for (BundleController bundle : bundles)
         {
@@ -1083,7 +996,7 @@ public class BundleManager
 
     public void fireFrameworkEvent(final FrameworkEvent event)
     {
-        for (final BundleController bundle : installedbundles.values())
+        for (final BundleController bundle : installedBundles.values())
         {
             Set<FrameworkListener> frameworkListeners = bundle.getFrameworkListeners();
             if (frameworkListeners != null)
@@ -1117,7 +1030,7 @@ public class BundleManager
         ServiceReference reference = event.getServiceReference();
         String[] classes = (String[]) reference.getProperty(Constants.OBJECTCLASS);
 
-        for (BundleController bundle : installedbundles.values())
+        for (BundleController bundle : installedBundles.values())
         {
             for (String clazz : classes)
             {
@@ -1165,43 +1078,6 @@ public class BundleManager
     public void writeUnlock()
     {
         readWriteLock.writeLock().unlock();
-    }
-
-    // todo: util candidate
-    private Generation allocateGeneration(BundleController bundle, ArchiveStore archiveStore) throws BundleException
-    {
-        if (archiveStore.getFragmentDescription() != null)
-        {
-            FragmentDescription description = archiveStore.getFragmentDescription();
-            if (description.getExtension() == null)
-            {
-                return new FragmentGeneration(bundle, archiveStore);
-            }
-            else
-            {
-                if (!archiveStore.getImportDescriptions().isEmpty()) throw new BundleException("Extension bundles cannot import packages");
-                if (!archiveStore.getRequireDescriptions().isEmpty()) throw new BundleException("Extension bundles cannot require other bundles");
-                if (!archiveStore.getBundleNativeCodeList().isEmpty()) throw new BundleException("Extension bundles cannot load native code");
-                if (!archiveStore.getDynamicDescriptions().isEmpty()) throw new BundleException("Extension bundles cannot dynamically import packages");
-                if (archiveStore.getBundleActivatorClass() != null) throw new BundleException("Extension bundles cannot have a bundle activator");
-
-                if (archiveStore.getFragmentDescription().getExtension() == Extension.FRAMEWORK)
-                {
-                    return new FrameworkExtensionGeneration(bundle, archiveStore);
-                }
-                else
-                {
-                    BootClasspathManager manager = (BootClasspathManager) framework.getProperty(BootClasspathManager.BOOT_CLASSPATH_MANAGER);
-                    if (manager == null || !manager.isSupported()) throw new BundleException("Boot classpath extensions not supported in this framework configuration");
-
-                    return new BootClassExtensionGeneration(bundle, archiveStore);
-                }
-            }
-        }
-        else
-        {
-            return new BundleGeneration(bundle, archiveStore);
-        }
     }
 
     /**

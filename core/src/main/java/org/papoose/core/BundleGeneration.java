@@ -21,14 +21,14 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.SortedSet;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 import org.papoose.core.descriptions.NativeCodeDescription;
 import org.papoose.core.spi.ArchiveStore;
-import org.papoose.core.util.ToStringCreator;
 import org.papoose.core.util.Util;
 
 
@@ -40,7 +40,7 @@ public class BundleGeneration extends Generation
     private BundleClassLoader classLoader;
     private final List<FragmentGeneration> fragments = new ArrayList<FragmentGeneration>();
     private final List<BundleGeneration> requiredBundles = new ArrayList<BundleGeneration>();
-    private final ReentrantLock starting = new ReentrantLock(true);
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 
     public BundleGeneration(BundleController bundleController, ArchiveStore archiveStore)
     {
@@ -77,9 +77,9 @@ public class BundleGeneration extends Generation
         return null;  //Todo change body of created methods use File | Settings | File Templates.
     }
 
-    public ReentrantLock getStarting()
+    public ReadWriteLock getLock()
     {
-        return starting;
+        return lock;
     }
 
     public Enumeration<URL> getResources(String name)
