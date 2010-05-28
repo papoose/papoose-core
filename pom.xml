@@ -191,24 +191,9 @@
     </pluginRepositories>
 
     <scm>
-        <connection>scm:svn:http://osgi.svn.sourceforge.net/svnroot/osgi/osgi-R4-spec/trunk</connection>
-        <developerConnection>scm:svn:https://osgi.svn.sourceforge.net/svnroot/osgi/osgi-R4-spec/trunk</developerConnection>
-        <url>https://osgi.svn.sourceforge.net/svnroot/osgi/osgi-R4-spec/trunk</url>
+        <connection>scm:git:git://github.com/maguro/papoose-core.git</connection>
+        <url>scm:git:git://github.com/maguro/papoose-core.git</url>
     </scm>
-
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <aggregate>true</aggregate>
-                    <javadocDirectory>${basedir}/src/main/javadoc</javadocDirectory>
-                    <docfilessubdirs>true</docfilessubdirs>
-                </configuration>
-            </plugin>
-        </plugins>
-    </reporting>
 
     <profiles>
 
