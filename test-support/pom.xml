@@ -14,22 +14,8 @@
 
     <modules>
         <module>optional</module>
-        <module>test-bundle</module>
-        <module>test-jar</module>
         <module>test-util</module>
     </modules>
-
-    <dependencyManagement>
-        <dependencies>
-
-            <dependency>
-                <groupId>org.papoose.test-support</groupId>
-                <artifactId>test-support-jar</artifactId>
-                <version>${pom.version}</version>
-            </dependency>
-
-        </dependencies>
-    </dependencyManagement>
 
 </project>
 

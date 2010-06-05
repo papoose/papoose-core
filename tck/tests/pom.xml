@@ -26,9 +26,8 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>org.papoose.test-support</groupId>
-                                    <artifactId>test-support-bundle</artifactId>
-                                    <version>${pom.version}</version>
+                                    <groupId>org.papoose.test.bundles</groupId>
+                                    <artifactId>test-bundle</artifactId>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>target</outputDirectory>

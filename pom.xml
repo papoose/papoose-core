@@ -139,9 +139,9 @@
             </dependency>
 
             <dependency>
-                <groupId>org.papoose.test-support</groupId>
-                <artifactId>test-support-bundle</artifactId>
-                <version>${pom.version}</version>
+                <groupId>org.papoose.test.bundles</groupId>
+                <artifactId>test-bundle</artifactId>
+                <version>1.0.0</version>
                 <scope>test</scope>
             </dependency>
 
@@ -207,7 +207,6 @@
                 </property>
             </activation>
             <modules>
-                <module>test-support</module>
                 <module>tck</module>
             </modules>
         </profile>
