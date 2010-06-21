@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Export-Package: com.acme
+Built-By: acabrera
+Tool: Bnd-0.0.357
+Bundle-Name: Papoose :: OSGi Compatibility Tests :: Bundles :: No Symb
+ olic Name
+Created-By: Apache Maven Bundle Plugin
+Build-Jdk: 1.6.0_20
+Bundle-Version: 1.0.0.SNAPSHOT
+Bnd-LastModified: 1277049310820
+Bundle-ManifestVersion: 2
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.html
+Bundle-Description: OSGi R4 Test Bundle

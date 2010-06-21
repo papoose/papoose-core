@@ -83,8 +83,8 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 
         this.attributes = new AttributesWrapper(attributes);
 
+        if (!this.attributes.containsKey(Constants.BUNDLE_SYMBOLICNAME)) throw new BundleException("Manifest missing " + Constants.BUNDLE_SYMBOLICNAME);
         String[] tokens = this.attributes.getValue(Constants.BUNDLE_SYMBOLICNAME).split(";");
-
         this.bundleSymbolicName = tokens[0];
 
         String singletonString = "false";

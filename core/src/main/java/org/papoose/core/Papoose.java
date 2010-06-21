@@ -114,7 +114,7 @@ public final class Papoose
     /**
      * Install the store, thread pool and setup a hierarchy of properties.
      * <p/>
-     * The framework instance gets registered and is accessable via its unique
+     * The framework instance gets registered and is accessible via its unique
      * framework id.
      *
      * @param store           the bundle store to use
@@ -128,7 +128,7 @@ public final class Papoose
     /**
      * Install the store, thread pool and setup a hierarchy of properties.
      * <p/>
-     * The framework instance gets registered and is accessable via its unique
+     * The framework instance gets registered and is accessible via its unique
      * framework id.
      *
      * @param store           the bundle store to use
@@ -143,7 +143,7 @@ public final class Papoose
     /**
      * Install the store, thread pool and setup a hierarchy of properties.
      * <p/>
-     * The framework instance gets registered and is accessable via its unique
+     * The framework instance gets registered and is accessible via its unique
      * framework id.
      *
      * @param frameworkName   the name of this framework instance.  It must be
@@ -161,7 +161,7 @@ public final class Papoose
     /**
      * Install the store, thread pool and setup a hierarchy of properties.
      * <p/>
-     * The framework instance gets registered and is accessable via its unique
+     * The framework instance gets registered and is accessible via its unique
      * framework id.
      *
      * @param frameworkName   the name of this framework instance.  It must be

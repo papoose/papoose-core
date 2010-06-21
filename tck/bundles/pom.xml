@@ -7,11 +7,13 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
+    <groupId>org.papoose.core.tck.bundles</groupId>
     <artifactId>tck-bundles</artifactId>
     <packaging>pom</packaging>
     <name>Papoose :: OSGi Compatibility Tests :: Bundles</name>
 
     <modules>
+        <module>no-symbolic-name</module>
         <module>simple</module>
     </modules>
 
