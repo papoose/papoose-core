@@ -47,6 +47,7 @@ class PapooseFramework implements Framework
     private final Object lock = new Object();
     private final Papoose framework;
     private final AtomicReference<SystemBundleController> systemBundle = new AtomicReference<SystemBundleController>();
+    private volatile NonDaemonThread nonDaemon;
 
     PapooseFramework(Papoose framework)
     {
@@ -116,6 +117,11 @@ class PapooseFramework implements Framework
 
         systemBundle.get().start();
 
+        nonDaemon = new NonDaemonThread();
+        Thread t = new Thread(nonDaemon);
+        t.setDaemon(false);
+        t.start();
+
         LOGGER.exiting(CLASS_NAME, "start");
     }
 
@@ -169,7 +175,15 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "stop", options);
 
-        stop();
+        try
+        {
+            stop();
+        }
+        finally
+        {
+            nonDaemon.stop();
+            nonDaemon = null;
+        }
 
         LOGGER.exiting(CLASS_NAME, "stop");
     }
