@@ -532,9 +532,6 @@ class ArchiveFileStore extends AbstractArchiveStore
                 }
             }
 
-            File archiveDir = new File(generationRoot, ARCHIVE_NAME);
-            assertTrue(archiveDir.mkdirs());
-
             JarInputStream jarInputStream = new JarInputStream(new FileInputStream(archiveFile));
 
             return jarInputStream.getManifest().getMainAttributes();
