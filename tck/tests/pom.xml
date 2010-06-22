@@ -23,6 +23,7 @@
                             <value>org.ops4j.pax.url</value>
                         </property>
                     </systemProperties>
+                    
                 </configuration>
             </plugin>            
         </plugins>

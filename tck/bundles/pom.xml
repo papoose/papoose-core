@@ -15,7 +15,6 @@
     <modules>
         <module>bad-activation-policy</module>
         <module>no-symbolic-name</module>
-        <module>simple</module>
     </modules>
 
 </project>
