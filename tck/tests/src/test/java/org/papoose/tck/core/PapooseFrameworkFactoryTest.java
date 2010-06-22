@@ -16,7 +16,6 @@
  */
 package org.papoose.tck.core;
 
-import java.io.File;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,9 +45,6 @@ public class PapooseFrameworkFactoryTest
     @Test
     public void test() throws Exception
     {
-        File f = new File("./target/bundle.jar");
-        String location = f.toURI().normalize().toString();
-
         Map<String, String> configuration = new HashMap<String, String>();
         configuration.put(Constants.FRAMEWORK_STORAGE, "target/papoose");
 
@@ -60,7 +56,7 @@ public class PapooseFrameworkFactoryTest
         Bundle systemBundle = framework.getBundleContext().getBundle(0);
         BundleContext context = systemBundle.getBundleContext();
 
-        Bundle testBundle = context.installBundle(location);
+        Bundle testBundle = context.installBundle("mvn:org.papoose.test.bundles/test-bundle/1.1.0");
 
         long testBundleId = testBundle.getBundleId();
 
@@ -95,7 +91,7 @@ public class PapooseFrameworkFactoryTest
         testBundle.uninstall();
 
         Dictionary headers = testBundle.getHeaders("en");
-        Assert.assertEquals("org.papoose.test-support.bundle", headers.get("Bundle-SymbOLicName"));
+        Assert.assertEquals("org.papoose.test.bundles.test-bundle", headers.get("Bundle-SymbOLicName"));
 
         headers = testBundle.getHeaders("en");
         Assert.assertEquals("bundle_en", headers.get("L10N-Bundle"));

@@ -41,16 +41,28 @@ public class PapooseTest
     private Framework framework;
 
     @Test
-    public void test()
+    public void testNoSymbolicName()
     {
         try
         {
-            framework.getBundleContext().installBundle("mvn:org.papoose.core.tck.bundles/no-symbolic-name/1.0.0.SNAPSHOT");
-            fail("Should have failed loading bundle missing symbolic name");
+            framework.getBundleContext().installBundle("mvn:org.papoose.core.tck.bundles/no-symbolic-name");
+            fail("Should have failed loading bundle with missing symbolic name");
         }
         catch (BundleException e)
         {
-            System.err.println(e);
+        }
+    }
+
+    @Test
+    public void testBadActivationPolicy()
+    {
+        try
+        {
+            framework.getBundleContext().installBundle("mvn:org.papoose.core.tck.bundles/bad-activation-policy");
+            fail("Should have failed loading bundle with bad activation policy");
+        }
+        catch (BundleException e)
+        {
         }
     }
 

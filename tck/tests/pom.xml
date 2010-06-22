@@ -8,36 +8,23 @@
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tck-tests</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <name>Papoose :: OSGi Compatibility Tests :: Tests</name>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.papoose.test.bundles</groupId>
-                                    <artifactId>test-bundle</artifactId>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>target</outputDirectory>
-                                    <destFileName>bundle.jar</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <forkMode>once</forkMode>
+                    <systemProperties>
+                        <property>
+                            <name>java.protocol.handler.pkgs</name>
+                            <value>org.ops4j.pax.url</value>
+                        </property>
+                    </systemProperties>
+                </configuration>
+            </plugin>            
         </plugins>
     </build>
 
@@ -97,6 +84,27 @@
         <dependency>
             <groupId>org.papoose.core</groupId>
             <artifactId>url-handlers</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core.tck.bundles</groupId>
+            <artifactId>bad-activation-policy</artifactId>
+            <version>${pom.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.core.tck.bundles</groupId>
+            <artifactId>no-symbolic-name</artifactId>
+            <version>${pom.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.test.bundles</groupId>
+            <artifactId>test-bundle</artifactId>
+            <version>1.1.0</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

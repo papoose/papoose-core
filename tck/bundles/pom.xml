@@ -13,6 +13,7 @@
     <name>Papoose :: OSGi Compatibility Tests :: Bundles</name>
 
     <modules>
+        <module>bad-activation-policy</module>
         <module>no-symbolic-name</module>
         <module>simple</module>
     </modules>

@@ -572,23 +572,30 @@ public abstract class AbstractArchiveStore implements ArchiveStore
 
     private static LazyActivationDescription obtainLazyActivationDescription(Attributes headers) throws BundleException
     {
-        LazyActivationDescription lazyActivationDescription;
+        LazyActivationDescription lazyActivationDescription = new LazyActivationDescription(false);
 
         if (headers.containsKey(Constants.BUNDLE_ACTIVATIONPOLICY))
         {
-            lazyActivationDescription = new LazyActivationDescription(true);
-
             String description = headers.getValue(Constants.BUNDLE_ACTIVATIONPOLICY);
             int index = description.indexOf(';');
 
             if (index != -1)
             {
+                if ("lazy".equals(description.substring(0, index - 1)))
+                {
+                    lazyActivationDescription = new LazyActivationDescription(true);
+                }
+
                 Util.parseLazyActivationDescription(description.substring(index + 1), lazyActivationDescription);
             }
-        }
-        else
-        {
-            lazyActivationDescription = new LazyActivationDescription(false);
+            else if ("lazy".equals(description))
+            {
+                lazyActivationDescription = new LazyActivationDescription(true);
+            }
+            else
+            {
+                throw new BundleException("Only lazy activation policy is allowed");
+            }
         }
 
         return lazyActivationDescription;
