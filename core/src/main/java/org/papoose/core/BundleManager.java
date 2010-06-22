@@ -564,6 +564,7 @@ public class BundleManager
                 nameVersions.put(key, generation);
                 locations.put(location, bundle);
                 installedBundles.put(bundleId, bundle);
+                framework.getResolver().added(generation);
 
                 bundleStore.markModified();
 
@@ -889,24 +890,6 @@ public class BundleManager
                 for (NameVersionKey key : keys) nameVersions.remove(key);
 
                 Long bundleId = null;
-                for (Map.Entry<Long, BundleController> entry : installedBundles.entrySet())
-                {
-                    if (entry.getValue() == bundleController)
-                    {
-                        bundleId = entry.getKey();
-                        break;
-                    }
-                }
-                if (bundleId != null)
-                {
-                    installedBundles.remove(bundleId);
-                }
-                else
-                {
-                    assert false;
-                }
-
-                bundleId = null;
                 for (Map.Entry<Long, BundleController> entry : installedBundles.entrySet())
                 {
                     if (entry.getValue() == bundleController)
