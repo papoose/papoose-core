@@ -18,6 +18,7 @@ package org.papoose.core;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.List;
@@ -26,6 +27,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+
 
 /**
  * @version $Revision$ $Date$
@@ -107,6 +109,12 @@ public final class ServiceRegistrationImpl implements ServiceRegistration
         if (pinnedRegistry == null) throw new IllegalStateException("Papoose framework already removed");
 
         pinnedRegistry.unregister(serviceId);
+    }
+
+    @Override
+    public String toString()
+    {
+        return Arrays.toString((Object[]) properties.get(Constants.OBJECTCLASS)) + "/" + serviceId;
     }
 
     public final class ServiceReferenceImpl implements ServiceReference
@@ -221,6 +229,12 @@ public final class ServiceRegistrationImpl implements ServiceRegistration
             int result = registry != null ? registry.hashCode() : 0;
             result = 31 * result + Long.valueOf(serviceId).hashCode();
             return result;
+        }
+
+        @Override
+        public String toString()
+        {
+            return Arrays.toString((Object[]) properties.get(Constants.OBJECTCLASS)) + "/" + serviceId;
         }
     }
 }

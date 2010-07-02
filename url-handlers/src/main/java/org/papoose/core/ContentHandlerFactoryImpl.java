@@ -87,7 +87,7 @@ class ContentHandlerFactoryImpl implements ContentHandlerFactory
                         handler = (ContentHandler) clazz.newInstance();
                     }
                 }
-                catch (Exception e)
+                catch (Exception ignore)
                 {
                 }
             }
@@ -103,7 +103,7 @@ class ContentHandlerFactoryImpl implements ContentHandlerFactory
         return handler;
     }
 
-    private String typeToPackageName(String contentType)
+    private static String typeToPackageName(String contentType)
     {
         contentType = contentType.toLowerCase();
         int len = contentType.length();

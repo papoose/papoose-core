@@ -79,7 +79,6 @@ public class URLStreamHandlerServiceImpl
             }
         }
 
-
         try
         {
             URLConnection.setContentHandlerFactory(new ContentHandlerFactoryImpl(this));
@@ -168,8 +167,6 @@ public class URLStreamHandlerServiceImpl
     public void stop()
     {
         LOGGER.entering(CLASS_NAME, "stop");
-
-        BundleContext systemBundleContext = framework.getSystemBundleContext();
 
         framework = null;
 

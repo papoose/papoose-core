@@ -17,6 +17,7 @@
 package org.papoose.core;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -46,7 +47,7 @@ import org.papoose.core.util.SecurityUtils;
 /**
  * @version $Revision$ $Date$
  */
-public class ServiceRegistry
+class ServiceRegistry
 {
     private final static String CLASS_NAME = ServiceRegistry.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
@@ -56,7 +57,7 @@ public class ServiceRegistry
     private final Papoose framework;
     private long lastServiceId;
 
-    public ServiceRegistry(Papoose framework)
+    ServiceRegistry(Papoose framework)
     {
         assert framework != null;
 
@@ -492,7 +493,6 @@ public class ServiceRegistry
         ServiceEntry oldEntry;
         ServiceEntry entry;
 
-
         synchronized (lock)
         {
             oldEntry = removing.get();
@@ -605,26 +605,7 @@ public class ServiceRegistry
         @Override
         public String toString()
         {
-            StringBuilder builder = new StringBuilder();
-
-            boolean first = true;
-            builder.append("[");
-            for (String objectClass : (String[]) registration.getReference().getProperty(Constants.OBJECTCLASS))
-            {
-                if (first)
-                {
-                    first = false;
-                }
-                else
-                {
-                    builder.append(", ");
-                }
-
-                builder.append(objectClass);
-            }
-            builder.append("]");
-
-            return builder.toString();
+            return Arrays.toString((String[]) registration.getReference().getProperty(Constants.OBJECTCLASS));
         }
     }
 

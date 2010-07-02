@@ -21,14 +21,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.After;
-import static org.junit.Assert.fail;
 import org.junit.Before;
-import org.junit.Test;
-import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
-
 import org.papoose.core.PapooseFrameworkFactory;
 import org.papoose.core.util.FileUtils;
 
@@ -36,31 +32,28 @@ import org.papoose.core.util.FileUtils;
 /**
  * @version $Revision: $ $Date: $
  */
-public class PapooseTest extends BaseTest
+public abstract class BaseTest
 {
-    @Test
-    public void testNoSymbolicName()
+    protected Framework framework;
+
+    @Before
+    public void before() throws Exception
     {
-        try
-        {
-            framework.getBundleContext().installBundle("mvn:org.papoose.core.tck.bundles/no-symbolic-name");
-            fail("Should have failed loading bundle with missing symbolic name");
-        }
-        catch (BundleException e)
-        {
-        }
+        Map<String, String> configuration = new HashMap<String, String>();
+        configuration.put(Constants.FRAMEWORK_STORAGE, "target/papoose");
+
+        FrameworkFactory factory = new PapooseFrameworkFactory();
+        framework = factory.newFramework(configuration);
+
+        framework.init();
     }
 
-    @Test
-    public void testBadActivationPolicy()
+    @After
+    public void after() throws Exception
     {
-        try
-        {
-            framework.getBundleContext().installBundle("mvn:org.papoose.core.tck.bundles/bad-activation-policy");
-            fail("Should have failed loading bundle with bad activation policy");
-        }
-        catch (BundleException e)
-        {
-        }
+        framework.stop();
+        framework = null;
+
+        FileUtils.delete(new File("target/papoose"));
     }
 }
