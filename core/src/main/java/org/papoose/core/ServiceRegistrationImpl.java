@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Properties;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Constants;
@@ -71,11 +72,20 @@ public final class ServiceRegistrationImpl implements ServiceRegistration
         {
             pinnedRegistry.validate(serviceId);
 
+            Dictionary old = new Properties();
+
             Enumeration<String> enumeration = this.properties.keys();
             while (enumeration.hasMoreElements())
             {
                 String key = enumeration.nextElement();
-                if (!Constants.OBJECTCLASS.equals(key) || !Constants.SERVICE_ID.equals(key))
+                old.put(key, this.properties.get(key));
+            }
+
+            enumeration = this.properties.keys();
+            while (enumeration.hasMoreElements())
+            {
+                String key = enumeration.nextElement();
+                if (!Constants.OBJECTCLASS.equals(key) && !Constants.SERVICE_ID.equals(key))
                 {
                     this.properties.remove(key);
                 }
@@ -86,13 +96,14 @@ public final class ServiceRegistrationImpl implements ServiceRegistration
             while (enumeration.hasMoreElements())
             {
                 String key = enumeration.nextElement();
-                if (!Constants.OBJECTCLASS.equals(key) || !Constants.SERVICE_ID.equals(key))
+                if (!Constants.OBJECTCLASS.equals(key) && !Constants.SERVICE_ID.equals(key))
                 {
                     this.properties.put(key, properties.get(key));
                 }
             }
+            if (this.properties.get(Constants.SERVICE_RANKING) == null) this.properties.put(Constants.SERVICE_RANKING, 0);
 
-            pinnedRegistry.setProperties(serviceId, this.properties);
+            pinnedRegistry.setProperties(serviceId, old);
         }
         finally
         {

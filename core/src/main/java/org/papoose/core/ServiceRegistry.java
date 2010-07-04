@@ -511,7 +511,7 @@ class ServiceRegistry
         }
     }
 
-    public void setProperties(long serviceId, Dictionary<String, Object> properties)
+    public void setProperties(long serviceId, Dictionary old)
     {
         ServiceEntry entry;
         synchronized (lock)
@@ -523,7 +523,7 @@ class ServiceRegistry
 
         ServiceRegistrationImpl serviceRegistration = entry.getRegistration();
 
-        framework.getBundleManager().fireServiceEvent(new ServiceEvent(ServiceEvent.MODIFIED, serviceRegistration.getReference()));
+        framework.getBundleManager().fireModifiedServiceEvent(serviceRegistration.getReference(), old);
     }
 
     public void unregister(long serviceId)

@@ -392,11 +392,13 @@ public class ServiceTest extends BaseTest
         BundleContext context = framework.getBundleContext();
 
         final AtomicReference<ServiceEvent> storedEvent = new AtomicReference<ServiceEvent>();
+        final AtomicReference<String> storedTest = new AtomicReference<String>();
         context.addServiceListener(new ServiceListener()
         {
             public void serviceChanged(ServiceEvent event)
             {
                 storedEvent.set(event);
+                storedTest.set((String) event.getServiceReference().getProperty("TEST"));
             }
         });
 
@@ -412,9 +414,14 @@ public class ServiceTest extends BaseTest
         }, properties);
 
         assertNotNull(registration);
-
         assertEquals(ServiceEvent.REGISTERED, storedEvent.get().getType());
-        assertEquals("PASS", storedEvent.get().getServiceReference().getProperty("TEST"));
+        assertEquals("PASS", storedTest.get());
+
+        properties.put("TEST", "MODIFIED");
+        registration.setProperties(properties);
+
+        assertEquals(ServiceEvent.MODIFIED, storedEvent.get().getType());
+        assertEquals("MODIFIED", storedTest.get());
 
         registration.unregister();
 
@@ -426,12 +433,14 @@ public class ServiceTest extends BaseTest
     {
         BundleContext context = framework.getBundleContext();
 
-        final AtomicReference<String> storedEvent = new AtomicReference<String>();
+        final AtomicReference<ServiceEvent> storedEvent = new AtomicReference<ServiceEvent>();
+        final AtomicReference<String> storedTest = new AtomicReference<String>();
         context.addServiceListener(new ServiceListener()
         {
             public void serviceChanged(ServiceEvent event)
             {
-                storedEvent.set((String) event.getServiceReference().getProperty("TE ST"));
+                storedEvent.set(event);
+                storedTest.set((String) event.getServiceReference().getProperty("TE ST"));
             }
         }, "( Te St=*)");
 
@@ -455,10 +464,24 @@ public class ServiceTest extends BaseTest
             }
         }, properties);
 
-        assertNotNull(registration);
 
-        assertEquals("PASS", storedEvent.get());
+        assertNotNull(registration);
+        assertEquals(ServiceEvent.REGISTERED, storedEvent.get().getType());
+        assertEquals("PASS", storedTest.get());
         assertTrue(noEvent.get());
+
+        properties.put("TE ST", "MODIFIED");
+        registration.setProperties(properties);
+
+        assertEquals(ServiceEvent.MODIFIED, storedEvent.get().getType());
+        assertEquals("MODIFIED", storedTest.get());
+
+        properties.clear();
+        properties.put("TEST", "END");
+        registration.setProperties(properties);
+
+        assertEquals(ServiceEvent.MODIFIED_ENDMATCH, storedEvent.get().getType());
+        assertNull(storedTest.get());
 
         registration.unregister();
     }

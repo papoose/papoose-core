@@ -27,6 +27,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -39,12 +40,14 @@ import org.osgi.framework.AdminPermission;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;
+import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.ServiceEvent;
-import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServicePermission;
+import org.osgi.framework.ServiceReference;
 
+import org.papoose.core.ServiceListenerWithFilter;
 import org.papoose.core.spi.TrustManager;
 
 
@@ -124,7 +127,43 @@ public class SecurityUtils
         }
     }
 
-    public static void serviceEvent(final ServiceListener listener, final ServiceEvent event, AccessControlContext context)
+    public static void serviceEvent(final ServiceListenerWithFilter listener, final ServiceEvent event, AccessControlContext context)
+    {
+        if (listener.getFilter().match(event.getServiceReference()))
+        {
+            if (System.getSecurityManager() == null)
+            {
+                listener.serviceChanged(event);
+            }
+            else
+            {
+                AccessController.doPrivileged(new PrivilegedAction<Void>()
+                {
+                    public Void run()
+                    {
+                        listener.serviceChanged(event);
+                        return null;
+                    }
+                }, context);
+            }
+        }
+    }
+
+    public static void modifiedServiceEvent(final ServiceListenerWithFilter listener, final ServiceReference reference, Dictionary old, AccessControlContext context)
+    {
+        Filter filter = listener.getFilter();
+
+        if (filter.match(reference))
+        {
+            modifiedServiceEvent(listener, new ServiceEvent(ServiceEvent.MODIFIED, reference), context);
+        }
+        else if (filter.match(old) && !filter.match(reference))
+        {
+            modifiedServiceEvent(listener, new ServiceEvent(ServiceEvent.MODIFIED_ENDMATCH, reference), context);
+        }
+    }
+
+    public static void modifiedServiceEvent(final ServiceListenerWithFilter listener, final ServiceEvent event, AccessControlContext context)
     {
         if (System.getSecurityManager() == null)
         {

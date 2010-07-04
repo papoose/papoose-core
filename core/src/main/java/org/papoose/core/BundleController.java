@@ -45,7 +45,6 @@ import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
@@ -76,8 +75,8 @@ public class BundleController implements Bundle
     private volatile Set<BundleListener> bundleListeners;
     private volatile Set<SynchronousBundleListener> syncBundleListeners;
     private volatile Set<FrameworkListener> frameworkListeners;
-    private volatile Set<ServiceListener> serviceListeners;
-    private volatile Set<ServiceListener> allServiceListeners;
+    private volatile Set<ServiceListenerWithFilter> serviceListeners;
+    private volatile Set<ServiceListenerWithFilter> allServiceListeners;
     private volatile BundleContextProxy bundleContext;
     private volatile Generation currentGeneration;
     private volatile BundleActivator bundleActivator;
@@ -107,12 +106,12 @@ public class BundleController implements Bundle
         return frameworkListeners;
     }
 
-    Set<ServiceListener> getServiceListeners()
+    Set<ServiceListenerWithFilter> getServiceListeners()
     {
         return serviceListeners;
     }
 
-    Set<ServiceListener> getAllServiceListeners()
+    Set<ServiceListenerWithFilter> getAllServiceListeners()
     {
         return allServiceListeners;
     }
@@ -971,7 +970,7 @@ public class BundleController implements Bundle
         {
             if (serviceListener instanceof AllServiceListener)
             {
-                if (allServiceListeners == null) allServiceListeners = new CopyOnWriteArraySet<ServiceListener>();
+                if (allServiceListeners == null) allServiceListeners = new CopyOnWriteArraySet<ServiceListenerWithFilter>();
 
                 if (!allServiceListeners.add(new ServiceListenerWithFilter(serviceListener, filter)))
                 {
@@ -980,7 +979,7 @@ public class BundleController implements Bundle
             }
             else
             {
-                if (serviceListeners == null) serviceListeners = new CopyOnWriteArraySet<ServiceListener>();
+                if (serviceListeners == null) serviceListeners = new CopyOnWriteArraySet<ServiceListenerWithFilter>();
 
                 if (!serviceListeners.add(new ServiceListenerWithFilter(serviceListener, filter)))
                 {
@@ -1037,45 +1036,4 @@ public class BundleController implements Bundle
         }
     }
 
-    private static class ServiceListenerWithFilter implements AllServiceListener
-    {
-        private final ServiceListener delegate;
-        private final Filter filter;
-
-        public ServiceListenerWithFilter(ServiceListener delegate)
-        {
-            this(delegate, DefaultFilter.TRUE);
-        }
-
-        public ServiceListenerWithFilter(ServiceListener delegate, Filter filter)
-        {
-            assert delegate != null;
-            assert filter != null;
-
-            this.delegate = delegate;
-            this.filter = filter;
-        }
-
-        public void serviceChanged(ServiceEvent event)
-        {
-            if (filter.match(event.getServiceReference())) delegate.serviceChanged(event);
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ServiceListenerWithFilter that = (ServiceListenerWithFilter) o;
-
-            return delegate == that.delegate;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return delegate.hashCode();
-        }
-    }
 }

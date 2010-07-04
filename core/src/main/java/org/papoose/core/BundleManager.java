@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007-2009 (C) The original author or authors
+ * Copyright 2007-2010 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,7 +45,6 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.ServiceEvent;
-import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServicePermission;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
@@ -1028,13 +1028,69 @@ public class BundleManager
         }
     }
 
-    protected void fireServiceEvent(ServiceEvent event, Set<ServiceListener> listeners, Bundle bundle)
+    private void fireServiceEvent(ServiceEvent event, Set<ServiceListenerWithFilter> listeners, BundleController bundle)
     {
-        for (final ServiceListener listener : listeners)
+        for (final ServiceListenerWithFilter listener : listeners)
         {
             try
             {
                 SecurityUtils.serviceEvent(listener, event, framework.getAcc());
+            }
+            catch (Throwable throwable)
+            {
+                fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+            }
+        }
+        for (final ServiceListenerWithFilter listener : listeners)
+        {
+            try
+            {
+                SecurityUtils.serviceEvent(listener, event, framework.getAcc());
+            }
+            catch (Throwable throwable)
+            {
+                fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+            }
+        }
+    }
+
+    public void fireModifiedServiceEvent(ServiceReference reference, Dictionary old)
+    {
+        String[] classes = (String[]) reference.getProperty(Constants.OBJECTCLASS);
+
+        for (BundleController bundle : installedBundles.values())
+        {
+            for (String clazz : classes)
+            {
+                if (!bundle.hasPermission(new ServicePermission(clazz, ServicePermission.GET))) continue;
+
+                if (bundle.getAllServiceListeners() != null) fireModifiedServiceEvent(reference, old, bundle.getAllServiceListeners(), bundle);
+
+                if (!reference.isAssignableTo(bundle, clazz)) continue;
+
+                if (bundle.getServiceListeners() != null) fireModifiedServiceEvent(reference, old, bundle.getServiceListeners(), bundle);
+            }
+        }
+    }
+
+    protected void fireModifiedServiceEvent(ServiceReference reference, Dictionary old, Set<ServiceListenerWithFilter> listeners, Bundle bundle)
+    {
+        for (final ServiceListenerWithFilter listener : listeners)
+        {
+            try
+            {
+                SecurityUtils.modifiedServiceEvent(listener, reference, old, framework.getAcc());
+            }
+            catch (Throwable throwable)
+            {
+                fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundle, throwable));
+            }
+        }
+        for (final ServiceListenerWithFilter listener : listeners)
+        {
+            try
+            {
+                SecurityUtils.modifiedServiceEvent(listener, reference, old, framework.getAcc());
             }
             catch (Throwable throwable)
             {
