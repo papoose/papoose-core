@@ -178,7 +178,7 @@ public final class ServiceRegistrationImpl implements ServiceRegistration
             return properties;
         }
 
-        private long getServiceId()
+        long getServiceId()
         {
             return serviceId;
         }

@@ -392,8 +392,9 @@ class ServiceRegistry
         }
     }
 
-    public Object getService(BundleController bundleController, ServiceReference serviceReference)
+    public Object getService(BundleController bundleController, ServiceReference sr)
     {
+        ServiceRegistrationImpl.ServiceReferenceImpl serviceReference = (ServiceRegistrationImpl.ServiceReferenceImpl) sr;
         SecurityException se = null;
         for (String objectClass : (String[]) serviceReference.getProperty(Constants.OBJECTCLASS))
         {
@@ -414,7 +415,7 @@ class ServiceRegistry
         synchronized (lock)
         {
             //noinspection SuspiciousMethodCalls
-            entry = serviceEntries.get(serviceReference.getProperty(Constants.SERVICE_ID));
+            entry = serviceEntries.get(serviceReference.getServiceId());
 
             if (entry == null) return null;
 
@@ -442,12 +443,12 @@ class ServiceRegistry
         }
     }
 
-
     public boolean ungetService(BundleController bundleController, ServiceReference serviceReference)
     {
         synchronized (lock)
         {
-            @SuppressWarnings({ "SuspiciousMethodCalls" }) ServiceEntry entry = serviceEntries.get(serviceReference.getProperty(Constants.SERVICE_ID));
+            @SuppressWarnings({ "SuspiciousMethodCalls" })
+            ServiceEntry entry = serviceEntries.get(serviceReference.getProperty(Constants.SERVICE_ID));
 
             if (entry == null) return false;
 
@@ -456,7 +457,6 @@ class ServiceRegistry
             if (reference == null) return false;
 
             reference.decrement();
-
 
             if (reference.getCount() == 0)
             {
@@ -470,6 +470,28 @@ class ServiceRegistry
             }
 
             return true;
+        }
+    }
+
+    public void ungetService(BundleController bundleController)
+    {
+        synchronized (lock)
+        {
+            for (ServiceEntry entry : serviceEntries.values())
+            {
+                BundleServiceReference reference = entry.getUsingBundles().get(bundleController);
+
+                if (reference == null) continue;
+
+                Object service = reference.getService();
+                if (service != null)
+                {
+                    ServiceFactory factory = (ServiceFactory) entry.getService();
+                    factory.ungetService(bundleController, entry.getRegistration(), service);
+                }
+
+                entry.getUsingBundles().remove(bundleController);
+            }
         }
     }
 

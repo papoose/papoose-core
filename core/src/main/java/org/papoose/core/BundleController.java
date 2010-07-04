@@ -344,6 +344,10 @@ public class BundleController implements Bundle
             if (currentGeneration.getState() == UNINSTALLED) throw new IllegalStateException("This bundle is uninstalled");
 
             Papoose framework = getFramework();
+
+            framework.getServiceRegistry().ungetService(this);
+            framework.getServiceRegistry().unregister(this);
+
             BundleManager bundleManager = framework.getBundleManager();
 
             bundleManager.uninstall(this);

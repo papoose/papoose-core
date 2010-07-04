@@ -16,15 +16,15 @@
  */
 package org.papoose.core;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.concurrent.Future;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Logger;
 
 import org.osgi.framework.FrameworkEvent;
+
 
 /**
  * A {@link java.util.concurrent.Future} that returns the {@link org.osgi.framework.FrameworkEvent} of a stopped OSGi
@@ -46,16 +46,6 @@ class FutureFrameworkEvent implements Future<FrameworkEvent>
     {
         this.latch = new CountDownLatch(1);
         LOGGER.config("Configured with a countdown latch");
-    }
-
-    FutureFrameworkEvent(FrameworkEvent frameworkEvent)
-    {
-        assert frameworkEvent != null;
-
-        this.latch = new CountDownLatch(0);
-        this.frameworkEvent = frameworkEvent;
-
-        if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("Configured with a framework event: " + frameworkEvent);
     }
 
     FrameworkEvent getFrameworkEvent()

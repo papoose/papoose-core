@@ -19,10 +19,14 @@ package org.papoose.tck.core;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.acme.Service;
+import com.acme.ServiceServiceFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
@@ -123,6 +127,148 @@ public class ServiceTest extends BaseTest
         assertEquals("Hello World!", storedMessage2.get());
 
         registration2.unregister();
+
+        reference = context.getServiceReference(Service.class.getName());
+
+        assertNull(reference);
+    }
+
+    @Test
+    public void testServiceFactory()
+    {
+        BundleContext context = framework.getBundleContext();
+
+        ServiceServiceFactory serviceFactory = new ServiceServiceFactory();
+        ServiceRegistration registration = context.registerService(Service.class.getName(), serviceFactory, null);
+
+        assertNotNull(registration);
+
+        ServiceReference reference = context.getServiceReference(Service.class.getName());
+
+        assertNotNull(reference);
+
+        Service service = (Service) context.getService(reference);
+
+        assertNotNull(service);
+
+        service.hello("Hello World!");
+
+        assertEquals("Hello World!", serviceFactory.data.get("MESSAGE"));
+
+        registration.unregister();
+
+        assertSame(service, serviceFactory.data.get("UNGET"));
+
+        reference = context.getServiceReference(Service.class.getName());
+
+        assertNull(reference);
+    }
+
+    @Test
+    public void testServiceFactoryUnGet() throws Exception
+    {
+        BundleContext context = framework.getBundleContext();
+
+        ServiceServiceFactory serviceFactory = new ServiceServiceFactory();
+        ServiceRegistration registration = context.registerService(Service.class.getName(), serviceFactory, null);
+
+        assertNotNull(registration);
+
+        Bundle testBundle = context.installBundle("mvn:org.papoose.test.bundles/test-bundle/1.1.0");
+
+        ServiceReference sreference = context.getServiceReference(Service.class.getName());
+        ServiceReference treference = testBundle.getBundleContext().getServiceReference(Service.class.getName());
+
+        assertNotNull(sreference);
+        assertNotNull(treference);
+
+        assertSame(context.getBundle(), sreference.getBundle());
+        assertSame(context.getBundle(), treference.getBundle());
+
+        Service sservice = (Service) context.getService(sreference);
+        Service tservice = (Service) testBundle.getBundleContext().getService(treference);
+
+        assertNotNull(sservice);
+        assertNotNull(tservice);
+
+        boolean sfound = false;
+        boolean tfound = false;
+        for (Bundle bundle : sreference.getUsingBundles())
+        {
+            if (context.getBundle() == bundle) sfound = true;
+            if (testBundle == bundle) tfound = true;
+        }
+        assertTrue("System bundle is using", sfound);
+        assertTrue("Test bundle is using", tfound);
+
+        sfound = false;
+        tfound = false;
+        for (Bundle bundle : treference.getUsingBundles())
+        {
+            if (context.getBundle() == bundle) sfound = true;
+            if (testBundle == bundle) tfound = true;
+        }
+        assertTrue("System bundle is using", sfound);
+        assertTrue("Test bundle is using", tfound);
+
+        tservice.hello("Hello World!");
+
+        assertEquals("Hello World!", serviceFactory.data.get("MESSAGE"));
+
+        testBundle.uninstall();
+
+        assertSame(tservice, serviceFactory.data.get("UNGET"));
+        assertTrue((Boolean) serviceFactory.data.get("TEST"));
+
+        serviceFactory.data.remove("UNGET");
+        registration.unregister();
+
+        assertSame(sservice, serviceFactory.data.get("UNGET"));
+        assertTrue((Boolean) serviceFactory.data.get("TEST"));
+
+        sreference = context.getServiceReference(Service.class.getName());
+
+        assertNull(sreference);
+    }
+
+    @Test
+    public void testMultiGetServiceFactory()
+    {
+        BundleContext context = framework.getBundleContext();
+
+        ServiceServiceFactory serviceFactory = new ServiceServiceFactory();
+        ServiceRegistration registration = context.registerService(Service.class.getName(), serviceFactory, null);
+
+        assertNotNull(registration);
+
+        ServiceReference reference = context.getServiceReference(Service.class.getName());
+
+        assertNotNull(reference);
+
+        context.getService(reference);
+        context.getService(reference);
+        Service service = (Service) context.getService(reference);
+
+        assertNotNull(service);
+
+        assertNotNull(reference.getUsingBundles());
+
+        service.hello("Hello World!");
+
+        assertEquals("Hello World!", serviceFactory.data.get("MESSAGE"));
+
+        context.ungetService(reference);
+        assertSame(null, serviceFactory.data.get("UNGET"));
+        context.ungetService(reference);
+        assertSame(null, serviceFactory.data.get("UNGET"));
+        context.ungetService(reference);
+        assertSame(service, serviceFactory.data.get("UNGET"));
+
+        serviceFactory.data.remove("UNGET");
+
+        registration.unregister();
+
+        assertSame(null, serviceFactory.data.get("UNGET"));
 
         reference = context.getServiceReference(Service.class.getName());
 
