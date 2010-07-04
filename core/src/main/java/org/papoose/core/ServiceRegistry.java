@@ -218,7 +218,23 @@ class ServiceRegistry
             }
             p.put(Constants.OBJECTCLASS, c);
             p.put(Constants.SERVICE_ID, serviceId);
-            if (p.get(Constants.SERVICE_RANKING) == null) p.put(Constants.SERVICE_RANKING, 0);
+
+            if (p.get(Constants.SERVICE_RANKING) == null)
+            {
+                p.put(Constants.SERVICE_RANKING, 0);
+            }
+            else
+            {
+                try
+                {
+                    p.put(Constants.SERVICE_RANKING, Integer.valueOf(p.get(Constants.SERVICE_RANKING).toString()));
+                }
+                catch (NumberFormatException e)
+                {
+                    LOGGER.warning("Bad value for service.ranking " + p.get(Constants.SERVICE_RANKING));
+                    p.put(Constants.SERVICE_RANKING, 0);
+                }
+            }
 
             serviceRegistration = new ServiceRegistrationImpl(p, this);
 

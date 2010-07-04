@@ -78,7 +78,7 @@ public class DefaultFilter implements Filter
 
     public boolean match(ServiceReference serviceReference)
     {
-        return expr.match(((ServiceRegistrationImpl.ServiceReferenceImpl) serviceReference).getProperties());
+        return match(((ServiceRegistrationImpl.ServiceReferenceImpl) serviceReference).getProperties());
     }
 
     public boolean match(final Dictionary dictionary)

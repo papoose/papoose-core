@@ -16,11 +16,13 @@
  */
 package org.papoose.tck.core;
 
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.acme.Service;
 import com.acme.ServiceServiceFactory;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -28,6 +30,9 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
@@ -56,6 +61,47 @@ public class ServiceTest extends BaseTest
         ServiceReference reference = context.getServiceReference(Service.class.getName());
 
         assertNotNull(reference);
+
+        Service service = (Service) context.getService(reference);
+
+        assertNotNull(service);
+
+        service.hello("Hello World!");
+
+        assertEquals("Hello World!", storedMessage.get());
+
+        registration.unregister();
+
+        reference = context.getServiceReference(Service.class.getName());
+
+        assertNull(reference);
+    }
+
+    @Test
+    public void testRegistrationWithProperties()
+    {
+        BundleContext context = framework.getBundleContext();
+
+        Properties properties = new Properties();
+        properties.put("TEST", "PASS");
+        final AtomicReference<String> storedMessage = new AtomicReference<String>();
+        ServiceRegistration registration = context.registerService(Service.class.getName(), new Service()
+        {
+            public void hello(String message)
+            {
+                storedMessage.set(message);
+            }
+        }, properties);
+
+        assertNotNull(registration);
+
+        ServiceReference reference = context.getServiceReference(Service.class.getName());
+
+        assertNotNull(reference);
+        assertEquals("PASS", reference.getProperty("TEST"));
+        assertTrue((Long) reference.getProperty(Constants.SERVICE_ID) > 0);
+        assertEquals(0, reference.getProperty(Constants.SERVICE_RANKING));
+        assertEquals(Service.class.getName(), ((String[]) reference.getProperty(Constants.OBJECTCLASS))[0]);
 
         Service service = (Service) context.getService(reference);
 
@@ -127,6 +173,70 @@ public class ServiceTest extends BaseTest
         assertEquals("Hello World!", storedMessage2.get());
 
         registration2.unregister();
+
+        reference = context.getServiceReference(Service.class.getName());
+
+        assertNull(reference);
+    }
+
+    @Test
+    public void testRegistrationsWithServiceRanking()
+    {
+        BundleContext context = framework.getBundleContext();
+
+        Properties properties = new Properties();
+        properties.put(Constants.SERVICE_RANKING, 1);
+        final AtomicReference<String> storedMessage1 = new AtomicReference<String>();
+        ServiceRegistration registration1 = context.registerService(Service.class.getName(), new Service()
+        {
+            public void hello(String message)
+            {
+                storedMessage1.set(message);
+            }
+        }, properties);
+
+        assertNotNull(registration1);
+
+        properties.put(Constants.SERVICE_RANKING, 2);
+        final AtomicReference<String> storedMessage2 = new AtomicReference<String>();
+        ServiceRegistration registration2 = context.registerService(Service.class.getName(), new Service()
+        {
+            public void hello(String message)
+            {
+                storedMessage2.set(message);
+            }
+        }, properties);
+
+        assertNotNull(registration2);
+
+        ServiceReference reference = context.getServiceReference(Service.class.getName());
+
+        assertNotNull(reference);
+
+        Service service = (Service) context.getService(reference);
+
+        assertNotNull(service);
+
+        service.hello("Hello World!");
+
+        assertEquals("Hello World!", storedMessage2.get());
+        assertNull(storedMessage1.get());
+
+        registration2.unregister();
+
+        reference = context.getServiceReference(Service.class.getName());
+
+        assertNotNull(reference);
+
+        service = (Service) context.getService(reference);
+
+        assertNotNull(service);
+
+        service.hello("Hello World!");
+
+        assertEquals("Hello World!", storedMessage1.get());
+
+        registration1.unregister();
 
         reference = context.getServiceReference(Service.class.getName());
 
@@ -257,12 +367,13 @@ public class ServiceTest extends BaseTest
 
         assertEquals("Hello World!", serviceFactory.data.get("MESSAGE"));
 
-        context.ungetService(reference);
+        assertTrue(context.ungetService(reference));
         assertSame(null, serviceFactory.data.get("UNGET"));
-        context.ungetService(reference);
+        assertTrue(context.ungetService(reference));
         assertSame(null, serviceFactory.data.get("UNGET"));
-        context.ungetService(reference);
+        assertTrue(context.ungetService(reference));
         assertSame(service, serviceFactory.data.get("UNGET"));
+        assertFalse(context.ungetService(reference));
 
         serviceFactory.data.remove("UNGET");
 
@@ -274,4 +385,82 @@ public class ServiceTest extends BaseTest
 
         assertNull(reference);
     }
+
+    @Test
+    public void testServiceListener()
+    {
+        BundleContext context = framework.getBundleContext();
+
+        final AtomicReference<ServiceEvent> storedEvent = new AtomicReference<ServiceEvent>();
+        context.addServiceListener(new ServiceListener()
+        {
+            public void serviceChanged(ServiceEvent event)
+            {
+                storedEvent.set(event);
+            }
+        });
+
+        Properties properties = new Properties();
+        properties.put("TEST", "PASS");
+        final AtomicReference<String> storedMessage = new AtomicReference<String>();
+        ServiceRegistration registration = context.registerService(Service.class.getName(), new Service()
+        {
+            public void hello(String message)
+            {
+                storedMessage.set(message);
+            }
+        }, properties);
+
+        assertNotNull(registration);
+
+        assertEquals(ServiceEvent.REGISTERED, storedEvent.get().getType());
+        assertEquals("PASS", storedEvent.get().getServiceReference().getProperty("TEST"));
+
+        registration.unregister();
+
+        assertEquals(ServiceEvent.UNREGISTERING, storedEvent.get().getType());
+    }
+
+    @Test
+    public void testServiceListenerWithFilter() throws Exception
+    {
+        BundleContext context = framework.getBundleContext();
+
+        final AtomicReference<String> storedEvent = new AtomicReference<String>();
+        context.addServiceListener(new ServiceListener()
+        {
+            public void serviceChanged(ServiceEvent event)
+            {
+                storedEvent.set((String) event.getServiceReference().getProperty("TE ST"));
+            }
+        }, "( Te St=*)");
+
+        final AtomicReference<Boolean> noEvent = new AtomicReference<Boolean>(true);
+        context.addServiceListener(new ServiceListener()
+        {
+            public void serviceChanged(ServiceEvent event)
+            {
+                noEvent.set(false);
+            }
+        }, "(NO-MATCH=*)");
+
+        Properties properties = new Properties();
+        properties.put("TE ST", "PASS");
+        final AtomicReference<String> storedMessage = new AtomicReference<String>();
+        ServiceRegistration registration = context.registerService(Service.class.getName(), new Service()
+        {
+            public void hello(String message)
+            {
+                storedMessage.set(message);
+            }
+        }, properties);
+
+        assertNotNull(registration);
+
+        assertEquals("PASS", storedEvent.get());
+        assertTrue(noEvent.get());
+
+        registration.unregister();
+    }
+
 }
