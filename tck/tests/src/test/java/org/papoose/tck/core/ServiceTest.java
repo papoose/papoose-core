@@ -20,6 +20,9 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.acme.BService;
+import com.acme.BogusServiceReference;
+import com.acme.FaultyServiceServiceFactory;
+import com.acme.NaughtyServiceServiceFactory;
 import com.acme.Service;
 import com.acme.ServiceServiceFactory;
 import static org.junit.Assert.assertEquals;
@@ -462,6 +465,116 @@ public class ServiceTest extends BaseTest
     }
 
     @Test
+    public void testFaultyServiceFactory()
+    {
+        BundleContext context = framework.getBundleContext();
+
+        FaultyServiceServiceFactory serviceFactory = new FaultyServiceServiceFactory();
+        ServiceRegistration registration = context.registerService(Service.class.getName(), serviceFactory, null);
+
+        assertNotNull(registration);
+
+        ServiceReference reference = context.getServiceReference(Service.class.getName());
+
+        assertNotNull(reference);
+
+        Service service = (Service) context.getService(reference);
+        assertNull(serviceFactory.data.get("GET"));
+
+        serviceFactory.data.remove("GET");
+        assertSame(service, context.getService(reference));
+        assertNull(serviceFactory.data.get("GET"));
+        assertSame(service, context.getService(reference));
+        assertNull(serviceFactory.data.get("GET"));
+
+        assertNull(service);
+
+        assertNotNull(reference.getUsingBundles());
+
+        assertTrue(context.ungetService(reference));
+        assertNull(serviceFactory.data.get("UNGET"));
+        assertNull(serviceFactory.data.get("TEST"));
+        assertTrue(context.ungetService(reference));
+        assertNull(serviceFactory.data.get("UNGET"));
+        assertNull(serviceFactory.data.get("TEST"));
+        assertTrue(context.ungetService(reference));
+        assertNull(serviceFactory.data.get("UNGET"));
+        assertNull(serviceFactory.data.get("TEST"));
+        assertFalse(context.ungetService(reference));
+
+        Service newService = (Service) context.getService(reference);
+        assertNull(newService);
+
+        serviceFactory.data.remove("UNGET");
+
+        registration.unregister();
+
+        assertNull(serviceFactory.data.get("UNGET"));
+        assertNull(serviceFactory.data.get("TEST"));
+
+        assertFalse(context.ungetService(reference));
+
+        reference = context.getServiceReference(Service.class.getName());
+
+        assertNull(reference);
+    }
+
+    @Test
+    public void testNaughtyServiceFactory()
+    {
+        BundleContext context = framework.getBundleContext();
+
+        NaughtyServiceServiceFactory serviceFactory = new NaughtyServiceServiceFactory();
+        ServiceRegistration registration = context.registerService(Service.class.getName(), serviceFactory, null);
+
+        assertNotNull(registration);
+
+        ServiceReference reference = context.getServiceReference(Service.class.getName());
+
+        assertNotNull(reference);
+
+        Service service = (Service) context.getService(reference);
+        assertEquals(registration, serviceFactory.data.get("GET"));
+
+        serviceFactory.data.remove("GET");
+        assertSame(service, context.getService(reference));
+        assertNull(serviceFactory.data.get("GET"));
+        assertSame(service, context.getService(reference));
+        assertNull(serviceFactory.data.get("GET"));
+
+        assertNull(service);
+
+        assertNotNull(reference.getUsingBundles());
+
+        assertTrue(context.ungetService(reference));
+        assertNull(serviceFactory.data.get("UNGET"));
+        assertNull(serviceFactory.data.get("TEST"));
+        assertTrue(context.ungetService(reference));
+        assertNull(serviceFactory.data.get("UNGET"));
+        assertNull(serviceFactory.data.get("TEST"));
+        assertTrue(context.ungetService(reference));
+        assertNull(serviceFactory.data.get("UNGET"));
+        assertNull(serviceFactory.data.get("TEST"));
+        assertFalse(context.ungetService(reference));
+
+        Service newService = (Service) context.getService(reference);
+        assertNull(newService);
+
+        serviceFactory.data.remove("UNGET");
+
+        registration.unregister();
+
+        assertNull(serviceFactory.data.get("UNGET"));
+        assertNull(serviceFactory.data.get("TEST"));
+
+        assertFalse(context.ungetService(reference));
+
+        reference = context.getServiceReference(Service.class.getName());
+
+        assertNull(reference);
+    }
+
+    @Test
     public void testServiceListener()
     {
         BundleContext context = framework.getBundleContext();
@@ -580,6 +693,41 @@ public class ServiceTest extends BaseTest
         catch (InvalidSyntaxException ignored)
         {
         }
+    }
+
+    @Test
+    public void testBogusServiceReference()
+    {
+        BundleContext context = framework.getBundleContext();
+
+        final AtomicReference<String> storedMessage = new AtomicReference<String>();
+        ServiceRegistration registration = context.registerService(Service.class.getName(), new Service()
+        {
+            public void hello(String message)
+            {
+                storedMessage.set(message);
+            }
+        }, null);
+
+        assertNotNull(registration);
+
+        ServiceReference reference = context.getServiceReference(Service.class.getName());
+
+        assertNotNull(reference);
+
+        Service service = (Service) context.getService(new BogusServiceReference());
+
+        assertNull(service);
+
+        registration.unregister();
+
+        service = (Service) context.getService(reference);
+
+        assertNull(service);
+
+        reference = context.getServiceReference(Service.class.getName());
+
+        assertNull(reference);
     }
 
 }

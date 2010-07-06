@@ -1058,7 +1058,7 @@ public abstract class ClassUtils
      * @param instance the instance to analyse for interfaces
      * @return all interfaces that the given instance implements as Set
      */
-    public static Set getAllInterfacesAsSet(Object instance)
+    public static Set<Class> getAllInterfacesAsSet(Object instance)
     {
 
         if (instance == null) throw new IllegalArgumentException("Instance must not be null");

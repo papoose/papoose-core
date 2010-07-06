@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceFactory;
@@ -203,32 +204,7 @@ class ServiceRegistry
             SecurityUtils.checkServicePermission(clazz, ServicePermission.REGISTER);
         }
 
-        Set<Class> classes = ClassUtils.getAllInterfacesAsSet(service);
-        if (!classes.contains(ServiceFactory.class))
-        {
-            for (String clazz : clazzes)
-            {
-                boolean found = false;
-
-                if (clazz.equals(service.getClass().getName()))
-                {
-                    found = true;
-                }
-                else
-                {
-                    for (Class cls : classes)
-                    {
-                        if (clazz.equals(cls.getName()))
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!found) throw new IllegalArgumentException();
-            }
-        }
+        checkClasses(service, clazzes);
 
         ServiceRegistrationImpl serviceRegistration;
 
@@ -443,6 +419,8 @@ class ServiceRegistry
 
     public Object getService(BundleController bundleController, ServiceReference sr)
     {
+        if (!(sr instanceof ServiceRegistrationImpl.ServiceReferenceImpl)) return null;
+
         ServiceRegistrationImpl.ServiceReferenceImpl serviceReference = (ServiceRegistrationImpl.ServiceReferenceImpl) sr;
         SecurityException se = null;
         for (String objectClass : (String[]) serviceReference.getProperty(Constants.OBJECTCLASS))
@@ -477,6 +455,8 @@ class ServiceRegistry
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (reference)
         {
+            if (reference.getCount() > 1) return reference.getService();
+
             Object service = entry.getService();
             if (reference.getService() != null)
             {
@@ -484,9 +464,20 @@ class ServiceRegistry
             }
             else if (service instanceof ServiceFactory)
             {
-                ServiceFactory factory = (ServiceFactory) service;
-                service = factory.getService(bundleController, entry.getRegistration());
-                reference.setService(service);
+                try
+                {
+                    ServiceFactory factory = (ServiceFactory) service;
+                    service = factory.getService(bundleController, entry.getRegistration());
+
+                    checkClasses(service, (String[]) sr.getProperty(Constants.OBJECTCLASS));
+
+                    reference.setService(service);
+                }
+                catch (Throwable t)
+                {
+                    framework.getBundleManager().fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundleController, t));
+                    service = null;
+                }
             }
             return service;
         }
@@ -632,6 +623,36 @@ class ServiceRegistry
         synchronized (lock)
         {
             //Todo: change body of created methods use File | Settings | File Templates.
+        }
+    }
+
+    public static void checkClasses(Object service, String[] clazzes)
+    {
+        Set<Class> classes = ClassUtils.getAllInterfacesAsSet(service);
+        if (!classes.contains(ServiceFactory.class))
+        {
+            for (String clazz : clazzes)
+            {
+                boolean found = false;
+
+                if (clazz.equals(service.getClass().getName()))
+                {
+                    found = true;
+                }
+                else
+                {
+                    for (Class cls : classes)
+                    {
+                        if (clazz.equals(cls.getName()))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!found) throw new IllegalArgumentException();
+            }
         }
     }
 
