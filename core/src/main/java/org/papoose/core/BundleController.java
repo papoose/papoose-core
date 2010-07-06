@@ -854,7 +854,7 @@ public class BundleController implements Bundle
     ServiceReference[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException
     {
 
-        return framework.getServiceRegistry().getAllServiceReferences(this, clazz, filter);
+        return framework.getServiceRegistry().getAllServiceReferences(clazz, filter);
     }
 
     ServiceReference getServiceReference(String clazz)
@@ -906,6 +906,7 @@ public class BundleController implements Bundle
         }
     }
 
+    @SuppressWarnings({ "SuspiciousMethodCalls" })
     void removeBundleListener(BundleListener bundleListener)
     {
         lock.writeLock().lock();

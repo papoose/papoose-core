@@ -19,18 +19,22 @@ package org.papoose.tck.core;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.acme.BService;
 import com.acme.Service;
 import com.acme.ServiceServiceFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
@@ -78,6 +82,42 @@ public class ServiceTest extends BaseTest
     }
 
     @Test
+    public void testRegistrationWithBadClass()
+    {
+        BundleContext context = framework.getBundleContext();
+
+        try
+        {
+            context.registerService("FUBAR", new BService(), null);
+
+            fail("Object does not implement interface");
+        }
+        catch (IllegalArgumentException ignore)
+        {
+        }
+
+        try
+        {
+            context.registerService(Service.class.getName(), null, null);
+
+            fail("Service is null");
+        }
+        catch (IllegalArgumentException ignore)
+        {
+        }
+
+        ServiceRegistration registration = context.registerService(BService.class.getName(), new BService(), null);
+
+        assertNotNull(registration);
+
+        registration.unregister();
+
+        ServiceReference reference = context.getServiceReference(Service.class.getName());
+
+        assertNull(reference);
+    }
+
+    @Test
     public void testRegistrationWithProperties()
     {
         BundleContext context = framework.getBundleContext();
@@ -112,6 +152,11 @@ public class ServiceTest extends BaseTest
         assertEquals("Hello World!", storedMessage.get());
 
         registration.unregister();
+
+        assertEquals("PASS", reference.getProperty("TEST"));
+        assertTrue((Long) reference.getProperty(Constants.SERVICE_ID) > 0);
+        assertEquals(0, reference.getProperty(Constants.SERVICE_RANKING));
+        assertEquals(Service.class.getName(), ((String[]) reference.getProperty(Constants.OBJECTCLASS))[0]);
 
         reference = context.getServiceReference(Service.class.getName());
 
@@ -279,8 +324,10 @@ public class ServiceTest extends BaseTest
     {
         BundleContext context = framework.getBundleContext();
 
+        Properties properties = new Properties();
+        properties.put("TEST", "PASS");
         ServiceServiceFactory serviceFactory = new ServiceServiceFactory();
-        ServiceRegistration registration = context.registerService(Service.class.getName(), serviceFactory, null);
+        ServiceRegistration registration = context.registerService(Service.class.getName(), serviceFactory, properties);
 
         assertNotNull(registration);
 
@@ -300,6 +347,7 @@ public class ServiceTest extends BaseTest
 
         assertNotNull(sservice);
         assertNotNull(tservice);
+        assertNotSame(sservice, tservice);
 
         boolean sfound = false;
         boolean tfound = false;
@@ -325,16 +373,25 @@ public class ServiceTest extends BaseTest
 
         assertEquals("Hello World!", serviceFactory.data.get("MESSAGE"));
 
+        serviceFactory.data.clear();
         testBundle.uninstall();
 
         assertSame(tservice, serviceFactory.data.get("UNGET"));
         assertTrue((Boolean) serviceFactory.data.get("TEST"));
 
-        serviceFactory.data.remove("UNGET");
+        serviceFactory.data.clear();
         registration.unregister();
 
         assertSame(sservice, serviceFactory.data.get("UNGET"));
         assertTrue((Boolean) serviceFactory.data.get("TEST"));
+        assertEquals("PASS", treference.getProperty("TEST"));
+        assertTrue((Long) treference.getProperty(Constants.SERVICE_ID) > 0);
+        assertEquals(0, treference.getProperty(Constants.SERVICE_RANKING));
+        assertEquals(Service.class.getName(), ((String[]) treference.getProperty(Constants.OBJECTCLASS))[0]);
+        assertEquals("PASS", sreference.getProperty("TEST"));
+        assertTrue((Long) sreference.getProperty(Constants.SERVICE_ID) > 0);
+        assertEquals(0, sreference.getProperty(Constants.SERVICE_RANKING));
+        assertEquals(Service.class.getName(), ((String[]) sreference.getProperty(Constants.OBJECTCLASS))[0]);
 
         sreference = context.getServiceReference(Service.class.getName());
 
@@ -355,9 +412,9 @@ public class ServiceTest extends BaseTest
 
         assertNotNull(reference);
 
-        context.getService(reference);
-        context.getService(reference);
         Service service = (Service) context.getService(reference);
+        assertSame(service, context.getService(reference));
+        assertSame(service, context.getService(reference));
 
         assertNotNull(service);
 
@@ -369,17 +426,26 @@ public class ServiceTest extends BaseTest
 
         assertTrue(context.ungetService(reference));
         assertSame(null, serviceFactory.data.get("UNGET"));
+        assertNull(serviceFactory.data.get("TEST"));
         assertTrue(context.ungetService(reference));
         assertSame(null, serviceFactory.data.get("UNGET"));
+        assertNull(serviceFactory.data.get("TEST"));
         assertTrue(context.ungetService(reference));
         assertSame(service, serviceFactory.data.get("UNGET"));
+        assertTrue((Boolean) serviceFactory.data.get("TEST"));
         assertFalse(context.ungetService(reference));
+
+        Service newService = (Service) context.getService(reference);
+        assertNotSame(service, newService);
 
         serviceFactory.data.remove("UNGET");
 
         registration.unregister();
 
-        assertSame(null, serviceFactory.data.get("UNGET"));
+        assertSame(newService, serviceFactory.data.get("UNGET"));
+        assertTrue((Boolean) serviceFactory.data.get("TEST"));
+
+        assertFalse(context.ungetService(reference));
 
         reference = context.getServiceReference(Service.class.getName());
 
@@ -484,6 +550,27 @@ public class ServiceTest extends BaseTest
         assertNull(storedTest.get());
 
         registration.unregister();
+    }
+
+    @Test
+    public void testServiceListenerWithBadFilter()
+    {
+        BundleContext context = framework.getBundleContext();
+
+        try
+        {
+            context.addServiceListener(new ServiceListener()
+            {
+                public void serviceChanged(ServiceEvent event)
+                {
+                }
+            }, "sdssf)sfsf(");
+
+            fail("Should have thrown an exception");
+        }
+        catch (InvalidSyntaxException ignored)
+        {
+        }
     }
 
 }

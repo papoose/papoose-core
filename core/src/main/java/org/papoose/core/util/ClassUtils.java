@@ -1073,7 +1073,7 @@ public abstract class ClassUtils
      * @param clazz the class to analyse for interfaces
      * @return all interfaces that the given object implements as Set
      */
-    public static Set getAllInterfacesForClassAsSet(Class clazz)
+    public static Set<Class> getAllInterfacesForClassAsSet(Class clazz)
     {
         return getAllInterfacesForClassAsSet(clazz, null);
     }
@@ -1088,14 +1088,14 @@ public abstract class ClassUtils
      *                    (may be <code>null</code> when accepting all declared interfaces)
      * @return all interfaces that the given object implements as Set
      */
-    public static Set getAllInterfacesForClassAsSet(Class clazz, ClassLoader classLoader)
+    public static Set<Class> getAllInterfacesForClassAsSet(Class clazz, ClassLoader classLoader)
     {
         if (clazz == null) throw new IllegalArgumentException("Class must not be null");
         if (clazz.isInterface())
         {
             return Collections.singleton(clazz);
         }
-        Set interfaces = new LinkedHashSet();
+        Set<Class> interfaces = new LinkedHashSet<Class>();
         while (clazz != null)
         {
             for (int i = 0; i < clazz.getInterfaces().length; i++)

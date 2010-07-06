@@ -41,6 +41,7 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
 import org.papoose.core.filter.Expr;
+import org.papoose.core.util.ClassUtils;
 import org.papoose.core.util.SecurityUtils;
 
 
@@ -197,6 +198,38 @@ class ServiceRegistry
     {
         LOGGER.entering(CLASS_NAME, "registerService", new Object[]{ bundleController, clazzes, service, properties });
 
+        for (String clazz : clazzes)
+        {
+            SecurityUtils.checkServicePermission(clazz, ServicePermission.REGISTER);
+        }
+
+        Set<Class> classes = ClassUtils.getAllInterfacesAsSet(service);
+        if (!classes.contains(ServiceFactory.class))
+        {
+            for (String clazz : clazzes)
+            {
+                boolean found = false;
+
+                if (clazz.equals(service.getClass().getName()))
+                {
+                    found = true;
+                }
+                else
+                {
+                    for (Class cls : classes)
+                    {
+                        if (clazz.equals(cls.getName()))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!found) throw new IllegalArgumentException();
+            }
+        }
+
         ServiceRegistrationImpl serviceRegistration;
 
         synchronized (lock)
@@ -311,7 +344,7 @@ class ServiceRegistry
         }
     }
 
-    public ServiceReference[] getAllServiceReferences(BundleController bundleController, String clazz, String filter) throws InvalidSyntaxException
+    public ServiceReference[] getAllServiceReferences(String clazz, String filter) throws InvalidSyntaxException
     {
         synchronized (lock)
         {
