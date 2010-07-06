@@ -42,6 +42,8 @@ public class ServiceServiceFactory implements ServiceFactory
             }
         };
 
+        data.put("GET", registration);
+
         tuples.put(bundle, new Tuple(bundle, registration, service));
 
         return service;

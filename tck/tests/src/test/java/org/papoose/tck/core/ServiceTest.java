@@ -76,6 +76,10 @@ public class ServiceTest extends BaseTest
 
         registration.unregister();
 
+        service = (Service) context.getService(reference);
+
+        assertNull(service);
+
         reference = context.getServiceReference(Service.class.getName());
 
         assertNull(reference);
@@ -413,8 +417,13 @@ public class ServiceTest extends BaseTest
         assertNotNull(reference);
 
         Service service = (Service) context.getService(reference);
+        assertEquals(registration, serviceFactory.data.get("GET"));
+
+        serviceFactory.data.remove("GET");
         assertSame(service, context.getService(reference));
+        assertNull(serviceFactory.data.get("GET"));
         assertSame(service, context.getService(reference));
+        assertNull(serviceFactory.data.get("GET"));
 
         assertNotNull(service);
 
