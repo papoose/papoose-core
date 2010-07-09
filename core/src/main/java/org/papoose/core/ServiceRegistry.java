@@ -455,15 +455,11 @@ class ServiceRegistry
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (reference)
         {
-            if (reference.getCount() > 1) return reference.getService();
-
             Object service = entry.getService();
-            if (reference.getService() != null)
+            if (service instanceof ServiceFactory)
             {
-                service = reference.getService();
-            }
-            else if (service instanceof ServiceFactory)
-            {
+                if (reference.getCount() > 1) return reference.getService();
+
                 try
                 {
                     ServiceFactory factory = (ServiceFactory) service;
@@ -705,15 +701,6 @@ class ServiceRegistry
     {
         private int count;
         private Object service;
-
-        private BundleServiceReference()
-        {
-        }
-
-        private BundleServiceReference(Object service)
-        {
-            this.service = service;
-        }
 
         public void increment()
         {

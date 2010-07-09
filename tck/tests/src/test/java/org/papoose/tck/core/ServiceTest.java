@@ -23,6 +23,7 @@ import com.acme.BService;
 import com.acme.BogusServiceReference;
 import com.acme.FaultyServiceServiceFactory;
 import com.acme.NaughtyServiceServiceFactory;
+import com.acme.NoInterfaceService;
 import com.acme.Service;
 import com.acme.ServiceServiceFactory;
 import static org.junit.Assert.assertEquals;
@@ -73,6 +74,14 @@ public class ServiceTest extends BaseTest
 
         assertNotNull(service);
 
+        reference = registration.getReference();
+
+        assertNotNull(reference);
+
+        service = (Service) context.getService(reference);
+
+        assertNotNull(service);
+
         service.hello("Hello World!");
 
         assertEquals("Hello World!", storedMessage.get());
@@ -84,6 +93,34 @@ public class ServiceTest extends BaseTest
         assertNull(service);
 
         reference = context.getServiceReference(Service.class.getName());
+
+        assertNull(reference);
+    }
+
+    @Test
+    public void testRegistrationWithNoInterface()
+    {
+        BundleContext context = framework.getBundleContext();
+
+        ServiceRegistration registration = context.registerService(NoInterfaceService.class.getName(), new NoInterfaceService(), null);
+
+        assertNotNull(registration);
+
+        ServiceReference reference = context.getServiceReference(NoInterfaceService.class.getName());
+
+        assertNotNull(reference);
+
+        NoInterfaceService service = (NoInterfaceService) context.getService(reference);
+
+        assertNotNull(service);
+
+        registration.unregister();
+
+        service = (NoInterfaceService) context.getService(reference);
+
+        assertNull(service);
+
+        reference = context.getServiceReference(NoInterfaceService.class.getName());
 
         assertNull(reference);
     }
@@ -700,12 +737,10 @@ public class ServiceTest extends BaseTest
     {
         BundleContext context = framework.getBundleContext();
 
-        final AtomicReference<String> storedMessage = new AtomicReference<String>();
         ServiceRegistration registration = context.registerService(Service.class.getName(), new Service()
         {
             public void hello(String message)
             {
-                storedMessage.set(message);
             }
         }, null);
 
