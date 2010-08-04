@@ -272,7 +272,7 @@ public class SecurityUtils
             {
                 for (Iterator<List<Certificate>> iter2 = certificateChains.iterator(); iter2.hasNext();)
                 {
-                    X509Certificate cert = (X509Certificate) ((List<Certificate>) iter2.next()).get(0);
+                    X509Certificate cert = (X509Certificate) iter2.next().get(0);
                     boolean found = false;
                     for (List<Certificate> chain : chains)
                     {
