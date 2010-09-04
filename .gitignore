@@ -4,3 +4,4 @@
 *.iws
 # all target dirs
 target/
+classes/
