@@ -22,7 +22,9 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.ops4j.pax.exam.CoreOptions.equinox;
 import static org.ops4j.pax.exam.CoreOptions.felix;
+import static org.ops4j.pax.exam.CoreOptions.knopflerfish;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.provision;
@@ -49,7 +51,8 @@ public class FrameworkTest
     public static Option[] configure()
     {
         return options(
-                felix().version("2.0.5"),
+                equinox(),
+                felix(),
                 compendiumProfile(),
                 // org.ops4j.pax.exam.container.def.PaxRunnerOptions.vmOption("-Xmx1024M -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005"),
                 // this is necessary to let junit runner not timeout the remote process before attaching debugger
@@ -98,6 +101,7 @@ public class FrameworkTest
         assertNotNull(areference);
         assertNotNull(breference);
         assertNotNull(creference);
+        assertNotNull(treference);
 
         assertEquals(areference, sreference);
         assertEquals(breference, creference);

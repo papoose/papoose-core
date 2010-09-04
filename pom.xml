@@ -209,19 +209,27 @@
 
     <profiles>
 
-        <!-- testing profile -->
-        <profile>
-            <id>tck</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-                <property>
-                    <name>env-test</name>
-                </property>
-            </activation>
-            <modules>
-                <module>tck</module>
-            </modules>
-        </profile>
+      <!-- testing profile -->
+      <profile>
+          <id>tck</id>
+          <activation>
+              <activeByDefault>false</activeByDefault>
+          </activation>
+          <modules>
+              <module>tck</module>
+          </modules>
+      </profile>
+
+      <!-- asselbly profile -->
+      <profile>
+          <id>assemble</id>
+          <activation>
+              <activeByDefault>false</activeByDefault>
+          </activation>
+          <modules>
+              <module>assemble</module>
+          </modules>
+      </profile>
 
     </profiles>
 

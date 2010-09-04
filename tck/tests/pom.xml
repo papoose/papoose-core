@@ -30,7 +30,7 @@
     </build>
 
     <properties>
-        <paxExamVersion>1.2.1-SNAPSHOT</paxExamVersion>
+      <paxExamVersion>1.2.2-SNAPSHOT</paxExamVersion>
     </properties>
 
     <dependencies>
