@@ -375,10 +375,10 @@ public class ServiceTest extends BaseTest
 
         assertNotNull(registration);
 
-        Bundle testBundle = context.installBundle("mvn:org.papoose.test.bundles/test-bundle/1.1.0");
+        Bundle tb = context.installBundle("mvn:org.papoose.test.bundles/test-bundle/1.1.0");
 
         ServiceReference sreference = context.getServiceReference(Service.class.getName());
-        ServiceReference treference = testBundle.getBundleContext().getServiceReference(Service.class.getName());
+        ServiceReference treference = tb.getBundleContext().getServiceReference(Service.class.getName());
 
         assertNotNull(sreference);
         assertNotNull(treference);
@@ -387,7 +387,7 @@ public class ServiceTest extends BaseTest
         assertSame(context.getBundle(), treference.getBundle());
 
         Service sservice = (Service) context.getService(sreference);
-        Service tservice = (Service) testBundle.getBundleContext().getService(treference);
+        Service tservice = (Service) tb.getBundleContext().getService(treference);
 
         assertNotNull(sservice);
         assertNotNull(tservice);
@@ -398,7 +398,7 @@ public class ServiceTest extends BaseTest
         for (Bundle bundle : sreference.getUsingBundles())
         {
             if (context.getBundle() == bundle) sfound = true;
-            if (testBundle == bundle) tfound = true;
+            if (tb == bundle) tfound = true;
         }
         assertTrue("System bundle is using", sfound);
         assertTrue("Test bundle is using", tfound);
@@ -408,7 +408,7 @@ public class ServiceTest extends BaseTest
         for (Bundle bundle : treference.getUsingBundles())
         {
             if (context.getBundle() == bundle) sfound = true;
-            if (testBundle == bundle) tfound = true;
+            if (tb == bundle) tfound = true;
         }
         assertTrue("System bundle is using", sfound);
         assertTrue("Test bundle is using", tfound);
@@ -418,7 +418,7 @@ public class ServiceTest extends BaseTest
         assertEquals("Hello World!", serviceFactory.data.get("MESSAGE"));
 
         serviceFactory.data.clear();
-        testBundle.uninstall();
+        tb.uninstall();
 
         assertSame(tservice, serviceFactory.data.get("UNGET"));
         assertTrue((Boolean) serviceFactory.data.get("TEST"));
@@ -765,4 +765,69 @@ public class ServiceTest extends BaseTest
         assertNull(reference);
     }
 
+    @Test
+    public void testServicesInDifferentClassSpaces() throws Exception
+    {
+        framework.start();
+        BundleContext context = framework.getBundleContext();
+
+        Bundle share = context.installBundle("mvn:org.papoose.test.bundles/test-share/1.1.0");
+        assertNotNull(share);
+        share.start();
+
+        Bundle svcA = context.installBundle("mvn:org.papoose.core.tck.bundles/service-a/1.0.0");
+        assertNotNull(svcA);
+        svcA.start();
+
+        Bundle svcB = context.installBundle("mvn:org.papoose.core.tck.bundles/service-b/2.0.0");
+        assertNotNull(svcB);
+        svcB.start();
+
+        Bundle consumer = context.installBundle("mvn:org.papoose.core.tck.bundles/service-consumer/1.0.0");
+        assertNotNull(consumer);
+        consumer.start();
+
+
+        ServiceReference sreference = context.getServiceReference("com.acme.svc.Service");
+        ServiceReference areference = svcA.getBundleContext().getServiceReference("com.acme.svc.Service");
+        ServiceReference breference = svcB.getBundleContext().getServiceReference("com.acme.svc.Service");
+        ServiceReference creference = consumer.getBundleContext().getServiceReference("com.acme.svc.Service");
+
+        assertNotNull(sreference);
+        assertNotNull(areference);
+        assertNotNull(breference);
+        assertNotNull(creference);
+
+        assertEquals(areference, sreference);
+        assertEquals(breference, creference);
+
+        ServiceReference[] references = context.getAllServiceReferences("com.acme.svc.Service", null);
+
+        assertEquals(2, references.length);
+
+        references = context.getServiceReferences("com.acme.svc.Service", null);
+
+        assertEquals(2, references.length);
+
+        references = svcA.getBundleContext().getServiceReferences("com.acme.svc.Service", null);
+
+        assertEquals(1, references.length);
+
+        references = svcB.getBundleContext().getServiceReferences("com.acme.svc.Service", null);
+
+        assertEquals(1, references.length);
+
+        Object sservice = context.getService(sreference);
+        Object aservice = svcA.getBundleContext().getService(areference);
+        Object bservice = svcB.getBundleContext().getService(breference);
+        Object cservice = consumer.getBundleContext().getService(creference);
+
+        assertNotNull(sservice);
+        assertNotNull(aservice);
+        assertNotNull(bservice);
+        assertNotNull(cservice);
+        assertSame(sservice, aservice);
+        assertNotSame(aservice, bservice);
+        assertSame(bservice, cservice);
+    }
 }

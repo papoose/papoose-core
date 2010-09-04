@@ -147,15 +147,94 @@ class ServiceRegistry
 
             BundleClassLoader requestingClassLoader = obtainSource(requestingBundleController, packageName);
 
-            if (requestingClassLoader == null) return true;
-
             BundleClassLoader registeringClassLoader = obtainSource(registeringBundleController, packageName);
 
-            return registeringClassLoader == null || registeringClassLoader == requestingClassLoader;
+            if (requestingClassLoader == null && registeringClassLoader == null)
+            {
+                try
+                {
+                    BundleClassLoader reqbcl = obtainClassLoader(requestingBundleController);
+                    if (reqbcl == null) return true;
+                    Class reqc = reqbcl.delegateLoadClass(className);
+
+                    BundleClassLoader regbcl = obtainClassLoader(registeringBundleController);
+                    if (regbcl == null) return true;
+                    Class regc = regbcl.delegateLoadClass(className);
+
+                    return reqc == regc;
+                }
+                catch (ClassNotFoundException e)
+                {
+                    return true;
+                }
+            }
+            else if (requestingClassLoader == null)
+            {
+                if (obtainClassLoader(requestingBundleController) == registeringClassLoader)
+                {
+                    return true;
+                }
+                else
+                {
+                    try
+                    {
+                        BundleClassLoader reqbcl = obtainClassLoader(requestingBundleController);
+                        Class reqc = reqbcl.delegateLoadClass(className);
+                        try
+                        {
+                            BundleClassLoader regbcl = obtainClassLoader(registeringBundleController);
+                            Class regc = regbcl.delegateLoadClass(className);
+
+                            return reqc == regc;
+                        }
+                        catch (ClassNotFoundException e)
+                        {
+                            return false;
+                        }
+                    }
+                    catch (ClassNotFoundException e)
+                    {
+                        return true;
+                    }
+                }
+            }
+            else if (registeringClassLoader == null)
+            {
+                if (requestingClassLoader == obtainClassLoader(registeringBundleController))
+                {
+                    return true;
+                }
+                else
+                {
+                    try
+                    {
+                        BundleClassLoader regbcl = obtainClassLoader(registeringBundleController);
+                        Class regc = regbcl.delegateLoadClass(className);
+                        try
+                        {
+                            Class reqc = requestingClassLoader.delegateLoadClass(className);
+
+                            return reqc == regc;
+                        }
+                        catch (ClassNotFoundException e)
+                        {
+                            return false;
+                        }
+                    }
+                    catch (ClassNotFoundException e)
+                    {
+                        return true;
+                    }
+                }
+            }
+            else
+            {
+                return requestingClassLoader == registeringClassLoader;
+            }
         }
     }
 
-    private BundleClassLoader obtainSource(BundleController bundle, String packageName)
+    private static BundleClassLoader obtainSource(BundleController bundle, String packageName)
     {
         BundleClassLoader bundleClassLoader = obtainClassLoader(bundle);
 
@@ -174,6 +253,8 @@ class ServiceRegistry
 
     private static BundleClassLoader obtainClassLoader(BundleController bundle)
     {
+        if (bundle.getState() == Bundle.INSTALLED) bundle.getFramework().getBundleManager().resolve(bundle);
+
         Generation generation = bundle.getCurrentGeneration();
         BundleGeneration bundleGeneration;
 

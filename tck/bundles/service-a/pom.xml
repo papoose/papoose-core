@@ -1,0 +1,51 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <groupId>org.papoose.core.tck.bundles</groupId>
+        <artifactId>tck-bundles</artifactId>
+        <version>1.0.0.SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>service-a</artifactId>
+    <version>1.0.0</version>
+    <packaging>bundle</packaging>
+    <name>Papoose :: TCK :: Bundles :: Service A</name>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Bundle-Version>1.0.0</Bundle-Version>
+                        <Export-Package>com.acme.svc;version=1.0.0</Export-Package>
+                        <Import-Package>org.papoose.test.bundles.share,org.osgi.framework;version="[1,2)"</Import-Package>
+                        <Private-Package>com.acme.impl</Private-Package>
+                        <Bundle-Activator>com.acme.impl.Activator</Bundle-Activator>
+                    </instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.papoose.test.bundles</groupId>
+            <artifactId>test-share</artifactId>
+        </dependency>
+
+    </dependencies>
+
+</project>

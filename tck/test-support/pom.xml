@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tck-support</artifactId>
     <packaging>jar</packaging>
-    <name>Papoose :: OSGi Compatibility Tests :: Support</name>
+    <name>Papoose :: TCK :: Support</name>
 
     <build/>
 

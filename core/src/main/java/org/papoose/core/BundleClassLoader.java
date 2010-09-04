@@ -309,7 +309,7 @@ public class BundleClassLoader extends NamedClassLoader implements BundleReferen
 
         for (String exportedPackage : exportedPackages)
         {
-            if (exportedPackage.equals(packageName)) throw new ClassNotFoundException();
+            if (exportedPackage.equals(packageName)) throw new ClassNotFoundException("Package " + packageName + " for " + className);
         }
 
         for (DynamicDescription dynamicDescription : dynamicImports)

@@ -19,12 +19,14 @@ package org.papoose.tck.core;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.junit.After;
 import org.junit.Before;
 import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
+
 import org.papoose.core.PapooseFrameworkFactory;
 import org.papoose.core.util.FileUtils;
 
@@ -35,12 +37,15 @@ import org.papoose.core.util.FileUtils;
 public abstract class BaseTest
 {
     protected Framework framework;
+    protected String root;
 
     @Before
     public void before() throws Exception
     {
+        root = "target/papoose_" + new Random().nextInt();
+
         Map<String, String> configuration = new HashMap<String, String>();
-        configuration.put(Constants.FRAMEWORK_STORAGE, "target/papoose");
+        configuration.put(Constants.FRAMEWORK_STORAGE, root);
 
         FrameworkFactory factory = new PapooseFrameworkFactory();
         framework = factory.newFramework(configuration);
@@ -54,6 +59,8 @@ public abstract class BaseTest
         framework.stop();
         framework = null;
 
-        FileUtils.delete(new File("target/papoose"));
+        FileUtils.delete(new File(root));
+
+        root = null;
     }
 }

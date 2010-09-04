@@ -10,7 +10,7 @@
     <groupId>org.papoose.core.tck</groupId>
     <artifactId>tck</artifactId>
     <packaging>pom</packaging>
-    <name>Papoose :: OSGi Compatibility Tests</name>
+    <name>Papoose :: TCK</name>
 
     <modules>
         <module>bundles</module>

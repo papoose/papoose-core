@@ -9,7 +9,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tck-tests</artifactId>
     <packaging>jar</packaging>
-    <name>Papoose :: OSGi Compatibility Tests :: Tests</name>
+    <name>Papoose :: TCK :: Tests</name>
 
     <build>
         <plugins>
@@ -29,8 +29,11 @@
         </plugins>
     </build>
 
-    <dependencies>
+    <properties>
+        <paxExamVersion>1.2.1-SNAPSHOT</paxExamVersion>
+    </properties>
 
+    <dependencies>
         <dependency>
             <groupId>org.ops4j.pax.url</groupId>
             <artifactId>pax-url-mvn</artifactId>
@@ -107,6 +110,28 @@
             <version>1.1.0</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam</artifactId>
+            <version>${paxExamVersion}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam-junit</artifactId>
+            <version>${paxExamVersion}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ops4j.pax.exam</groupId>
+            <artifactId>pax-exam-container-default</artifactId>
+            <version>${paxExamVersion}</version>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
 </project>

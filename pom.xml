@@ -151,6 +151,12 @@
                 <scope>test</scope>
             </dependency>
 
+            <dependency>
+                <groupId>org.papoose.test.bundles</groupId>
+                <artifactId>test-share</artifactId>
+                <version>1.1.0</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

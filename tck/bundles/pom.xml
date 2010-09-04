@@ -10,11 +10,14 @@
     <groupId>org.papoose.core.tck.bundles</groupId>
     <artifactId>tck-bundles</artifactId>
     <packaging>pom</packaging>
-    <name>Papoose :: OSGi Compatibility Tests :: Bundles</name>
+    <name>Papoose :: TCK :: Bundles</name>
 
     <modules>
         <module>bad-activation-policy</module>
         <module>no-symbolic-name</module>
+        <module>service-a</module>
+        <module>service-b</module>
+        <module>service-consumer</module>
     </modules>
 
 </project>

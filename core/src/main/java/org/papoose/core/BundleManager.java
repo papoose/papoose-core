@@ -676,9 +676,11 @@ public class BundleManager
 
             bundleGeneration.getClassLoader().setLazyActivation(false);
 
+            Throwable throwable;
+            String error;
+            String bundleActivatorClassName = archiveStore.getBundleActivatorClass();
             try
             {
-                String bundleActivatorClassName = archiveStore.getBundleActivatorClass();
                 if (bundleActivatorClassName != null)
                 {
                     Class bundleActivatorClass = bundleGeneration.getClassLoader().loadClass(bundleActivatorClassName);
@@ -708,23 +710,28 @@ public class BundleManager
             }
             catch (ClassNotFoundException cnfe)
             {
-                LOGGER.log(Level.WARNING, "Unable to load bundle activator class", cnfe);
+                error = "Unable to load bundle activator class";
+                throwable = cnfe;
             }
             catch (InstantiationException ie)
             {
-                LOGGER.log(Level.WARNING, "Unable to instantiate bundle activator class", ie);
+                error = "Unable to instantiate bundle activator class";
+                throwable = ie;
             }
             catch (IllegalAccessException iae)
             {
-                LOGGER.log(Level.WARNING, "Unable to instantiate bundle activator class", iae);
+                error = "Unable to instantiate bundle activator class";
+                throwable = iae;
             }
             catch (ClassCastException cce)
             {
-                LOGGER.log(Level.WARNING, "Bundle activator not an instance of BundleActivator", cce);
+                error = "Bundle activator not an instance of BundleActivator";
+                throwable = cce;
             }
             catch (Throwable t)
             {
-                LOGGER.log(Level.WARNING, "Unable to start bundle activator class", t);
+                error = "Unable to start bundle activator class";
+                throwable = t;
             }
 
             bundleGeneration.setState(Bundle.STOPPING);
@@ -734,6 +741,8 @@ public class BundleManager
             bundleGeneration.setState(Bundle.RESOLVED);
 
             fireBundleEvent(new BundleEvent(BundleEvent.STOPPED, bundleController));
+
+            throw new BundleException(error + " for " + bundleActivatorClassName, throwable);
         }
         catch (InterruptedException ie)
         {
@@ -1021,9 +1030,10 @@ public class BundleManager
 
                 if (bundle.getAllServiceListeners() != null) fireServiceEvent(event, bundle.getAllServiceListeners(), bundle);
 
-                if (!reference.isAssignableTo(bundle, clazz)) continue;
-
-                if (bundle.getServiceListeners() != null) fireServiceEvent(event, bundle.getServiceListeners(), bundle);
+                if (bundle.getServiceListeners() != null)
+                {
+                    if (reference.isAssignableTo(bundle, clazz)) fireServiceEvent(event, bundle.getServiceListeners(), bundle);
+                }
             }
         }
     }
