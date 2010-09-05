@@ -118,7 +118,7 @@ class PapooseFramework implements Framework
         systemBundle.get().start();
 
         nonDaemon = new NonDaemonThread();
-        Thread t = new Thread(nonDaemon);
+        Thread t = new Thread(nonDaemon, "Daemon thread for " + framework.getFrameworkName());
         t.setDaemon(false);
         t.start();
 
