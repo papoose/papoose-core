@@ -666,10 +666,12 @@ public class DefaultResolver implements Resolver
 
             if (targetImport.isMandatory())
             {
-                if (packageName.startsWith("javax.") || packageName.startsWith("org.osgi."))
-                {
-                    if (LOGGER.isLoggable(Level.WARNING)) LOGGER.warning("Unable to find a wire for " + packageName + ".  Adding it to org.osgi.framework.system.packages or org.osgi.framework.bootdelegation might solve this problem");
-                }
+                // todo this got printed even though the package got wired.
+                // Add some more extensive logic of remove it all together
+//                if (packageName.startsWith("javax.") || packageName.startsWith("org.osgi."))
+//                {
+//                    if (LOGGER.isLoggable(Level.WARNING)) LOGGER.warning("Unable to find a wire for " + packageName + ".  Adding it to org.osgi.framework.system.packages or org.osgi.framework.bootdelegation might solve this problem");
+//                }
 
                 return null;
             }
