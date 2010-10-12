@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.osgi.framework.Constants;
@@ -80,6 +81,19 @@ public class PapooseFrameworkFactory implements FrameworkFactory
             if (!"FILE".equals(storeTypeString))
             {
                 LOGGER.warning("Unable to parse " + PapooseConstants.PAPOOSE_FRAMEWORK_STORE_TYPE + ", using file store");
+            }
+        }
+
+        String storageCleanString = properties.getProperty(Constants.FRAMEWORK_STORAGE_CLEAN, "");
+        if (Constants.FRAMEWORK_STORAGE_CLEAN.equalsIgnoreCase(storageCleanString))
+        {
+            try
+            {
+                store.clear();
+            }
+            catch (PapooseException pe)
+            {
+                LOGGER.log(Level.WARNING, "Unable to clean framework storage", pe);
             }
         }
 
