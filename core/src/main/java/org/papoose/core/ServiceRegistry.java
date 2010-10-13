@@ -457,6 +457,8 @@ class ServiceRegistry
     {
         if (references.isEmpty()) return null;
 
+        if (references.size() == 1) return references.toArray(new ServiceReference[1]);
+
         SortedSet<ServiceReference> sorted = new TreeSet<ServiceReference>(new Comparator<ServiceReference>()
         {
             public int compare(ServiceReference o1, ServiceReference o2)
