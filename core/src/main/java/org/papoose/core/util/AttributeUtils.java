@@ -50,7 +50,12 @@ public class AttributeUtils
 
             public boolean isEmpty() { return attributes.isEmpty(); }
 
-            public Enumeration keys() { return Collections.enumeration(attributes.keySet()); }
+            public Enumeration keys()
+            {
+                Set<String> set = new HashSet<String>();
+                for (Object key : attributes.keySet()) set.add(key.toString());
+                return Collections.enumeration(set);
+            }
 
             public Enumeration elements() { return Collections.enumeration(attributes.values()); }
 
@@ -70,7 +75,12 @@ public class AttributeUtils
 
             public boolean isEmpty() { return attributes.isEmpty(); }
 
-            public Enumeration keys() { return Collections.enumeration(attributes.keySet()); }
+            public Enumeration keys()
+            {
+                Set<String> set = new HashSet<String>();
+                for (Object key : attributes.keySet()) set.add(key.toString());
+                return Collections.enumeration(set);
+            }
 
             public Enumeration elements()
             {

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2009 (C) The original author or authors
+ * Copyright 2009-2010 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,20 +126,11 @@ public class BundleController implements Bundle
         return bundleStore;
     }
 
-    Executor getSerialExecutor()
+    synchronized Executor getSerialExecutor()
     {
-        lock.writeLock().lock();
+        if (serialExecutor == null) serialExecutor = new SerialExecutor(framework.getExecutorService());
 
-        try
-        {
-            if (serialExecutor == null) serialExecutor = new SerialExecutor(framework.getExecutorService());
-
-            return serialExecutor;
-        }
-        finally
-        {
-            lock.writeLock().unlock();
-        }
+        return serialExecutor;
     }
 
     Map<Integer, Generation> getGenerations()
@@ -154,7 +145,24 @@ public class BundleController implements Bundle
 
     void setCurrentGeneration(Generation currentGeneration)
     {
-        this.currentGeneration = currentGeneration;
+        try
+        {
+            lock.readLock().lockInterruptibly();
+        }
+        catch (InterruptedException ie)
+        {
+            Thread.currentThread().interrupt();
+            return;
+        }
+
+        try
+        {
+            this.currentGeneration = currentGeneration;
+        }
+        finally
+        {
+            lock.readLock().unlock();
+        }
     }
 
     BundleActivator getBundleActivator()
@@ -192,7 +200,7 @@ public class BundleController implements Bundle
 
         try
         {
-            lock.writeLock().lockInterruptibly();
+            lock.readLock().lockInterruptibly();
         }
         catch (InterruptedException ie)
         {
@@ -213,7 +221,7 @@ public class BundleController implements Bundle
         }
         finally
         {
-            lock.writeLock().unlock();
+            lock.readLock().unlock();
         }
     }
 
@@ -476,39 +484,30 @@ public class BundleController implements Bundle
     {
         SecurityUtils.checkAdminPermission(this, AdminPermission.METADATA);
 
-        lock.readLock().lock();
+        ArchiveStore archiveStore = getCurrentGeneration().getArchiveStore();
 
-        try
+        if (locale != null && locale.length() == 0) return AttributeUtils.allocateReadOnlyDictionary(archiveStore.getAttributes());
+
+        L18nResourceBundle parent = I18nUtils.loadResourceBundle(archiveStore, null, null);
+
+        for (Locale intermediateLocale : I18nUtils.generateLocaleList(Locale.getDefault()))
         {
-            ArchiveStore archiveStore = getCurrentGeneration().getArchiveStore();
+            parent = I18nUtils.loadResourceBundle(archiveStore, parent, intermediateLocale);
+        }
 
-            if (locale != null && locale.length() == 0) return AttributeUtils.allocateReadOnlyDictionary(archiveStore.getAttributes());
-
-            L18nResourceBundle parent = I18nUtils.loadResourceBundle(archiveStore, null, null);
-
-            for (Locale intermediateLocale : I18nUtils.generateLocaleList(Locale.getDefault()))
+        if (locale != null)
+        {
+            Locale target = I18nUtils.parseLocale(locale);
+            if (!target.equals(Locale.getDefault()))
             {
-                parent = I18nUtils.loadResourceBundle(archiveStore, parent, intermediateLocale);
-            }
-
-            if (locale != null)
-            {
-                Locale target = I18nUtils.parseLocale(locale);
-                if (!target.equals(Locale.getDefault()))
+                for (Locale intermediateLocale : I18nUtils.generateLocaleList(target))
                 {
-                    for (Locale intermediateLocale : I18nUtils.generateLocaleList(target))
-                    {
-                        parent = I18nUtils.loadResourceBundle(archiveStore, parent, intermediateLocale);
-                    }
+                    parent = I18nUtils.loadResourceBundle(archiveStore, parent, intermediateLocale);
                 }
             }
+        }
 
-            return AttributeUtils.allocateReadOnlyI18nDictionary(archiveStore.getAttributes(), parent);
-        }
-        finally
-        {
-            lock.readLock().unlock();
-        }
+        return AttributeUtils.allocateReadOnlyI18nDictionary(archiveStore.getAttributes(), parent);
     }
 
     /**
@@ -794,6 +793,8 @@ public class BundleController implements Bundle
 
         try
         {
+            if (getState() < Bundle.STARTING) return null;
+
             if (bundleContext == null) bundleContext = new BundleContextProxy(this);
 
             return bundleContext;

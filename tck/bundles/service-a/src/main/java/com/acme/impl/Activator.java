@@ -22,6 +22,7 @@ import java.util.Hashtable;
 import com.acme.svc.Service;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
@@ -42,6 +43,7 @@ public class Activator implements BundleActivator
 
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
         properties.put("SERVICE", "A");
+        properties.put(Constants.SERVICE_RANKING, Integer.MAX_VALUE);
 
         registration = context.registerService(Service.class.getName(), new Service()
         {

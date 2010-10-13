@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (C) The original author or authors
+ * Copyright 2008-2010 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@ package org.papoose.core;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
 
 import org.osgi.framework.Bundle;
@@ -45,13 +42,14 @@ public class StartLevelImpl implements StartManager, StartLevel, SynchronousBund
 {
     private final static String CLASS_NAME = StartLevelImpl.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
+    private final Object lock = new Object();
     private final Set<StartedState> started = new HashSet<StartedState>();
     private volatile Papoose framework;
     private volatile StartManager savedStartManager;
     private volatile SerialExecutor serialExecutor;
     private volatile StartLevelStore store;
     private volatile ServiceRegistration serviceRegistration;
-    private volatile int startLevel = 1;
+    private volatile int startLevel = 0;
     private volatile int initialBundleStartLevel = 1;
 
     public void start(Papoose framework)
@@ -74,14 +72,14 @@ public class StartLevelImpl implements StartManager, StartLevel, SynchronousBund
         }
         else
         {
-            this.store = new DefaltStartLevelStore();
+            this.store = new DefaultStartLevelStore();
         }
 
         store.start(framework);
 
         systemBundleContext.addBundleListener(this);
 
-        this.serviceRegistration = systemBundleContext.registerService(StartLevelImpl.class.getName(), this, null);
+        this.serviceRegistration = systemBundleContext.registerService(StartLevel.class.getName(), this, null);
 
         LOGGER.exiting(CLASS_NAME, "start");
     }
@@ -112,57 +110,46 @@ public class StartLevelImpl implements StartManager, StartLevel, SynchronousBund
 
     public void start(BundleGeneration bundle, int options) throws BundleException
     {
-        FutureTask<Void> task = new FutureTask<Void>(new BundleStart(bundle.getBundleController(), options));
-
-        serialExecutor.execute(task);
-
-
-        try
+        synchronized (lock)
         {
-            task.get();
-        }
-        catch (InterruptedException ie)
-        {
-            Thread.currentThread().interrupt();
-            throw new BundleException("Interrupted while waiting for bundle to start", ie);
-        }
-        catch (ExecutionException ee)
-        {
-            if (ee.getCause() != null)
+            BundleController bundleController = bundle.getBundleController();
+
+            if (startLevel >= getBundleStartLevel(bundleController))
             {
-                throw new BundleException("Interrupted while waiting for bundle to start", ee.getCause());
+                BundleManager bundleManager = framework.getBundleManager();
+                try
+                {
+                    bundleManager.beginStart((BundleGeneration) bundleController.getCurrentGeneration(), options);
+                }
+                catch (BundleException be)
+                {
+                    bundleManager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundleController, be));
+                }
             }
-            else
-            {
-                throw new BundleException("Interrupted while waiting for bundle to start");
-            }
+
+            started.add(new StartedState(bundleController, options));
         }
     }
 
     public void stop(BundleGeneration bundle, int options) throws BundleException
     {
-        FutureTask<Void> task = new FutureTask<Void>(new BundleStop(bundle.getBundleController(), options));
+        synchronized (lock)
+        {
+            BundleController bundleController = bundle.getBundleController();
 
-        serialExecutor.execute(task);
+            if (bundleController.getState() == Bundle.ACTIVE)
+            {
+                started.remove(new StartedState(bundleController));
 
-        try
-        {
-            task.get();
-        }
-        catch (InterruptedException ie)
-        {
-            Thread.currentThread().interrupt();
-            throw new BundleException("Interrupted while waiting for bundle to start", ie);
-        }
-        catch (ExecutionException ee)
-        {
-            if (ee.getCause() != null)
-            {
-                throw new BundleException("Interrupted while waiting for bundle to start", ee.getCause());
-            }
-            else
-            {
-                throw new BundleException("Interrupted while waiting for bundle to start");
+                BundleManager bundleManager = framework.getBundleManager();
+                try
+                {
+                    bundleManager.beginStop((BundleGeneration) bundleController.getCurrentGeneration(), options);
+                }
+                catch (BundleException be)
+                {
+                    bundleManager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundleController, be));
+                }
             }
         }
     }
@@ -213,11 +200,17 @@ public class StartLevelImpl implements StartManager, StartLevel, SynchronousBund
         {
             BundleController bundle = (BundleController) bundleEvent.getBundle();
 
-            store.setBundleStartLevel(bundle, initialBundleStartLevel);
             if (isBundlePersistentlyStarted(bundle))
             {
                 started.add(new StartedState(bundle));
-                serialExecutor.execute(new FutureTask<Void>(new BundleStart(bundle, Bundle.START_TRANSIENT)));
+                try
+                {
+                    start((BundleGeneration) bundle.getCurrentGeneration(), Bundle.START_TRANSIENT);
+                }
+                catch (BundleException e)
+                {
+                    e.printStackTrace();  //Todo change body of catch statement use File | Settings | File Templates.
+                }
             }
         }
         else if (bundleEvent.getType() == BundleEvent.UNINSTALLED)
@@ -226,7 +219,14 @@ public class StartLevelImpl implements StartManager, StartLevel, SynchronousBund
 
             store.clearBundleStartLevel(bundle);
             started.remove(new StartedState(bundle));
-            serialExecutor.execute(new FutureTask<Void>(new BundleStop(bundle, Bundle.STOP_TRANSIENT)));
+            try
+            {
+                stop((BundleGeneration) bundle.getCurrentGeneration(), Bundle.STOP_TRANSIENT);
+            }
+            catch (BundleException e)
+            {
+                e.printStackTrace();  //Todo change body of catch statement use File | Settings | File Templates.
+            }
         }
     }
 
@@ -296,127 +296,60 @@ public class StartLevelImpl implements StartManager, StartLevel, SynchronousBund
         {
             BundleManager bundleManager = framework.getBundleManager();
 
-            if (startLevel < desiredStartLevel)
+            synchronized (lock)
             {
-                while (startLevel < desiredStartLevel)
+                if (startLevel < desiredStartLevel)
                 {
-                    startLevel++;
-
-                    for (StartedState startedState : started)
+                    while (startLevel < desiredStartLevel)
                     {
-                        BundleController bundleController = startedState.getBundleController();
+                        startLevel++;
 
-                        if (startLevel == StartLevelImpl.this.getBundleStartLevel(bundleController))
+                        for (StartedState startedState : started)
                         {
-                            try
+                            BundleController bundleController = startedState.getBundleController();
+
+                            if (startLevel == StartLevelImpl.this.getBundleStartLevel(bundleController))
                             {
-                                bundleManager.beginStart((BundleGeneration) bundleController.getCurrentGeneration(), startedState.getOptions());
-                                startedState.clearOptions();
-                            }
-                            catch (BundleException be)
-                            {
-                                bundleManager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundleController, be));
+                                try
+                                {
+                                    bundleManager.beginStart((BundleGeneration) bundleController.getCurrentGeneration(), startedState.getOptions());
+                                    startedState.clearOptions();
+                                }
+                                catch (BundleException be)
+                                {
+                                    bundleManager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundleController, be));
+                                }
                             }
                         }
                     }
                 }
-            }
-            else if (startLevel > desiredStartLevel)
-            {
-                while (startLevel > desiredStartLevel)
+                else if (startLevel > desiredStartLevel)
                 {
-                    for (StartedState startedState : started)
+                    while (startLevel > desiredStartLevel)
                     {
-                        BundleController bundleController = startedState.getBundleController();
-
-                        if (startLevel == StartLevelImpl.this.getBundleStartLevel(bundleController))
+                        for (StartedState startedState : started)
                         {
-                            try
+                            BundleController bundleController = startedState.getBundleController();
+
+                            if (startLevel == StartLevelImpl.this.getBundleStartLevel(bundleController))
                             {
-                                bundleManager.beginStop((BundleGeneration) bundleController.getCurrentGeneration(), Bundle.STOP_TRANSIENT);
-                            }
-                            catch (Exception e)
-                            {
-                                bundleManager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundleController, e));
+                                try
+                                {
+                                    bundleManager.beginStop((BundleGeneration) bundleController.getCurrentGeneration(), Bundle.STOP_TRANSIENT);
+                                }
+                                catch (Exception e)
+                                {
+                                    bundleManager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundleController, e));
+                                }
                             }
                         }
+
+                        startLevel--;
                     }
-
-                    startLevel--;
                 }
+
+                bundleManager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.STARTLEVEL_CHANGED, bundleManager.getBundle(0), null));
             }
-
-            bundleManager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.STARTLEVEL_CHANGED, bundleManager.getBundle(0), null));
-        }
-    }
-
-    private class BundleStart implements Callable<Void>
-    {
-        private final BundleController bundleController;
-        private final int options;
-
-        private BundleStart(BundleController bundleController, int options)
-        {
-            assert bundleController != null;
-            assert options >= 0;
-
-            this.bundleController = bundleController;
-            this.options = options;
-        }
-
-        public Void call() throws Exception
-        {
-            if (startLevel >= StartLevelImpl.this.getBundleStartLevel(bundleController))
-            {
-                BundleManager bundleManager = framework.getBundleManager();
-                try
-                {
-                    bundleManager.beginStart((BundleGeneration) bundleController.getCurrentGeneration(), options);
-                }
-                catch (BundleException be)
-                {
-                    bundleManager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundleController, be));
-                }
-            }
-
-            started.add(new StartedState(bundleController, options));
-
-            return null;
-        }
-    }
-
-    private class BundleStop implements Callable<Void>
-    {
-        private final BundleController bundleController;
-        private final int options;
-
-        private BundleStop(BundleController bundleController, int options)
-        {
-            assert bundleController != null;
-            assert options >= 0;
-
-            this.bundleController = bundleController;
-            this.options = options;
-        }
-
-        public Void call() throws Exception
-        {
-            if (bundleController.getState() == Bundle.ACTIVE)
-            {
-                started.remove(new StartedState(bundleController));
-
-                BundleManager bundleManager = framework.getBundleManager();
-                try
-                {
-                    bundleManager.beginStop((BundleGeneration) bundleController.getCurrentGeneration(), options);
-                }
-                catch (BundleException be)
-                {
-                    bundleManager.fireFrameworkEvent(new FrameworkEvent(FrameworkEvent.ERROR, bundleController, be));
-                }
-            }
-
-            return null;
         }
     }
 }

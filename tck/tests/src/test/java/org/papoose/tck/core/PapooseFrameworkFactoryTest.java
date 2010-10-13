@@ -17,6 +17,7 @@
 package org.papoose.tck.core;
 
 import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -116,6 +117,16 @@ public class PapooseFrameworkFactoryTest
 
         headers = testBundle.getHeaders("en");
         Assert.assertEquals("no translation for this entry", headers.get("L10N-NoTranslation"));
+
+        headers = testBundle.getHeaders("en");
+
+        Enumeration enumeration = headers.keys();
+        while (enumeration.hasMoreElements())
+        {
+            Object key = enumeration.nextElement();
+            assertTrue(key instanceof String);
+            assertTrue(headers.get(key) instanceof String);
+        }
 
         try
         {

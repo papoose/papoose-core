@@ -376,6 +376,7 @@ public class ServiceTest extends BaseTest
         assertNotNull(registration);
 
         Bundle tb = context.installBundle("mvn:org.papoose.test.bundles/test-bundle/1.1.0");
+        tb.start();
 
         ServiceReference sreference = context.getServiceReference(Service.class.getName());
         ServiceReference treference = tb.getBundleContext().getServiceReference(Service.class.getName());

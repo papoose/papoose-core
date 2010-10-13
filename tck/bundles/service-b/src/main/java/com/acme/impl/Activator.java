@@ -22,6 +22,7 @@ import java.util.Hashtable;
 import com.acme.svc.Service;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.papoose.test.bundles.share.Share;
@@ -41,6 +42,7 @@ public class Activator implements BundleActivator
 
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
         properties.put("SERVICE", "B");
+        properties.put(Constants.SERVICE_RANKING, 0);
 
         registration = context.registerService(Service.class.getName(), new Service()
         {

@@ -30,6 +30,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkEvent;
+import org.osgi.framework.FrameworkListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
 import org.osgi.framework.launch.Framework;
@@ -115,12 +116,24 @@ class PapooseFramework implements Framework
 
         if (systemBundle.get() == null) throw new IllegalStateException("Framework has not been initialized");
 
-        systemBundle.get().start();
-
         nonDaemon = new NonDaemonThread();
         Thread t = new Thread(nonDaemon, "Daemon thread for " + framework.getFrameworkName());
         t.setDaemon(false);
         t.start();
+
+        systemBundle.get().addFrameworkListener(new FrameworkListener()
+        {
+            public void frameworkEvent(FrameworkEvent event)
+            {
+                if (event.getType() >= FrameworkEvent.STOPPED)
+                {
+                    nonDaemon.stop();
+                    nonDaemon = null;
+                }
+            }
+        });
+
+        systemBundle.get().start();
 
         LOGGER.exiting(CLASS_NAME, "start");
     }
@@ -175,15 +188,7 @@ class PapooseFramework implements Framework
     {
         LOGGER.entering(CLASS_NAME, "stop", options);
 
-        try
-        {
-            stop();
-        }
-        finally
-        {
-            nonDaemon.stop();
-            nonDaemon = null;
-        }
+        stop();
 
         LOGGER.exiting(CLASS_NAME, "stop");
     }

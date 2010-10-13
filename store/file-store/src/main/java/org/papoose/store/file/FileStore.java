@@ -67,28 +67,9 @@ public class FileStore implements Store
 
         this.root = new File(root, "papoose");
 
-        if (!this.root.exists())
-        {
-            if (!this.root.mkdirs()) throw new FatalError("Unable to create non-existant root: " + this.root);
-        }
-        else
-        {
-            File propertiesFile = new File(this.root, PROPERTIES_FILE);
-            if (propertiesFile.exists())
-            {
-                load();
-            }
-            else
-            {
-                properties.put(FILESTORE_VERSION_KEY, FILESTORE_VERSION);
-                save();
-            }
-        }
-
-        File bundlesRoot = new File(this.root, BUNDLES_DIR);
-        if (!bundlesRoot.exists() && !bundlesRoot.mkdirs()) throw new FatalError("Unable to create bundles root: " + bundlesRoot);
-
         if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("root: " + this.root);
+
+        init();
 
         LOGGER.exiting(CLASS_NAME, "FileStore");
     }
@@ -132,6 +113,8 @@ public class FileStore implements Store
                 throw pe;
             }
         }
+
+        init();
 
         LOGGER.exiting(CLASS_NAME, "clear");
     }
@@ -306,6 +289,30 @@ public class FileStore implements Store
         if (LOGGER.isLoggable(Level.FINER)) LOGGER.exiting(CLASS_NAME, "loadArchiveStore", result);
 
         return result;
+    }
+
+    private void init()
+    {
+        if (!this.root.exists())
+        {
+            if (!root.mkdirs()) throw new FatalError("Unable to create non-existant root: " + root);
+        }
+        else
+        {
+            File propertiesFile = new File(root, PROPERTIES_FILE);
+            if (propertiesFile.exists())
+            {
+                load();
+            }
+            else
+            {
+                properties.put(FILESTORE_VERSION_KEY, FILESTORE_VERSION);
+                save();
+            }
+        }
+
+        File bundlesRoot = new File(root, BUNDLES_DIR);
+        if (!bundlesRoot.exists() && !bundlesRoot.mkdirs()) throw new FatalError("Unable to create bundles root: " + bundlesRoot);
     }
 
     private void load()

@@ -205,6 +205,17 @@ public final class Papoose
         this.clientProperties = properties;
         this.properties = assembleProperties(properties);
 
+        String startLevelValue = properties.getProperty(PapooseConstants.PAPOOSE_FRAMEWORK_START_LEVEL, "1");
+        try
+        {
+            this.startLevel = Integer.parseInt(startLevelValue);
+        }
+        catch (NumberFormatException nfe)
+        {
+            LOGGER.log(Level.WARNING, "Unable to set start level using value " + startLevelValue + " defaulting to 1", nfe);
+            this.startLevel = 1;
+        }
+
         if (LOGGER.isLoggable(Level.CONFIG))
         {
             LOGGER.config("Framework name: " + frameworkName);
@@ -382,6 +393,15 @@ public final class Papoose
         }
     }
 
+    /**
+     * Get the system bundle context.
+     * <p/>
+     * Somtimes the framework may not be started and so getting a "regular"
+     * bundle context would return null.  This method will always return the
+     * system bundle context.
+     *
+     * @return the bundle context of the system bundle
+     */
     public BundleContext getSystemBundleContext()
     {
         LOGGER.entering(CLASS_NAME, "getSystemBundleContext");
@@ -390,7 +410,8 @@ public final class Papoose
 
         synchronized (lock)
         {
-            if (state.getState() < Bundle.STARTING) throw new IllegalStateException("Framework has not been initialized");
+            //todo: Do we really need this?
+//            if (state.getState() < Bundle.STARTING) throw new IllegalStateException("Framework has not been initialized");
 
             BundleManager manager = getBundleManager();
 
@@ -401,7 +422,17 @@ public final class Papoose
              * tests.
              */
             //noinspection RedundantCast
-            systemBundleContext = ((BundleController) manager.getBundle(0)).getBundleContext();
+            BundleController bundle = ((BundleController) manager.getBundle(0));
+            systemBundleContext = bundle.getBundleContext();
+            if (systemBundleContext == null)
+            {
+                /**
+                 * framework must not have been in a "valid" state to return a
+                 * bundle context.  Return a hand crafted one instead.
+                 */
+                systemBundleContext = new BundleContextProxy(bundle);
+            }
+
         }
 
         LOGGER.exiting(CLASS_NAME, "getSystemBundleContext", systemBundleContext);
@@ -524,11 +555,11 @@ public final class Papoose
             String bootDelegateString = properties.getProperty(Constants.FRAMEWORK_BOOTDELEGATION);
             if (bootDelegateString == null)
             {
-                bootDelegateString = "org.papoose.*";
+                bootDelegateString = "org.papoose.*,org.osgi.*";
             }
             else
             {
-                bootDelegateString += ",org.papoose.*";
+                bootDelegateString += ",org.papoose.*,org.osgi.*";
             }
 
             bootDelegates = bootDelegateString.split(",");
@@ -710,7 +741,7 @@ public final class Papoose
 
             try
             {
-                Class bootLevelServiceClass = getSystemBundleContext().getBundle().loadClass(bootLevelServiceClassName);
+                Class bootLevelServiceClass = getClass().getClassLoader().loadClass(bootLevelServiceClassName);
                 Object pojo = bootLevelServiceClass.newInstance();
 
                 if (LOGGER.isLoggable(Level.FINEST)) LOGGER.finest("Starting " + pojo);

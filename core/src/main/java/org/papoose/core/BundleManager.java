@@ -289,6 +289,8 @@ public class BundleManager
             throw new BundleException("Request for stream interrupted", ie);
         }
 
+        BundleController bundle;
+
         try
         {
             if (locations.containsKey(location)) return locations.get(location);
@@ -302,13 +304,16 @@ public class BundleManager
                 ArchiveStore archiveStore = store.allocateArchiveStore(framework, bundleId, inputStream);
 
                 NameVersionKey key = new NameVersionKey(archiveStore.getBundleSymbolicName(), archiveStore.getBundleVersion());
-                if (nameVersions.containsKey(key)) throw new BundleException("Bundle already registered with name " + key.getSymbolicName() + " and version " + key.getVersion());
+                if (nameVersions.containsKey(key))
+                {
+                    throw new BundleException("Bundle already registered with name " + key.getSymbolicName() + " and version " + key.getVersion());
+                }
 
                 BundleUtils.processNativeCodeDescriptions(framework, archiveStore);
 
                 BundleUtils.confirmRequiredExecutionEnvironment(framework, archiveStore.getBundleRequiredExecutionEnvironment());
 
-                BundleController bundle = new BundleController(framework, bundleStore);
+                bundle = new BundleController(framework, bundleStore);
 
                 Generation generation = BundleUtils.allocateGeneration(framework, bundle, archiveStore);
 
@@ -328,11 +333,6 @@ public class BundleManager
 
                 generation.setState(Bundle.INSTALLED);
 
-                fireBundleEvent(new BundleEvent(BundleEvent.INSTALLED, bundle));
-
-                LOGGER.exiting(CLASS_NAME, "installBundle", bundle);
-
-                return bundle;
             }
             catch (BundleException be)
             {
@@ -375,6 +375,12 @@ public class BundleManager
         {
             writeUnlock();
         }
+
+        fireBundleEvent(new BundleEvent(BundleEvent.INSTALLED, bundle));
+
+        LOGGER.exiting(CLASS_NAME, "installBundle", bundle);
+
+        return bundle;
     }
 
     public boolean resolve(Bundle target)
@@ -635,7 +641,10 @@ public class BundleManager
                 }
             }
 
-            if (bundleGeneration.getState() == Bundle.INSTALLED && !resolve(bundleGeneration.getBundleController())) throw new BundleException("Unable to resolve bundle");
+            if (bundleGeneration.getState() == Bundle.INSTALLED)
+            {
+                if (!resolve(bundleGeneration.getBundleController())) throw new BundleException("Unable to resolve bundle");
+            }
 
             if (lazyActivationDescription.isLazyActivation())
             {

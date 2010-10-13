@@ -85,7 +85,7 @@ public class PapooseFrameworkFactory implements FrameworkFactory
         }
 
         String storageCleanString = properties.getProperty(Constants.FRAMEWORK_STORAGE_CLEAN, "");
-        if (Constants.FRAMEWORK_STORAGE_CLEAN.equalsIgnoreCase(storageCleanString))
+        if (Constants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT.equalsIgnoreCase(storageCleanString))
         {
             try
             {
