@@ -64,6 +64,7 @@ public class VersionRangeTest
         }
     }
 
+    @Test
     public void testRanges()
     {
         VersionRange range = new VersionRange(new Version(1, 0, 0), new Version(2, 0, 0), false, false);
@@ -116,6 +117,7 @@ public class VersionRangeTest
 
     }
 
+    @Test
     public void testVersion()
     {
         VersionRange range = VersionRange.parseVersionRange("(1.0.0,2.0.0)");
