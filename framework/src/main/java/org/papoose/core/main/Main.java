@@ -37,10 +37,18 @@ import org.papoose.core.PapooseFrameworkFactory;
 
 
 /**
+ * A simple class to instantiate a single instance of {@link Framework}.
+ * <p/>
+ * Note that this class does not use the Java&#8482; SE 6 <code>ServiceLoader</code>
+ * class to create a FrameworkFactory instance.  This class is hardcoded to always
+ * instantiate an instance of {@link PapooseFrameworkFactory}.
+ * from the resource.
+ *
  * @version $Revision: $ $Date: $
  */
 public class Main
 {
+
     private final static String CLASS_NAME = Main.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private static volatile Framework framework;
@@ -57,8 +65,50 @@ public class Main
      */
     public static final String CONFIG_PROPERTIES_PROP = "papoose.config.properties";
 
+    /**
+     * The property name used to specify the initial start level value that is
+     * assigned to a Bundle when it is first installed.
+     * <p/>
+     * See {@link StartLevel#setInitialBundleStartLevel(int)} for more details.
+     */
     public static final String BUNDLE_START_LEVEL = "papoose.startlevel.bundle";
 
+    /**
+     * Construct an instance of {@link org.papoose.core.PapooseFramework}.
+     * <p/>
+     * The steps taken are
+     * <ol>
+     * <li>initialize the instance using properties from a properties file
+     * located located by a URL in the systems property "papoose.config.properties".</li>
+     * <li>install and optionally start bundles.  The lists of bundles to
+     * install are found under the following property keys:
+     * <dl>
+     * <dt><tt>papoose.auto.install</tt></dt>
+     * <dd>A space delimited list of bundle URLs to be installed when the
+     * framework has been started.</dd>
+     * <dt><tt>papoose.auto.install</tt>.N</dt>
+     * <dd>A space delimited list of bundle URLs to be installed when the
+     * framework has been started.  When N is a non-negative integer the
+     * bundles that are installed have their start level set to that integer.</dd>
+     * <dt><tt>papoose.auto.start</tt></dt>
+     * <dd>A space delimited list of bundle URLs to be installed and started
+     * when the framework has been started.</dd>
+     * <dt><tt>papoose.auto.start</tt>.N</dt>
+     * <dd>A space delimited list of bundle URLs to be installed and started
+     * when the framework has been started.  When N is a non-negative integer
+     * the bundles that are installed have their start level set to that
+     * integer.</dd>
+     * </dl>
+     * </li>
+     * <li>start the framework instance and wait for it to be stopped</li>
+     * </ol>
+     * <p/>
+     * The framework instance can be interrupted but an orderly shutdown by
+     * having a bundle call {@link Bundle#stop()} on the system bundle.
+     *
+     * @param args not used
+     * @throws Exception is thrown if there is an error starting the framework
+     */
     public static void main(String... args) throws Exception
     {
         Properties configuration = obtainConfigProps();
@@ -100,14 +150,32 @@ public class Main
         System.exit(0);
     }
 
+    /**
+     * Process possible bundle install and start requests that may be present
+     * in the configuration.
+     *
+     * @param configuration the configuration which may contain bundle install and start requests
+     */
     private static void processBundleRequests(Properties configuration)
     {
         BundleContext context = framework.getBundleContext();
         StartLevel startLevel = (StartLevel) context.getService(context.getServiceReference(StartLevel.class.getName()));
 
-        if (configuration.contains(BUNDLE_START_LEVEL))
+        if (startLevel == null)
         {
-            startLevel.setInitialBundleStartLevel(Integer.getInteger(configuration.getProperty(BUNDLE_START_LEVEL)));
+            LOGGER.log(Level.WARNING, "Unable to find StartLevel service");
+        }
+        else if (configuration.contains(BUNDLE_START_LEVEL))
+        {
+            String initialBundleStartLevel = configuration.getProperty(BUNDLE_START_LEVEL);
+            try
+            {
+                startLevel.setInitialBundleStartLevel(Integer.parseInt(initialBundleStartLevel));
+            }
+            catch (NumberFormatException nfe)
+            {
+                LOGGER.log(Level.WARNING, "Unable to parse initial bundle start level " + initialBundleStartLevel, nfe);
+            }
         }
 
         List<Bundle> start = new ArrayList<Bundle>();
@@ -116,7 +184,15 @@ public class Main
             if (key.startsWith("papoose.auto.install") || key.startsWith("papoose.auto.start"))
             {
                 String[] tokens = key.split("\\.");
-                Integer level = Integer.parseInt(tokens[3]);
+                int level = -1;
+                try
+                {
+                    if (tokens.length == 4) level = Integer.parseInt(tokens[3]);
+                }
+                catch (NumberFormatException nfe)
+                {
+                    LOGGER.log(Level.WARNING, "Unable to parse bundle start level " + key, nfe);
+                }
                 String[] urls = configuration.getProperty(key).split(" ");
 
                 for (String url : urls)
@@ -126,7 +202,7 @@ public class Main
                     try
                     {
                         Bundle bundle = context.installBundle(url);
-                        startLevel.setBundleStartLevel(bundle, level);
+                        if (startLevel != null && level >= 0) startLevel.setBundleStartLevel(bundle, level);
                         if (key.startsWith("papoose.auto.start")) start.add(bundle);
                     }
                     catch (BundleException be)
@@ -150,6 +226,14 @@ public class Main
         }
     }
 
+    /**
+     * Load a properties file specified by the URL in the system property
+     * <code>papoose.config.properties</code>.  If that property does not exist
+     * or of there is a problem loading the file then an empty properties
+     * object is returned.
+     *
+     * @return a properties file specified by the URL in the system property <code>papoose.config.properties</code>
+     */
     private static Properties obtainConfigProps()
     {
         LOGGER.entering(CLASS_NAME, "obtainConfigProps");
