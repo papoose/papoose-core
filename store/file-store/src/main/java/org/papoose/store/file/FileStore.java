@@ -79,16 +79,11 @@ public class FileStore implements Store
         return root;
     }
 
-    public boolean isPreviouslyUsed() throws PapooseException
-    {
-        return new File(this.root, PROPERTIES_FILE).exists();
-    }
-
     public void clear() throws PapooseException
     {
         LOGGER.entering(CLASS_NAME, "clear");
 
-        File properties = new File(this.root, PROPERTIES_FILE);
+        File properties = new File(root, PROPERTIES_FILE);
         if (properties.exists())
         {
             if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine(properties.toString() + " exists, will delete");
@@ -108,7 +103,20 @@ public class FileStore implements Store
 
             if (!FileUtils.delete(bundleRoot))
             {
-                PapooseException pe = new PapooseException("Unable to delete properties file");
+                PapooseException pe = new PapooseException("Unable to delete bundles directory");
+                LOGGER.throwing(CLASS_NAME, "clear", pe);
+                throw pe;
+            }
+        }
+
+        File systemRoot = FileUtils.buildPath(root, SYSTEM_DIR);
+        if (systemRoot.exists())
+        {
+            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine(systemRoot.toString() + " exists, will delete");
+
+            if (!FileUtils.delete(systemRoot))
+            {
+                PapooseException pe = new PapooseException("Unable to delete system root directory");
                 LOGGER.throwing(CLASS_NAME, "clear", pe);
                 throw pe;
             }
@@ -177,18 +185,19 @@ public class FileStore implements Store
     {
         LOGGER.entering(CLASS_NAME, "allocateBundleStore", new Object[]{ bundleId, location });
 
-        assert location != null;
+        if (bundleId <= 0) throw new BundleException("Invalid bundle id " + bundleId);
+        if (location == null) throw new BundleException("Invalid location " + location);
 
         File bundleRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId);
-
-        properties.setProperty(GENERATION_KEY + bundleId, "-1");
-
-        save();
 
         if (bundleRoot.exists()) throw new BundleException("Bundle store location " + bundleRoot + " already exists");
         if (!bundleRoot.mkdirs()) throw new FatalError("Unable to create bundle store location: " + bundleRoot);
 
         BundleFileStore result = new BundleFileStore(bundleRoot, bundleId, location);
+
+        properties.setProperty(GENERATION_KEY + bundleId, "-1");
+
+        save();
 
         LOGGER.exiting(CLASS_NAME, "allocateBundleStore", result);
 
@@ -222,26 +231,28 @@ public class FileStore implements Store
         LOGGER.entering(CLASS_NAME, "allocateArchiveStore", new Object[]{ framework, bundleId, inputStream });
 
         ArchiveFileStore result;
+        String generationKey = GENERATION_KEY + bundleId;
+        int generation;
         try
         {
-            int generation = Integer.parseInt(properties.getProperty(GENERATION_KEY + bundleId)) + 1;
-
-            properties.setProperty(GENERATION_KEY + bundleId, Integer.toString(generation));
-
-            File archiveRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId, GENERATIONS_DIR, generation);
-
-            if (archiveRoot.exists()) throw new FatalError("Archive store location " + archiveRoot + " already exists");
-            if (!archiveRoot.mkdirs()) throw new FatalError("Unable to create archive store location: " + archiveRoot);
-
-            result = new ArchiveFileStore(framework, bundleId, generation, archiveRoot, inputStream);
-
-            save();
+            generation = Integer.parseInt(properties.getProperty(generationKey, "-1")) + 1;
         }
         catch (NumberFormatException nfe)
         {
             LOGGER.log(Level.SEVERE, "Unable to obtain last generation", nfe);
             throw new FatalError("Unable to obtain last generation", nfe);
         }
+
+        properties.setProperty(generationKey, Integer.toString(generation));
+
+        File archiveRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId, GENERATIONS_DIR, generation);
+
+        if (archiveRoot.exists()) throw new FatalError("Archive store location " + archiveRoot + " already exists");
+        if (!archiveRoot.mkdirs()) throw new FatalError("Unable to create archive store location: " + archiveRoot);
+
+        result = new ArchiveFileStore(framework, bundleId, generation, archiveRoot, inputStream);
+
+        save();
 
         LOGGER.exiting(CLASS_NAME, "allocateArchiveStore", result);
 
@@ -256,7 +267,11 @@ public class FileStore implements Store
 
         SortedSet<Integer> generations = new TreeSet<Integer>();
 
-        for (String generation : archivesRoot.list())
+        String[] list = archivesRoot.list();
+
+        if (list == null) throw new BundleException("Bundle does not exist under id " + bundleId);
+
+        for (String generation : list)
         {
             try
             {
@@ -297,18 +312,16 @@ public class FileStore implements Store
         {
             if (!root.mkdirs()) throw new FatalError("Unable to create non-existant root: " + root);
         }
+
+        File propertiesFile = new File(root, PROPERTIES_FILE);
+        if (propertiesFile.exists())
+        {
+            load();
+        }
         else
         {
-            File propertiesFile = new File(root, PROPERTIES_FILE);
-            if (propertiesFile.exists())
-            {
-                load();
-            }
-            else
-            {
-                properties.put(FILESTORE_VERSION_KEY, FILESTORE_VERSION);
-                save();
-            }
+            properties.put(FILESTORE_VERSION_KEY, FILESTORE_VERSION);
+            save();
         }
 
         File bundlesRoot = new File(root, BUNDLES_DIR);

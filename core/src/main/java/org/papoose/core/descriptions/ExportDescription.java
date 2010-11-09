@@ -116,6 +116,36 @@ public class ExportDescription
     }
 
     @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ExportDescription that = (ExportDescription) o;
+
+        if (referenceCount != that.referenceCount) return false;
+        if (exclude != null ? !exclude.equals(that.exclude) : that.exclude != null) return false;
+        if (include != null ? !include.equals(that.include) : that.include != null) return false;
+        if (mandatory != null ? !mandatory.equals(that.mandatory) : that.mandatory != null) return false;
+        if (!packageNames.equals(that.packageNames)) return false;
+        if (!parameters.equals(that.parameters)) return false;
+        return !(uses != null ? !uses.equals(that.uses) : that.uses != null);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = packageNames.hashCode();
+        result = 31 * result + parameters.hashCode();
+        result = 31 * result + (uses != null ? uses.hashCode() : 0);
+        result = 31 * result + (mandatory != null ? mandatory.hashCode() : 0);
+        result = 31 * result + (include != null ? include.hashCode() : 0);
+        result = 31 * result + (exclude != null ? exclude.hashCode() : 0);
+        result = 31 * result + referenceCount;
+        return result;
+    }
+
+    @Override
     public String toString()
     {
         StringBuilder builder = new StringBuilder();

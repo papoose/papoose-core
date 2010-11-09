@@ -60,6 +60,28 @@ public class LazyActivationDescription
     }
 
     @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        LazyActivationDescription that = (LazyActivationDescription) o;
+
+        if (lazyActivation != that.lazyActivation) return false;
+        if (exclude != null ? !exclude.equals(that.exclude) : that.exclude != null) return false;
+        return !(include != null ? !include.equals(that.include) : that.include != null);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = (lazyActivation ? 1 : 0);
+        result = 31 * result + (include != null ? include.hashCode() : 0);
+        result = 31 * result + (exclude != null ? exclude.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString()
     {
         return (lazyActivation ? "LAZY" : "EAGER");

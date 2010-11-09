@@ -31,19 +31,6 @@ import org.papoose.core.PapooseException;
 public interface Store
 {
     /**
-     * Discover if this store pointed to a space that was previously used.
-     * <p/>
-     * The store can and usually will be pointing to a space that was
-     * previously used.  This information can be useful when deciding whether
-     * or not to clear the space.
-     *
-     * @return <code>true</code> if this store pointed to a space that was
-     *         previously used; <code>false</code> otherwise.
-     * @throws PapooseException if an error occurs obtaining this information
-     */
-    boolean isPreviouslyUsed() throws PapooseException;
-
-    /**
      * Clear the space for use by the store.  When pointing a store at a new
      * space it is usually a good practice to clear the space before using it.
      * <p/>

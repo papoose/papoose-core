@@ -45,7 +45,6 @@ import org.apache.xbean.classloader.ResourceHandle;
 import org.apache.xbean.classloader.ResourceLocation;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.InvalidSyntaxException;
-import static org.papoose.core.util.Assert.assertTrue;
 
 import org.papoose.core.AbstractArchiveStore;
 import org.papoose.core.L18nResourceBundle;
@@ -511,6 +510,7 @@ class ArchiveFileStore extends AbstractArchiveStore
     }
 
     // todo: what and why are we copying anything here?
+
     private static Attributes loadAndProvideAttributes(File generationRoot, InputStream inputStream) throws BundleException
     {
         try
@@ -533,8 +533,14 @@ class ArchiveFileStore extends AbstractArchiveStore
             }
 
             JarInputStream jarInputStream = new JarInputStream(new FileInputStream(archiveFile));
-
-            return jarInputStream.getManifest().getMainAttributes();
+            try
+            {
+                return jarInputStream.getManifest().getMainAttributes();
+            }
+            finally
+            {
+                jarInputStream.close();
+            }
         }
         catch (IOException ioe)
         {

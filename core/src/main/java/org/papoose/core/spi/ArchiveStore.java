@@ -98,7 +98,7 @@ public interface ArchiveStore extends Comparable
 
     InputStream getInputStreamForResource(int location, String path) throws IOException;
 
-    public Certificate[] getCertificates();
+    Certificate[] getCertificates();
 
     /**
      * Set the native code descriptions that the bundle store is to use

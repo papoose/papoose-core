@@ -35,11 +35,6 @@ import org.papoose.core.spi.Store;
  */
 public class MockStore implements Store
 {
-    public boolean isPreviouslyUsed() throws PapooseException
-    {
-        return false;
-    }
-
     public void clear() throws PapooseException
     {
     }

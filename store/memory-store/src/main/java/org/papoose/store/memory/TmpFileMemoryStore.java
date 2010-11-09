@@ -84,17 +84,6 @@ public class TmpFileMemoryStore implements Store
         return root;
     }
 
-    public boolean isPreviouslyUsed() throws PapooseException
-    {
-        LOGGER.entering(CLASS_NAME, "isPreviouslyUsed");
-
-        boolean result = new File(this.root, PROPERTIES_FILE).exists();
-
-        LOGGER.exiting(CLASS_NAME, "isPreviouslyUsed", result);
-
-        return result;
-    }
-
     public void clear() throws PapooseException
     {
         LOGGER.entering(CLASS_NAME, "clear");

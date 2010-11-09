@@ -122,7 +122,7 @@ public final class Papoose
      */
     public Papoose(Store store, ExecutorService executorService)
     {
-        this(null, store, executorService, null);
+        this(null, store, executorService, new Properties());
     }
 
     /**
@@ -155,7 +155,7 @@ public final class Papoose
      */
     public Papoose(String frameworkName, Store store, ExecutorService executorService)
     {
-        this(frameworkName, store, executorService, null);
+        this(frameworkName, store, executorService, new Properties());
     }
 
     /**
@@ -251,12 +251,12 @@ public final class Papoose
         return executorService;
     }
 
-    String getFrameworkName()
+    public String getFrameworkName()
     {
         return frameworkName;
     }
 
-    int getFrameworkId()
+    public int getFrameworkId()
     {
         return frameworkId;
     }

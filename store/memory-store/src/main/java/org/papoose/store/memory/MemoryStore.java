@@ -49,11 +49,6 @@ public class MemoryStore implements Store
         LOGGER.exiting(CLASS_NAME, "FileStore");
     }
 
-    public boolean isPreviouslyUsed() throws PapooseException
-    {
-        return false;
-    }
-
     public void clear() throws PapooseException
     {
         properties.clear();
