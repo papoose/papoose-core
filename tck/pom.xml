@@ -18,5 +18,14 @@
         <module>tests</module>
     </modules>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.papoose.core.tck</groupId>
+                <artifactId>tck-support</artifactId>
+                <version>1.0.0.SNAPSHOT</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>
 

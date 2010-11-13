@@ -91,6 +91,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.papoose.core.tck</groupId>
+            <artifactId>tck-support</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.papoose.core.tck.bundles</groupId>
             <artifactId>bad-activation-policy</artifactId>
             <version>${pom.version}</version>
