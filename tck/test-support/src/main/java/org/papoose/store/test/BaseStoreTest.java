@@ -63,14 +63,14 @@ import org.papoose.core.spi.Store;
  */
 public abstract class BaseStoreTest
 {
-    abstract Store createStore();
+    protected abstract Store createStore();
 
     @Test
     public void test() throws Exception
     {
         final long earlyTimestamp = System.currentTimeMillis();
         Store fileStore = createStore();
-        Papoose papoose = new Papoose("org.acme.osgi.0", fileStore, new ScheduledThreadPoolExecutor(10), new Properties());
+        Papoose papoose = new Papoose(fileStore, new ScheduledThreadPoolExecutor(10), new Properties());
 
         papoose.start();
 
@@ -161,6 +161,32 @@ public abstract class BaseStoreTest
         bundleStore.setAutoStart(AutostartSetting.EAGER);
         assertEquals(AutostartSetting.EAGER, bundleStore.getAutostart());
 
+        store.stop();
+
+        store = createStore();
+
+        store.start();
+
+        list = store.loadBundleStores();
+        assertTrue(list.isEmpty());
+
+        bundleStore = store.obtainSystemBundleStore();
+
+        assertEquals(AutostartSetting.STOPPED, bundleStore.getAutostart());
+
+        store.stop();
+    }
+
+    @Test
+    public void testSystemDataRoot() throws Exception
+    {
+        Store store = createStore();
+
+        store.start();
+
+        BundleStore bundleStore = store.obtainSystemBundleStore();
+        assertNotNull(bundleStore);
+
         File file = new File(bundleStore.getDataRoot(), "test.data");
         assertFalse(file.exists());
 
@@ -176,9 +202,6 @@ public abstract class BaseStoreTest
         store = createStore();
 
         store.start();
-
-        list = store.loadBundleStores();
-        assertTrue(list.isEmpty());
 
         bundleStore = store.obtainSystemBundleStore();
 
@@ -267,15 +290,21 @@ public abstract class BaseStoreTest
         bundleStore.setAutoStart(AutostartSetting.EAGER);
         assertEquals(AutostartSetting.EAGER, bundleStore.getAutostart());
 
-        File file = new File(bundleStore.getDataRoot(), "test.data");
-        assertFalse(file.exists());
+        store.stop();
+    }
 
-        OutputStream out = new FileOutputStream(file);
-        out.write(1);
-        out.write(2);
-        out.write(3);
-        out.close();
-        assertTrue(file.exists());
+    @Test
+    public void testBundleStorePersistence() throws Exception
+    {
+        Store store = createStore();
+
+        store.start();
+
+        BundleStore bundleStore = store.allocateBundleStore(1, "First Bundle");
+
+        assertEquals(AutostartSetting.STOPPED, bundleStore.getAutostart());
+        bundleStore.setAutoStart(AutostartSetting.EAGER);
+        assertEquals(AutostartSetting.EAGER, bundleStore.getAutostart());
 
         store.stop();
 
@@ -293,17 +322,6 @@ public abstract class BaseStoreTest
         assertEquals("First Bundle", bundleStore.getLocation());
         assertEquals(AutostartSetting.EAGER, bundleStore.getAutostart());
 
-        file = new File(bundleStore.getDataRoot(), "test.data");
-        assertTrue(file.exists());
-
-        InputStream in = new FileInputStream(file);
-        assertEquals(1, in.read());
-        assertEquals(2, in.read());
-        assertEquals(3, in.read());
-        in.close();
-
-        assertTrue(file.exists());
-
         store.stop();
 
         store.clear();
@@ -314,8 +332,6 @@ public abstract class BaseStoreTest
 
         list = store.loadBundleStores();
         assertTrue(list.isEmpty());
-
-        assertFalse(file.exists());
 
         store.allocateBundleStore(1, "First Bundle");
 
@@ -332,6 +348,22 @@ public abstract class BaseStoreTest
 
     @Test
     public void testArchiveStore() throws Exception
+    {
+        Store store = createStore();
+
+        Papoose framework = new Papoose(store, new ScheduledThreadPoolExecutor(10));
+
+        store.start();
+
+        ArchiveStore archiveStore = store.allocateArchiveStore(framework, 1, new FileInputStream(new File("./target/bundle.jar")));
+
+        checkArchiveStore(archiveStore, framework);
+
+        store.stop();
+    }
+
+    @Test
+    public void testLoadArchiveStore() throws Exception
     {
         Store store = createStore();
 
@@ -387,7 +419,7 @@ public abstract class BaseStoreTest
         assertEquals(0, archiveStore.getGeneration());
         assertEquals("org.papoose.test.bundles.test-bundle", archiveStore.getBundleSymbolicName());
         assertEquals("com.acme.impl.Activator", archiveStore.getBundleActivatorClass());
-        assertEquals(new Version(1, 0, 0), archiveStore.getBundleVersion());
+        assertEquals(new Version(1, 1, 0), archiveStore.getBundleVersion());
 
         List<String> classPath = archiveStore.getBundleClassPath();
         assertNotNull(classPath);
@@ -408,7 +440,7 @@ public abstract class BaseStoreTest
         assertEquals(0, archiveStore.getDynamicDescriptions().size());
 
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("bundle-version", new Version(1, 0, 0));
+        map.put("bundle-version", new Version(1, 1, 0));
         map.put("bundle-symbolic-name", "org.papoose.test.bundles.test-bundle");
         map.put("version", new Version(0, 0, 0));
 

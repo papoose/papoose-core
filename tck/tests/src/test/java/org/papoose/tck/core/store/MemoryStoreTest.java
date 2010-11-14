@@ -18,42 +18,51 @@
  */
 package org.papoose.tck.core.store;
 
-import java.io.File;
-
-import org.junit.After;
-import org.junit.Before;
+import org.junit.Test;
 
 import org.papoose.core.spi.Store;
-import org.papoose.core.util.FileUtils;
-import org.papoose.store.file.FileStore;
+import org.papoose.store.memory.MemoryStore;
 import org.papoose.store.test.BaseStoreTest;
 
 
 /**
  * @version $Revision: $ $Date: $
  */
-public class FileStoreTest extends BaseStoreTest
+public class MemoryStoreTest extends BaseStoreTest
 {
-    private File testDirectory;
+    /**
+     * Memory stores do not support data roots
+     *
+     * @throws Exception if an error occurs
+     */
+    @Test
+    public void testSystemDataRoot() throws Exception
+    {
+    }
+
+    /**
+     * Memory stores do not support persistent archive stores
+     *
+     * @throws Exception if an error occurs
+     */
+    @Test
+    public void testLoadArchiveStore() throws Exception
+    {
+    }
+
+    /**
+     * Memory stores do not support persistent bundle stores
+     *
+     * @throws Exception if an error occurs
+     */
+    @Test
+    public void testBundleStorePersistence() throws Exception
+    {
+    }
 
     @Override
     protected Store createStore()
     {
-        return new FileStore(testDirectory);
-    }
-
-    @Before
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void setUp() throws Exception
-    {
-        testDirectory = File.createTempFile("papoose", "test");
-        testDirectory.delete();
-        testDirectory.mkdir();
-    }
-
-    @After
-    public void tearDown() throws Exception
-    {
-        FileUtils.delete(testDirectory);
+        return new MemoryStore();
     }
 }

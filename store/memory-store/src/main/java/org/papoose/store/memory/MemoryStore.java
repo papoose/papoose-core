@@ -20,17 +20,20 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 
+import org.papoose.core.FatalError;
 import org.papoose.core.Papoose;
 import org.papoose.core.PapooseException;
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.spi.BundleStore;
 import org.papoose.core.spi.Store;
 import org.papoose.core.util.ToStringCreator;
+
 
 /**
  * @version $Revision$ $Date$
@@ -88,7 +91,9 @@ public class MemoryStore implements Store
     {
         LOGGER.entering(CLASS_NAME, "allocateBundleStore", new Object[]{ bundleId, location });
 
-        assert location != null;
+        if (bundleId <= 0) throw new BundleException("Invalid bundle id " + bundleId);
+        if (location == null) throw new BundleException("Invalid location " + location);
+        if (properties.containsKey(GENERATION_KEY + bundleId)) throw new BundleException("Bundle already exists with id " + bundleId);
 
         properties.setProperty(GENERATION_KEY + bundleId, "-1");
 
@@ -112,9 +117,19 @@ public class MemoryStore implements Store
     {
         LOGGER.entering(CLASS_NAME, "allocateArchiveStore", new Object[]{ framework, bundleId, inputStream });
 
-        int generation = Integer.parseInt(properties.getProperty(GENERATION_KEY + bundleId)) + 1;
+        String generationKey = GENERATION_KEY + bundleId;
+        int generation;
+        try
+        {
+            generation = Integer.parseInt(properties.getProperty(generationKey, "-1")) + 1;
+        }
+        catch (NumberFormatException nfe)
+        {
+            LOGGER.log(Level.SEVERE, "Unable to obtain last generation", nfe);
+            throw new FatalError("Unable to obtain last generation", nfe);
+        }
 
-        properties.setProperty(GENERATION_KEY + bundleId, Integer.toString(generation));
+        properties.setProperty(generationKey, Integer.toString(generation));
 
         ArchiveMemoryStore result = new ArchiveMemoryStore(framework, bundleId, generation, inputStream);
 

@@ -22,24 +22,45 @@ import java.io.File;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 import org.papoose.core.spi.Store;
 import org.papoose.core.util.FileUtils;
-import org.papoose.store.file.FileStore;
+import org.papoose.store.memory.TmpFileMemoryStore;
 import org.papoose.store.test.BaseStoreTest;
 
 
 /**
  * @version $Revision: $ $Date: $
  */
-public class FileStoreTest extends BaseStoreTest
+public class TmpFileMemoryStoreTest extends BaseStoreTest
 {
     private File testDirectory;
+
+    /**
+     * Tmp file memory stores do not support persistent archive stores
+     *
+     * @throws Exception if an error occurs
+     */
+    @Test
+    public void testLoadArchiveStore() throws Exception
+    {
+    }
+
+    /**
+     * Tmp file memory stores do not support persistent bundle stores
+     *
+     * @throws Exception if an error occurs
+     */
+    @Test
+    public void testBundleStorePersistence() throws Exception
+    {
+    }
 
     @Override
     protected Store createStore()
     {
-        return new FileStore(testDirectory);
+        return new TmpFileMemoryStore(testDirectory);
     }
 
     @Before

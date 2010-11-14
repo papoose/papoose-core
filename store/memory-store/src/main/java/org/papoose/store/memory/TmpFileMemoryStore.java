@@ -39,11 +39,20 @@ import org.papoose.core.spi.Store;
 import org.papoose.core.util.FileUtils;
 import org.papoose.core.util.ToStringCreator;
 
+
 /**
+ * Instances of {@link TmpFileMemoryStore} are memory based file stores that
+ * allow bundle data roots to be created on a temporary file system.
+ * <p/>
+ * Bundle and archive stores are not expected to be persisted between framework
+ * instantiations.
+ *
  * @version $Revision$ $Date$
  */
 public class TmpFileMemoryStore implements Store
 {
+    public final static String FILESTORE_VERSION_KEY = "org.papoose.store.tmpFileMemory.version";
+    public final static String FILESTORE_VERSION = "1.0";
     private final static String CLASS_NAME = TmpFileMemoryStore.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
     private final static String PROPERTIES_FILE = "store.properties";
@@ -55,28 +64,17 @@ public class TmpFileMemoryStore implements Store
 
     public TmpFileMemoryStore(File root)
     {
-        LOGGER.entering(CLASS_NAME, "FileStore");
+        LOGGER.entering(CLASS_NAME, "TmpFileMemoryStore");
 
         if (root == null) throw new IllegalArgumentException("Root file for file store cannot be null");
 
-        this.root = root;
+        this.root = new File(root, "papoose");
 
-        if (!root.exists())
-        {
-            if (!root.mkdirs()) throw new FatalError("Unable to create non-existent root: " + root);
-            save();
-        }
-        else
-        {
-            load();
-        }
+        if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("root: " + this.root);
 
-        File bundlesRoot = new File(root, BUNDLES_DIR);
-        if (!bundlesRoot.exists() && !bundlesRoot.mkdirs()) throw new FatalError("Unable to create bundles root: " + bundlesRoot);
+        init();
 
-        if (LOGGER.isLoggable(Level.CONFIG)) LOGGER.config("root: " + root);
-
-        LOGGER.exiting(CLASS_NAME, "FileStore");
+        LOGGER.exiting(CLASS_NAME, "TmpFileMemoryStore");
     }
 
     public File getRoot()
@@ -88,7 +86,7 @@ public class TmpFileMemoryStore implements Store
     {
         LOGGER.entering(CLASS_NAME, "clear");
 
-        File properties = new File(this.root, PROPERTIES_FILE);
+        File properties = new File(root, PROPERTIES_FILE);
         if (properties.exists())
         {
             if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine(properties.toString() + " exists, will delete");
@@ -108,11 +106,26 @@ public class TmpFileMemoryStore implements Store
 
             if (!FileUtils.delete(bundleRoot))
             {
-                PapooseException pe = new PapooseException("Unable to delete properties file");
+                PapooseException pe = new PapooseException("Unable to delete bundles directory");
                 LOGGER.throwing(CLASS_NAME, "clear", pe);
                 throw pe;
             }
         }
+
+        File systemRoot = FileUtils.buildPath(root, SYSTEM_DIR);
+        if (systemRoot.exists())
+        {
+            if (LOGGER.isLoggable(Level.FINE)) LOGGER.fine(systemRoot.toString() + " exists, will delete");
+
+            if (!FileUtils.delete(systemRoot))
+            {
+                PapooseException pe = new PapooseException("Unable to delete system root directory");
+                LOGGER.throwing(CLASS_NAME, "clear", pe);
+                throw pe;
+            }
+        }
+
+        init();
 
         LOGGER.exiting(CLASS_NAME, "clear");
     }
@@ -159,18 +172,19 @@ public class TmpFileMemoryStore implements Store
     {
         LOGGER.entering(CLASS_NAME, "allocateBundleStore", new Object[]{ bundleId, location });
 
-        assert location != null;
+        if (bundleId <= 0) throw new BundleException("Invalid bundle id " + bundleId);
+        if (location == null) throw new BundleException("Invalid location " + location);
 
         File bundleRoot = FileUtils.buildPath(root, BUNDLES_DIR, bundleId);
-
-        properties.setProperty(GENERATION_KEY + bundleId, "-1");
-
-        save();
 
         if (bundleRoot.exists()) throw new BundleException("Bundle store location " + bundleRoot + " already exists");
         if (!bundleRoot.mkdirs()) throw new FatalError("Unable to create bundle store location: " + bundleRoot);
 
         BundleStore result = new BundleTmpFileMemoryStore(bundleRoot, bundleId, location);
+
+        properties.setProperty(GENERATION_KEY + bundleId, "-1");
+
+        save();
 
         LOGGER.exiting(CLASS_NAME, "allocateBundleStore", result);
 
@@ -203,22 +217,21 @@ public class TmpFileMemoryStore implements Store
     {
         LOGGER.entering(CLASS_NAME, "allocateArchiveStore", new Object[]{ framework, bundleId, inputStream });
 
-        ArchiveMemoryStore result;
+        String generationKey = GENERATION_KEY + bundleId;
+        int generation;
         try
         {
-            int generation = Integer.parseInt(properties.getProperty(GENERATION_KEY + bundleId)) + 1;
-
-            properties.setProperty(GENERATION_KEY + bundleId, Integer.toString(generation));
-
-            result = new ArchiveMemoryStore(framework, bundleId, generation, inputStream);
-
-            save();
+            generation = Integer.parseInt(properties.getProperty(generationKey, "-1")) + 1;
         }
         catch (NumberFormatException nfe)
         {
             LOGGER.log(Level.SEVERE, "Unable to obtain last generation", nfe);
             throw new FatalError("Unable to obtain last generation", nfe);
         }
+
+        properties.setProperty(generationKey, Integer.toString(generation));
+
+        ArchiveMemoryStore result = new ArchiveMemoryStore(framework, bundleId, generation, inputStream);
 
         LOGGER.exiting(CLASS_NAME, "allocateArchiveStore", result);
 
@@ -228,6 +241,28 @@ public class TmpFileMemoryStore implements Store
     public synchronized ArchiveStore loadArchiveStore(Papoose framework, long bundleId) throws BundleException
     {
         throw new UnsupportedOperationException("Memory based store does not support loading persisted archive");
+    }
+
+    private void init()
+    {
+        if (!this.root.exists())
+        {
+            if (!root.mkdirs()) throw new FatalError("Unable to create non-existant root: " + root);
+        }
+
+        File propertiesFile = new File(root, PROPERTIES_FILE);
+        if (propertiesFile.exists())
+        {
+            load();
+        }
+        else
+        {
+            properties.put(FILESTORE_VERSION_KEY, FILESTORE_VERSION);
+            save();
+        }
+
+        File bundlesRoot = new File(root, BUNDLES_DIR);
+        if (!bundlesRoot.exists() && !bundlesRoot.mkdirs()) throw new FatalError("Unable to create bundles root: " + bundlesRoot);
     }
 
     private void load()
