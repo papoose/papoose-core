@@ -19,8 +19,6 @@ package org.papoose.core.filter;
 
 /**
  * The Apache Felix project seemed to have a nice default implementation.
- *
- * @version $Revision$ $Date$
  */
 public class DefaultApproxAlgorithm implements ApproxAlgorithm
 {

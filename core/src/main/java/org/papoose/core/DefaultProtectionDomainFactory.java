@@ -28,7 +28,7 @@ import org.papoose.core.spi.ProtectionDomainFactory;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class DefaultProtectionDomainFactory implements ProtectionDomainFactory
 {

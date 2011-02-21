@@ -27,7 +27,7 @@ import org.osgi.service.url.URLStreamHandlerSetter;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class URLStreamHandlerNotFound implements URLStreamHandlerService
 {

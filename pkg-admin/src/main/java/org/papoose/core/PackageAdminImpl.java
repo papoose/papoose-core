@@ -44,7 +44,7 @@ import org.papoose.core.descriptions.ExportDescription;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class PackageAdminImpl implements PackageAdmin
 {

@@ -25,7 +25,7 @@ import org.papoose.core.spi.ArchiveStore;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class I18nUtils
 {

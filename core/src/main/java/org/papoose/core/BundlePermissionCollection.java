@@ -30,7 +30,7 @@ import org.osgi.service.permissionadmin.PermissionInfo;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class BundlePermissionCollection extends PermissionCollection
 {

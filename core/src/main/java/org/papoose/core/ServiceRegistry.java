@@ -47,7 +47,7 @@ import org.papoose.core.util.SecurityUtils;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class ServiceRegistry
 {

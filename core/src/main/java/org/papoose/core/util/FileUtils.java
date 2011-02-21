@@ -28,7 +28,7 @@ import org.osgi.framework.BundleException;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class FileUtils
 {

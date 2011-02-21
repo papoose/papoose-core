@@ -23,7 +23,7 @@ import org.papoose.core.BundleGeneration;
 import org.papoose.core.FragmentGeneration;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface CandidateBundle
 {

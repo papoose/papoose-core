@@ -48,7 +48,7 @@ import org.papoose.core.spi.ArchiveStore;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class BundleClassLoader extends NamedClassLoader implements BundleReference
 {

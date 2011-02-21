@@ -24,7 +24,7 @@ import org.papoose.core.AutostartSetting;
 import org.papoose.core.spi.BundleStore;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class MockBundleStore implements BundleStore
 {

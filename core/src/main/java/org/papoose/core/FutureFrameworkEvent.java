@@ -32,8 +32,6 @@ import org.osgi.framework.FrameworkEvent;
  * for {@link org.osgi.framework.launch.Framework#waitForStop(long)} and is
  * "triggered" when {@link #setFrameworkEvent(org.osgi.framework.FrameworkEvent)} is used to set
  * the return value.
- *
- * @version $Revision$ $Date$
  */
 class FutureFrameworkEvent implements Future<FrameworkEvent>
 {

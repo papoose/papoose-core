@@ -27,8 +27,6 @@ import org.papoose.core.descriptions.ExportDescription;
  * appear before un-resolved bundles.
  * <p/>
  * TODO: So why don't we include status in compareTo()?
- *
- * @version $Revision$ $Date$
  */
 public class ExportDescriptionWrapper implements Comparable<ExportDescriptionWrapper>
 {

@@ -34,8 +34,6 @@ import org.papoose.core.protocols.resource.ResourceUrlConnection;
  * <p/>
  * This class is not in the usual utils package because it needs package level
  * access to the framework's package protected methods.
- *
- * @version $Revision$ $Date$
  */
 public class UrlUtils
 {

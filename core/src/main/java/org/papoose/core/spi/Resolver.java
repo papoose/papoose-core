@@ -32,8 +32,6 @@ import org.papoose.core.descriptions.ImportDescription;
  * <p/>
  * <b>Note:</b> No effort is made to protect against concurrent access of this
  * interface's methods.  It is up to the implementer to ensure thread safety.
- *
- * @version $Revision$ $Date$
  */
 public interface Resolver
 {

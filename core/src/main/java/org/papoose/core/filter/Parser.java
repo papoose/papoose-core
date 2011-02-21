@@ -24,7 +24,7 @@ import org.osgi.framework.InvalidSyntaxException;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public final class Parser
 {

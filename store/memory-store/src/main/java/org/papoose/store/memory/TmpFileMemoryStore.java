@@ -46,8 +46,6 @@ import org.papoose.core.util.ToStringCreator;
  * <p/>
  * Bundle and archive stores are not expected to be persisted between framework
  * instantiations.
- *
- * @version $Revision$ $Date$
  */
 public class TmpFileMemoryStore implements Store
 {

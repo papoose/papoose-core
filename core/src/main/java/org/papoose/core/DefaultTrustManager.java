@@ -21,7 +21,7 @@ import java.security.cert.Certificate;
 import org.papoose.core.spi.TrustManager;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class DefaultTrustManager implements TrustManager
 {

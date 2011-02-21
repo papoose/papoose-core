@@ -46,7 +46,7 @@ import org.papoose.core.descriptions.RequireDescription;
 import org.papoose.core.spi.ArchiveStore;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class MockArchiveStore implements ArchiveStore
 {

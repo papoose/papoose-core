@@ -26,7 +26,7 @@ import org.osgi.service.condpermadmin.ConditionalPermissionInfo;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class BundleProtectionDomain extends ProtectionDomain implements PermissionChangeListener
 {

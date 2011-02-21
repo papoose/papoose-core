@@ -36,7 +36,7 @@ import org.papoose.core.util.ToStringCreator;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class MemoryStore implements Store
 {

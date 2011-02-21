@@ -20,7 +20,7 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class Activator implements BundleActivator
 {

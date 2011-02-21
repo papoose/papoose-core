@@ -24,7 +24,7 @@ import java.util.Dictionary;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 abstract class CompareExpr implements Expr
 {

@@ -20,7 +20,7 @@ import java.util.Dictionary;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class And implements Expr
 {

@@ -18,7 +18,7 @@ package org.papoose.core.filter;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class Equal extends CompareExpr
 {

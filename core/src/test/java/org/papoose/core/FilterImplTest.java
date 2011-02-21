@@ -27,7 +27,7 @@ import org.papoose.core.filter.Parser;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class FilterImplTest
 {

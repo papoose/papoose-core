@@ -24,8 +24,6 @@ package org.papoose.core.util;
  * <p/>
  * Modern day JVMs will eventually inline these calls and so there should be no
  * performance issues with this code.
- *
- * @version $Revision$ $Date$
  */
 public final class Assert
 {

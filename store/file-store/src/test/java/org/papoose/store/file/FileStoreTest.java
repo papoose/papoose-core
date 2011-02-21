@@ -61,7 +61,7 @@ import org.papoose.core.util.FileUtils;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class FileStoreTest
 {

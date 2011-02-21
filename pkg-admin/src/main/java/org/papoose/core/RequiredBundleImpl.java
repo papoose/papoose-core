@@ -27,8 +27,6 @@ import org.osgi.service.packageadmin.RequiredBundle;
  * monitor instead of "this" so that bundles that obtain an instance of this
  * class cannot inadvertently, or maliciously, lock this object and hence lock
  * the framework.
- *
- * @version $Revision$ $Date$
  */
 public class RequiredBundleImpl implements RequiredBundle
 {

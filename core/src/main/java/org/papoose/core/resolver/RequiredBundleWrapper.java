@@ -24,7 +24,7 @@ import org.papoose.core.BundleGeneration;
 import org.papoose.core.FragmentGeneration;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class RequiredBundleWrapper implements CandidateBundle
 {

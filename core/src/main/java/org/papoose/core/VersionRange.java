@@ -20,7 +20,7 @@ import org.osgi.framework.Version;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class VersionRange
 {

@@ -34,7 +34,7 @@ import org.papoose.core.spi.StartLevelStore;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class DefaultStartLevelStore implements StartLevelStore
 {

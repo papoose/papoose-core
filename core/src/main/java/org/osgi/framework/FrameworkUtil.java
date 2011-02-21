@@ -21,7 +21,7 @@ import org.papoose.core.filter.Parser;
 
 
 /**
- * @version $Revision$ $Date: 2009-02-09 20:22:41 -0800 (Mon, 09 Feb 2009) $
+ *
  */
 public class FrameworkUtil
 {

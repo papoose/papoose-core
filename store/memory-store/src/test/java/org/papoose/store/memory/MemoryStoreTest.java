@@ -33,7 +33,7 @@ import org.papoose.core.Papoose;
 import org.papoose.core.spi.Store;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class MemoryStoreTest
 {

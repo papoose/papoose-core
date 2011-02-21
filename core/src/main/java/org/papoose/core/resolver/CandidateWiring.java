@@ -20,7 +20,7 @@ import org.papoose.core.descriptions.ExportDescription;
 import org.papoose.core.util.ToStringCreator;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class CandidateWiring
 {

@@ -26,7 +26,7 @@ import org.papoose.core.AutostartSetting;
 import org.papoose.core.spi.BundleStore;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class BundleTmpFileMemoryStore implements BundleStore
 {

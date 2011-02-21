@@ -30,7 +30,7 @@ import org.papoose.core.spi.ArchiveStore;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public abstract class Generation
 {

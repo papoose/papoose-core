@@ -22,7 +22,7 @@ import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.Resolution;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class ImportDescriptionWrapper
 {

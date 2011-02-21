@@ -17,7 +17,7 @@
 package com.acme.api;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface AnvilApi
 {

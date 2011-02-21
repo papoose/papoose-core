@@ -39,7 +39,7 @@ import org.osgi.service.url.URLStreamHandlerService;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class URLStreamHandlerServiceImpl
 {

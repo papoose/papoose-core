@@ -28,7 +28,6 @@ import org.papoose.core.UrlUtils;
  * This URLStreamHandler will be used if our URLStreamHandlerFactory has not
  * been registered w/ URL.
  *
- * @version $Revision$ $Date$
  * @see org.papoose.core.ServiceURLStreamHandlerFactory
  */
 public class Handler extends URLStreamHandler

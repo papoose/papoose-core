@@ -17,7 +17,7 @@
 package org.papoose.core.descriptions;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public enum Extension
 {

@@ -26,7 +26,7 @@ import org.osgi.framework.FrameworkEvent;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class RefreshPackagesRunnable implements Runnable
 {

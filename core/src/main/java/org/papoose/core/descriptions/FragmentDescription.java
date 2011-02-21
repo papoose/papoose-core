@@ -25,7 +25,7 @@ import org.papoose.core.VersionRange;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class FragmentDescription
 {

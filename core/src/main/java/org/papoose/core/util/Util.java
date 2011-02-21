@@ -48,7 +48,7 @@ import org.papoose.core.descriptions.Visibility;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public final class Util
 {

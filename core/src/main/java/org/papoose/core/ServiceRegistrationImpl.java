@@ -31,7 +31,7 @@ import org.osgi.framework.ServiceRegistration;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public final class ServiceRegistrationImpl implements ServiceRegistration
 {

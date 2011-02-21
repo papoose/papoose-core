@@ -21,7 +21,6 @@ package org.papoose.core.util;
  * according to Spring conventions.
  *
  * @author Keith Donald
- * @version $Revision$ $Date$
  */
 public interface ValueStyler
 {

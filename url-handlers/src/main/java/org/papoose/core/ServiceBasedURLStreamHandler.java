@@ -26,7 +26,7 @@ import org.osgi.service.url.URLStreamHandlerSetter;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class ServiceBasedURLStreamHandler extends URLStreamHandler implements URLStreamHandlerSetter
 {

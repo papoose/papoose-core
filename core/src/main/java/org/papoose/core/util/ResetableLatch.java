@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class ResetableLatch
 {

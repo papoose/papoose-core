@@ -19,11 +19,10 @@ package org.papoose.core;
 import org.papoose.core.spi.ArchiveStore;
 import org.papoose.core.spi.BootClasspathManager;
 
+
 /**
  * The default boot classpath manager which does not support adding bundles to
  * the boot classpath.
- *
- * @version $Revision$ $Date$
  */
 public class DefaultBootClasspathManager implements BootClasspathManager
 {

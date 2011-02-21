@@ -20,7 +20,7 @@ import java.net.ContentHandler;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class ContentHandlerHolder implements Comparable<ContentHandlerHolder>
 {

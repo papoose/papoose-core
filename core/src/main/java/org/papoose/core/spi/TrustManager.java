@@ -19,7 +19,7 @@ package org.papoose.core.spi;
 import java.security.cert.Certificate;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface TrustManager
 {

@@ -63,7 +63,7 @@ import org.papoose.core.util.SecurityUtils;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class BundleManager
 {

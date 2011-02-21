@@ -25,7 +25,6 @@ package org.papoose.core.util;
  * instance underneath.
  *
  * @author Keith Donald
- * @version $Revision$ $Date$
  * @see ValueStyler
  * @see DefaultValueStyler
  */

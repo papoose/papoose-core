@@ -20,7 +20,7 @@ import org.osgi.service.url.URLStreamHandlerService;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class UrlStreamHandlerHolder implements Comparable<UrlStreamHandlerHolder>
 {

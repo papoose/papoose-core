@@ -28,8 +28,6 @@ import org.osgi.service.packageadmin.ExportedPackage;
  * monitor instead of "this" so that bundles that obtain an instance of this
  * class cannot inadvertently, or maliciously, lock this object and hence lock
  * the framework.
- *
- * @version $Revision$ $Date$
  */
 public class ExportedPackageImpl implements ExportedPackage, Comparable
 {

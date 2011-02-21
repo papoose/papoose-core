@@ -19,7 +19,7 @@ package org.papoose.core;
 import org.osgi.framework.Constants;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public enum FragmentAttachmentDirective
 {

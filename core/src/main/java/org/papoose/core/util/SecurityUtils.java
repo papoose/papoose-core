@@ -52,7 +52,7 @@ import org.papoose.core.spi.TrustManager;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class SecurityUtils
 {

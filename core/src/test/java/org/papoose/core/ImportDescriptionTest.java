@@ -28,7 +28,7 @@ import org.papoose.core.descriptions.ImportDescription;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class ImportDescriptionTest
 {

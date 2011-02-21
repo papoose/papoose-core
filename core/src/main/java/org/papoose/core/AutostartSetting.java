@@ -17,7 +17,7 @@
 package org.papoose.core;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public enum AutostartSetting
 {

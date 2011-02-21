@@ -27,7 +27,7 @@ import org.papoose.core.util.Util;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  *          TODO: Make immutable
  */
 public class ExportDescription

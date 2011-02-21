@@ -20,7 +20,7 @@ import org.papoose.core.spi.ArchiveStore;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class FrameworkExtensionGeneration extends ExtensionGeneration
 {

@@ -21,7 +21,7 @@ import java.net.URL;
 import java.io.IOException;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface MockURLStreamHandlerProvider
 {

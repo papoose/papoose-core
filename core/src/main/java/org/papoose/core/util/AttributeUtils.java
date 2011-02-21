@@ -37,7 +37,7 @@ import org.papoose.core.descriptions.ExportDescription;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 @SuppressWarnings({ "deprecation" })
 public class AttributeUtils

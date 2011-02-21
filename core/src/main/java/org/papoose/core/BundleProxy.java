@@ -31,7 +31,7 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class BundleProxy implements Bundle
 {

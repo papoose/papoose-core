@@ -27,8 +27,6 @@ import java.util.logging.Logger;
  * <p/>
  * Use this class when you need to have multiple queues feeding a single
  * thread pool.
- *
- * @version $Revision$ $Date$
  */
 public class SerialExecutor implements Executor
 {

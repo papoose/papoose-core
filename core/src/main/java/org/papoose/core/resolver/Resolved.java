@@ -29,7 +29,7 @@ import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.spi.ArchiveStore;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class Resolved extends Candidate implements CandidateBundle
 {

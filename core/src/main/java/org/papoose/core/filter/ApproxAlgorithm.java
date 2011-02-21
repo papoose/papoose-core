@@ -17,7 +17,7 @@
 package org.papoose.core.filter;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface ApproxAlgorithm
 {

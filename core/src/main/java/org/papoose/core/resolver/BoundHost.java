@@ -31,7 +31,7 @@ import org.papoose.core.descriptions.ImportDescription;
 import org.papoose.core.descriptions.RequireDescription;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class BoundHost extends UnResolved implements CandidateBundle
 {

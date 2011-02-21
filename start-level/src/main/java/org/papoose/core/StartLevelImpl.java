@@ -36,7 +36,7 @@ import org.papoose.core.util.SerialExecutor;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class StartLevelImpl implements StartManager, StartLevel, SynchronousBundleListener
 {

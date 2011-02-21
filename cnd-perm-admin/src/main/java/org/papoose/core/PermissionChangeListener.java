@@ -20,7 +20,7 @@ import org.osgi.service.condpermadmin.ConditionalPermissionInfo;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface PermissionChangeListener
 {

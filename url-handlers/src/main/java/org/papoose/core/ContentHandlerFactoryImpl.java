@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class ContentHandlerFactoryImpl implements ContentHandlerFactory
 {

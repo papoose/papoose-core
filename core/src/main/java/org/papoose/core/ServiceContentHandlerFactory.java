@@ -21,7 +21,7 @@ import java.net.ContentHandlerFactory;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class ServiceContentHandlerFactory implements ContentHandlerFactory
 {

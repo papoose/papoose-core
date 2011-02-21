@@ -21,7 +21,7 @@ import java.util.Dictionary;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class Or implements Expr
 {

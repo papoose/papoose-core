@@ -29,7 +29,7 @@ import org.papoose.core.filter.Expr;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class DefaultFilter implements Filter
 {

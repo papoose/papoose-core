@@ -21,7 +21,7 @@ import org.osgi.framework.Bundle;
 import org.papoose.core.Papoose;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface StartLevelStore
 {

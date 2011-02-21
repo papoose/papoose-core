@@ -21,7 +21,7 @@ import java.security.PermissionCollection;
 import java.util.Enumeration;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class AdminPermissionCollection extends PermissionCollection
 {

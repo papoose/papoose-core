@@ -57,7 +57,7 @@ import org.papoose.core.util.Util;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class ArchiveFileStore extends AbstractArchiveStore
 {

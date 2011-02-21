@@ -19,8 +19,6 @@ package org.papoose.core.resolver;
 /**
  * Thrown if the imports and/or exports of a host and its fragments are
  * incompatible.
- *
- * @version $Revision$ $Date$
  */
 public class IncompatibleException extends Exception
 {

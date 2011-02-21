@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2007-2009 (C) The original author or authors
+ * Copyright 2007-2011 (C) The original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,14 @@ import org.papoose.core.PapooseException;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface Store
 {
     /**
      * Clear the space for use by the store.  When pointing a store at a new
-     * space it is usually a good practice to clear the space before using it.
+     * space it is usually a good practice to clear the space before using it
+     * for the first time.
      * <p/>
      * This method will perform what ever steps that are needed to ensure the safe
      * use of the space by this store.

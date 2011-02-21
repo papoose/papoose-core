@@ -17,7 +17,7 @@
 package org.papoose.core.spi;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface ServiceManager
 {

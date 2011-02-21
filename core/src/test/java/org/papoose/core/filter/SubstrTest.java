@@ -28,7 +28,7 @@ import org.junit.Test;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class SubstrTest
 {

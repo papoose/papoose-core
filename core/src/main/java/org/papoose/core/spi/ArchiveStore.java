@@ -42,7 +42,7 @@ import org.papoose.core.descriptions.RequireDescription;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface ArchiveStore extends Comparable
 {

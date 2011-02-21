@@ -24,7 +24,7 @@ import org.papoose.core.BundleGeneration;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface ProtectionDomainFactory
 {

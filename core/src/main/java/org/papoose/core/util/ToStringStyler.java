@@ -22,7 +22,6 @@ package org.papoose.core.util;
  * should provide the workflow.
  *
  * @author Keith Donald
- * @version $Revision$ $Date$
  */
 public interface ToStringStyler
 {

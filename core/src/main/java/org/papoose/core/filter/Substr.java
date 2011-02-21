@@ -23,7 +23,7 @@ import org.papoose.core.util.Util;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class Substr implements Expr
 {

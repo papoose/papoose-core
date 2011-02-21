@@ -75,7 +75,6 @@ import org.osgi.framework.InvalidSyntaxException;
  * <li>name - The symbolic name of a bundle.</li>
  * </ul>
  *
- * @version $Revision$ $Date$
  */
 public final class AdminPermission extends BasicPermission
 {

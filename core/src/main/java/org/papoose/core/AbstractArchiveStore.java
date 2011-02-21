@@ -50,7 +50,7 @@ import org.papoose.core.util.Util;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public abstract class AbstractArchiveStore implements ArchiveStore
 {

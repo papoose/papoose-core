@@ -19,7 +19,7 @@ package org.papoose.core;
 import org.junit.Test;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class AdminPermissionTest
 {

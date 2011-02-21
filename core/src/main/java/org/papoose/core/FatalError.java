@@ -17,7 +17,7 @@
 package org.papoose.core;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class FatalError extends Error
 {

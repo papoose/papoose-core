@@ -51,7 +51,7 @@ import org.papoose.core.util.Util;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class DefaultResolver implements Resolver
 {

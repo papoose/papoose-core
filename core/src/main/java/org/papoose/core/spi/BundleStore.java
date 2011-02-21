@@ -22,7 +22,7 @@ import org.papoose.core.AutostartSetting;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public interface BundleStore
 {

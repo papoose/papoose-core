@@ -32,7 +32,7 @@ import org.papoose.core.spi.BundleStore;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class BundleFileStore implements BundleStore
 {

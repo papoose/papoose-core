@@ -30,7 +30,6 @@ import org.papoose.core.PapooseException;
  * <code>add()</code> is the same instance that is passed to
  * <code>remove()</code>.
  *
- * @version $Revision$ $Date$
  * @see org.papoose.core.DefaultBootClasspathManager
  * @see org.papoose.core.Papoose
  */

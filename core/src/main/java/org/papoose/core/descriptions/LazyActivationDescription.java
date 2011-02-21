@@ -21,7 +21,7 @@ import java.util.Set;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class LazyActivationDescription
 {

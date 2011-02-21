@@ -26,7 +26,7 @@ import org.papoose.core.spi.BundleStore;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class SystemBundleController extends BundleController
 {

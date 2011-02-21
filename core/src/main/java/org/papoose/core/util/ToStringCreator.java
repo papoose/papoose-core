@@ -23,7 +23,6 @@ package org.papoose.core.util;
  *
  * @author Keith Donald
  * @author Juergen Hoeller
- * @version $Revision$ $Date$
  */
 public class ToStringCreator
 {

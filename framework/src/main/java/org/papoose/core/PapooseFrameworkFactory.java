@@ -38,7 +38,7 @@ import org.papoose.store.memory.MemoryStore;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class PapooseFrameworkFactory implements FrameworkFactory
 {

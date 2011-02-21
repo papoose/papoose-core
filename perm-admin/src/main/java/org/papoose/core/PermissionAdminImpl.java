@@ -23,7 +23,7 @@ import org.osgi.service.permissionadmin.PermissionInfo;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class PermissionAdminImpl implements PermissionAdmin
 {

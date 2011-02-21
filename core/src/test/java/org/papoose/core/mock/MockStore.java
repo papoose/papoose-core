@@ -31,7 +31,7 @@ import org.papoose.core.spi.Store;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class MockStore implements Store
 {

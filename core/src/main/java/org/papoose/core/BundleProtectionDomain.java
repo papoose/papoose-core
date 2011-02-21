@@ -17,21 +17,14 @@
 package org.papoose.core;
 
 import java.security.CodeSource;
-import java.security.Permission;
 import java.security.PermissionCollection;
 import java.security.Principal;
 import java.security.ProtectionDomain;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
-
-import org.osgi.service.condpermadmin.ConditionalPermissionInfo;
 
 
 /**
  * Papoose protection domain used to support conditional admin service.
- *
- * @version $Revision$ $Date$
  */
 public class BundleProtectionDomain extends ProtectionDomain
 {

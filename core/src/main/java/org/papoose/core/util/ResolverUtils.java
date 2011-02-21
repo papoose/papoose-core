@@ -44,7 +44,7 @@ import org.papoose.core.resolver.UnBound;
 import org.papoose.core.resolver.UnResolved;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class ResolverUtils
 {

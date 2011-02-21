@@ -29,7 +29,7 @@ import org.osgi.framework.InvalidSyntaxException;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class ParserTest
 {

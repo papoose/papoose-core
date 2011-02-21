@@ -28,7 +28,7 @@ import org.papoose.core.mock.MockStore;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class PapooseTest
 {

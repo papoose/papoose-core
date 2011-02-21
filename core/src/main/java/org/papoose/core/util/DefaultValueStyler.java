@@ -33,7 +33,6 @@ import java.util.Set;
  *
  * @author Keith Donald
  * @author Juergen Hoeller
- * @version $Revision$ $Date$
  */
 public class DefaultValueStyler implements ValueStyler
 {

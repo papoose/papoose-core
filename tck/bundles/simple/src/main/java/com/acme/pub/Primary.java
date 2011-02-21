@@ -17,7 +17,7 @@
 package com.acme.pub;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class Primary
 {

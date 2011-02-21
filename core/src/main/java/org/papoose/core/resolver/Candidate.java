@@ -26,8 +26,6 @@ import org.papoose.core.util.ToStringCreator;
  * contain the necessary intermediate data to assist in this search and will
  * contain the information needed to assemble resolved bundles and their class
  * loaders if a consistent solution set is found.
- *
- * @version $Revision$ $Date$
  */
 public class Candidate
 {

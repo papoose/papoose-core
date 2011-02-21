@@ -42,7 +42,6 @@ import java.util.Set;
  * @author Keith Donald
  * @author Rob Harrop
  * @author Juergen Hoeller
- * @version $Revision$ $Date$
  */
 public abstract class ClassUtils
 {

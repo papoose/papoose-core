@@ -19,7 +19,7 @@ package org.papoose.core;
 import org.papoose.core.spi.ServiceManager;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class DefaultServiceManager implements ServiceManager
 {

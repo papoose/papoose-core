@@ -25,8 +25,6 @@ import java.util.ResourceBundle;
 /**
  * An extension to <code>PropertyResourceBundle</code> to expose the
  * <code>setParent</code> method.
- *
- * @version $Revision$ $Date$
  */
 public class L18nResourceBundle extends PropertyResourceBundle
 {

@@ -30,8 +30,6 @@ import org.papoose.core.util.ToStringCreator;
 /**
  * A bundle that can be resolved with a particular set of wires and list of
  * required bundles.
- *
- * @version $Revision$ $Date$
  */
 public class Solution
 {

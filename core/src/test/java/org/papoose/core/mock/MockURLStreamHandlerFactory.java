@@ -25,7 +25,7 @@ import java.util.HashSet;
 import java.io.IOException;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class MockURLStreamHandlerFactory implements URLStreamHandlerFactory
 {

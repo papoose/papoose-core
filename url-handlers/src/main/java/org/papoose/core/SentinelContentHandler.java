@@ -22,7 +22,7 @@ import java.net.URLConnection;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class SentinelContentHandler extends ContentHandler
 {

@@ -19,7 +19,7 @@ package org.papoose.core.resolver;
 import org.papoose.core.Generation;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public abstract class UnResolved extends Candidate implements Cloneable
 {

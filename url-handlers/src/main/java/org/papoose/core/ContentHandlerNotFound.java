@@ -23,7 +23,7 @@ import java.net.URLConnection;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class ContentHandlerNotFound extends ContentHandler
 {

@@ -54,7 +54,7 @@ import org.papoose.core.util.SecurityUtils;
 import org.papoose.core.util.Util;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class ArchiveMemoryStore extends AbstractArchiveStore
 {

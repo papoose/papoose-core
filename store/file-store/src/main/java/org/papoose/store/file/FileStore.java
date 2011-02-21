@@ -43,7 +43,7 @@ import org.papoose.core.util.ToStringCreator;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class FileStore implements Store
 {

@@ -61,7 +61,7 @@ import org.papoose.core.util.Util;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class BundleController implements Bundle
 {

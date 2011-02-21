@@ -17,7 +17,7 @@
 package com.acme.pvt;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class Private
 {

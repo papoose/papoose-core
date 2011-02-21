@@ -19,7 +19,7 @@ package com.acme.impl;
 import com.acme.api.AnvilApi;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class AnvilImpl implements AnvilApi
 {

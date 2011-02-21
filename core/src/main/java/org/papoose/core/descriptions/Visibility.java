@@ -19,7 +19,7 @@ package org.papoose.core.descriptions;
 /**
  * The visibility of the exports of a required bundle.
  *
- * @version $Revision$ $Date$
+ *
  */
 public enum Visibility
 {

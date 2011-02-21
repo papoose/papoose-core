@@ -34,7 +34,7 @@ import org.papoose.core.mock.MockBundle;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class FutureFrameworkEventTest
 {

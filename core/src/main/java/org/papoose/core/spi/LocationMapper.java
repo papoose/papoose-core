@@ -29,7 +29,6 @@ import org.papoose.core.PapooseException;
  * object of the <code>Papoose</code> constructor.  Use the key
  * <code>org.papoose.core.framework.spi.LocationMapper</code>.
  *
- * @version $Revision$ $Date$
  * @see org.papoose.core.DefaultLocationMapper
  * @see org.papoose.core.Papoose
  */

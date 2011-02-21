@@ -39,7 +39,7 @@ import org.papoose.core.PapooseFrameworkFactory;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class PapooseFrameworkFactoryTest
 {

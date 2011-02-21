@@ -47,7 +47,7 @@ import org.papoose.core.util.AttributeUtils;
 import org.papoose.core.util.AttributesWrapper;
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class SystemArchiveStore implements ArchiveStore
 {

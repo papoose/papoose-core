@@ -37,7 +37,7 @@ import org.papoose.core.util.Util;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class BundleContextProxy implements BundleContext
 {

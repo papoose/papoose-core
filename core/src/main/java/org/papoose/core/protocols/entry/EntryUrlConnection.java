@@ -25,7 +25,7 @@ import org.papoose.core.BundleManager;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class EntryUrlConnection extends URLConnection
 {

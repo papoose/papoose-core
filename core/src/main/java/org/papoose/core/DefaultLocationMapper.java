@@ -26,8 +26,6 @@ import org.papoose.core.spi.LocationMapper;
 
 /**
  * The default bundle location mapper that treats bundle locations as URLs.
- *
- * @version $Revision$ $Date$
  */
 public class DefaultLocationMapper implements LocationMapper
 {

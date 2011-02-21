@@ -24,7 +24,7 @@ import java.net.URLStreamHandler;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class SentinelURLStreamHandler extends URLStreamHandler
 {

@@ -20,8 +20,6 @@ import java.util.jar.Attributes;
 
 /**
  * Needed to override <code>containsKey()</code>
- *
- * @version $Revision$ $Date$
  */
 public class AttributesWrapper extends Attributes
 {

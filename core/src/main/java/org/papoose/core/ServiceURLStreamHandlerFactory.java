@@ -23,7 +23,7 @@ import java.security.PrivilegedAction;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 class ServiceURLStreamHandlerFactory implements URLStreamHandlerFactory
 {

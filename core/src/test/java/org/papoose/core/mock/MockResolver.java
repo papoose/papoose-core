@@ -30,7 +30,7 @@ import org.papoose.core.spi.Solution;
 
 
 /**
- * @version $Revision$ $Date$
+ *
  */
 public class MockResolver implements Resolver
 {
