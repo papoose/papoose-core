@@ -15,16 +15,6 @@ project. The following notice covers the XBean files:
 
 =========================================================================
 
-The Papoose build relies on source files supplied by the JCIP Annotations
-project. The following notice covers the JCIP Annotation files:
-
-  Copyright (c) 2005 Brian Goetz and Tim Peierls
-
-  Creative Commons Attribution License
-  http://creativecommons.org/licenses/by/2.5
-
-=========================================================================
-
 The Papoose build relies on source files supplied by the Apache Felix
 project. The following notice covers the Felix files:
 
