@@ -92,55 +92,55 @@
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>core</artifactId>
-                <version>${pom.version}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>cnd-perm-admin</artifactId>
-                <version>${pom.version}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>framework</artifactId>
-                <version>${pom.version}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>perm-admin</artifactId>
-                <version>${pom.version}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>pkg-admin</artifactId>
-                <version>${pom.version}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>start-level</artifactId>
-                <version>${pom.version}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>store-file</artifactId>
-                <version>${pom.version}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>store-memory</artifactId>
-                <version>${pom.version}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.papoose.core</groupId>
                 <artifactId>url-handlers</artifactId>
-                <version>${pom.version}</version>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
